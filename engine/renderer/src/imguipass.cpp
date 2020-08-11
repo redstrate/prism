@@ -85,6 +85,9 @@ void ImGuiPass::render_post(GFXCommandBuffer* command_buffer, const int index) {
 
     Expects(draw_data != nullptr);
     
+    if(draw_data->TotalIdxCount == 0 || draw_data->TotalVtxCount == 0)
+        return;
+    
     const int framebuffer_width = static_cast<int>(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
     const int framebuffer_height = static_cast<int>(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
     
