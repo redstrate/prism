@@ -70,6 +70,8 @@ struct Transform {
 struct Renderable {
     AssetPtr<Mesh> mesh;
     std::vector<AssetPtr<Material>> materials;
+    
+    std::vector<Matrix4x4> temp_bone_data;
 };
 
 struct Light {

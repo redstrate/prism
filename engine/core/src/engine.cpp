@@ -532,24 +532,25 @@ void Engine::calculate_object(Scene& scene, Object object, const Object parent_o
         auto& mesh = scene.get<Renderable>(object);
 
         if(mesh.mesh && !mesh.mesh->bones.empty()) {
+            if(mesh.temp_bone_data.empty())
+                mesh.temp_bone_data.resize(mesh.mesh->bones.size());
+            
             for(auto& part : mesh.mesh->parts) {
-                std::vector<Matrix4x4> bones(mesh.mesh->bones.size());
-
                 if(scene.get(object).parent != NullObject && scene.has<Renderable>(scene.get(object).parent) && !scene.get<Renderable>(scene.get(object).parent).mesh->bones.empty()) {
                     for(auto [i, ourBone] : utility::enumerate(mesh.mesh->bones)) {
                         for(auto& theirBone : scene.get<Renderable>(scene.get(object).parent).mesh->bones) {
                             if(ourBone.name == theirBone.name)
-                                bones[i] = mesh.mesh->global_inverse_transformation * theirBone.local_transform * part.offset_matrices[ourBone.index];
+                                mesh.temp_bone_data[i] = mesh.mesh->global_inverse_transformation * theirBone.local_transform * part.offset_matrices[ourBone.index];
                         }
                     }
                 } else {
                     calculate_bone(*mesh.mesh.handle, part, *mesh.mesh->root_bone);
 
-                    for(auto [i, bone] : utility::enumerate(bones))
-                        bones[i] = mesh.mesh->bones[i].final_transform;
+                    for(auto [i, bone] : utility::enumerate(mesh.temp_bone_data))
+                        mesh.temp_bone_data[i] = mesh.mesh->bones[i].final_transform;
                 }
 
-                engine->get_gfx()->copy_buffer(part.bone_batrix_buffer, bones.data(), 0, bones.size() * sizeof(Matrix4x4));
+                engine->get_gfx()->copy_buffer(part.bone_batrix_buffer, mesh.temp_bone_data.data(), 0, mesh.temp_bone_data.size() * sizeof(Matrix4x4));
             }
         }
     }
