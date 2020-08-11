@@ -5,6 +5,14 @@ I've been using this to actually develop a game i've been working on, and includ
 
 Although I developed this on macOS, it has been tested on Windows, Linux,  iOS, iPadOS and tvOS machines. Apart from some platform glue, these share a majority of the same code!
 
+![pcss](https://github.com/redstrate/prism/blob/master/misc/pcss.png?raw=true)
+![sponza](https://github.com/redstrate/prism/blob/master/misc/sponza.png?raw=true)
+
+![buddha](https://github.com/redstrate/prism/blob/master/misc/buddha.png?raw=true)
+![custom models](https://github.com/redstrate/prism/blob/master/misc/custom%20models.png?raw=true)
+
+The sibenik, sponza and buddha models shown are from the [McGuire Computer Graphics Archive](https://casual-effects.com/data/), other models shown are created by me.
+
 ## Features
 Here is a list of some of the notable features of Prism:
 
@@ -19,9 +27,9 @@ Here is a list of some of the notable features of Prism:
 	* Includes the new docking/viewport branch!
 	* Automatic DPI scaling on fonts for crisp rendering when the window is in a HiDPI environment.
 	* Custom backend built on top the GFX api and other platform agnostic systems.
-	* Plenty of custom widgets available for easy debug tooling, see imgui_stdlib.h and imgui_utility.hpp!
+	* Plenty of custom widgets available for easy debug tooling, see [imgui_stdlib.h](https://github.com/redstrate/prism/blob/master/extern/imgui/include/imgui_stdlib.h) and [imgui_utility.hpp](https://github.com/redstrate/prism/blob/master/engine/core/include/imgui_utility.hpp)!
 * Entity-Component system for scene authoring
-	* No runtime polymorphism is involved and leverages the native C++ type system. Components are simple structs.
+	* No runtime polymorphism is involved and leverages the native C++ type system. [Components are simple structs](https://github.com/redstrate/prism/blob/master/engine/core/include/components.hpp).
 * Asset management
 	* Custom model pipeline allowing for blazingly fast model loading and authoring.
 		* Includes a custom blender addon for easy export!
@@ -51,4 +59,4 @@ Here is a list of some of the notable features of Prism:
 * C++ compiler that fully supports C++17
 	* MSVC, Clang, and GCC have been tested
 
-There is no example available, but if you clone this repository and include it in your cmake tree, use the function `add_platform_executable` from AddPlatformExecutable.cmake to create a new Prism app.
+There is no example available, but if you clone this repository and include it in your cmake tree, use the function `add_platform_executable` from [AddPlatformExecutable.cmake](https://github.com/redstrate/prism/blob/master/cmake/AddPlatformExecutable.cmake) to create a new Prism app.
