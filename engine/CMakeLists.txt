@@ -1,0 +1,12 @@
+add_subdirectory(core)
+add_subdirectory(renderer)
+add_subdirectory(utility)
+add_subdirectory(gfx)
+add_subdirectory(math)
+add_subdirectory(log)
+add_subdirectory(asset)
+
+if(NOT ENABLE_IOS AND NOT ENABLE_TVOS)
+    add_subdirectory(audio)
+    add_subdirectory(tests)
+endif()

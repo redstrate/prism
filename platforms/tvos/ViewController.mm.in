@@ -1,0 +1,259 @@
+#include <MetalKit/MetalKit.h>
+#include <gfx_metal.hpp>
+#include <GameController/GameController.h>
+
+#import <UIKit/UIKit.h>
+
+#include <engine.hpp>
+
+#include <@APP_INCLUDE@>
+
+@APP_CLASS@* app = nullptr;
+
+int maxFPS = 60;
+
+std::array<bool, 8> inputKeys;
+
+float rightX = 0.0f, rightY = 0.0f;
+float leftX = 0.0f, leftY = 0.0f;
+
+@interface GameView : UIView
+@end
+
+@implementation GameView
+
++ (Class) layerClass {
+    return [CAMetalLayer class];
+}
+
+- (void)draw {
+    engine->update(1.0f / (float)maxFPS);
+    engine->begin_frame(1.0f / (float)maxFPS);
+    engine->render(0);
+}
+
+- (void) controllerConnected {
+    GCController* controller = [GCController controllers][0];
+    [[controller extendedGamepad] setValueChangedHandler:^(GCExtendedGamepad * _Nonnull gamepad, GCControllerElement * _Nonnull element) {
+        const auto& handle_element = [element](int index, GCControllerElement* e) {
+            if(element == e)
+                inputKeys[index] = [(GCControllerButtonInput*)e value] == 1.0f;
+        };
+        
+        handle_element(0, [[controller extendedGamepad] buttonA]);
+        handle_element(1, [[controller extendedGamepad] buttonB]);
+        handle_element(2, [[controller extendedGamepad] buttonX]);
+        handle_element(3, [[controller extendedGamepad] buttonY]);
+        
+        if(element == [[controller extendedGamepad] dpad]) {
+            inputKeys[4] = [[[[controller extendedGamepad] dpad] up] value] == 1.0f;
+            inputKeys[5] = [[[[controller extendedGamepad] dpad] down] value] == 1.0f;
+            inputKeys[6] = [[[[controller extendedGamepad] dpad] left] value] == 1.0f;
+            inputKeys[7] = [[[[controller extendedGamepad] dpad] right] value] == 1.0f;
+        }
+        
+        if(element == [[controller extendedGamepad] leftThumbstick]) {
+            leftX = [[[[controller extendedGamepad] leftThumbstick] xAxis] value];
+            leftY = [[[[controller extendedGamepad] leftThumbstick] yAxis] value];
+        }
+
+        if(element == [[controller extendedGamepad] rightThumbstick]) {
+            rightX = [[[[controller extendedGamepad] rightThumbstick] xAxis] value];
+            rightY = [[[[controller extendedGamepad] rightThumbstick] yAxis] value];
+        }
+    }];
+}
+
+@end
+
+@interface GameViewController : UIViewController
+
+@end
+
+float mouse_x = 0.0f, mouse_y = 0.0f;
+bool mouse_down = false;
+
+@interface GameViewController ()
+{
+    GameView* view;
+}
+@end
+
+@implementation GameViewController
+
+int width, height;
+int drawable_width, drawable_height;
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    view = (GameView*)self.view;
+    view.userInteractionEnabled = true;
+    
+    CADisplayLink* displayLink = [CADisplayLink displayLinkWithTarget:view selector:@selector(draw)];
+    [displayLink addToRunLoop:NSRunLoop.mainRunLoop forMode:NSDefaultRunLoopMode];
+    
+    width = [view frame].size.width;
+    height = [view frame].size.height;
+    
+    drawable_width = [view frame].size.width * [view contentScaleFactor];
+    drawable_height = [view frame].size.height * [view contentScaleFactor];
+    
+    engine = new Engine(0, nullptr);
+    
+    app = new @APP_CLASS@();
+    engine->set_app(app);
+    
+    GFXCreateInfo createInfo = {};
+    createInfo.api_validation_enabled = true;
+    
+    GFXMetal* gfx = new GFXMetal();
+    gfx->initialize(createInfo);
+    engine->set_gfx(gfx);
+    
+    app_main(engine);
+
+    engine->add_window((void*)CFBridgingRetain([view layer]), 0, {static_cast<uint32_t>(width), static_cast<uint32_t>(height)});
+    
+    app->initialize_render();
+    
+    NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
+    [nc addObserver:view
+        selector:@selector(controllerConnected)
+        name:GCControllerDidConnectNotification
+        object:nil];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+-(bool)prefersStatusBarHidden {
+    return YES;
+}
+
+@end
+
+void platform::capture_mouse(const bool capture) {
+    
+}
+
+const char* platform::get_name() {
+    return "tvOS";
+}
+
+Offset platform::get_cursor_position() {
+    return {static_cast<int32_t>(mouse_x), static_cast<int32_t>(mouse_y)};
+}
+
+std::tuple<float, float> platform::get_right_stick_position() {
+    return {rightX, rightY};
+}
+
+std::tuple<float, float> platform::get_left_stick_position() {
+    return {leftX, leftY};
+}
+
+bool platform::get_key_down(InputButton key) {
+    if(key == InputButton::ButtonA)
+        return inputKeys[0];
+    
+    if(key == InputButton::ButtonB)
+        return inputKeys[1];
+    
+    if(key == InputButton::ButtonX)
+        return inputKeys[2];
+    
+    if(key == InputButton::ButtonY)
+        return inputKeys[3];
+    
+    if(key == InputButton::DPadUp)
+        return inputKeys[4];
+    
+    if(key == InputButton::DPadDown)
+        return inputKeys[5];
+    
+    if(key == InputButton::DPadLeft)
+        return inputKeys[6];
+    
+    if(key == InputButton::DPadRight)
+        return inputKeys[7];
+    
+    return false;
+}
+
+int platform::open_window(const std::string_view title, const Rectangle rect, const WindowFlags flags) {
+   return 0;
+}
+
+void platform::set_window_title(const int index, const std::string_view title) {
+
+}
+
+bool platform::is_window_focused(const int index) {
+
+}
+
+void platform::set_window_focused(const int index) {
+
+}
+
+Extent platform::get_window_size(const int index) {
+    return {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+}
+
+Extent platform::get_window_drawable_size(const int index) {
+    return {static_cast<uint32_t>(drawable_width), static_cast<uint32_t>(drawable_height)};
+}
+
+Offset platform::get_window_position(const int index) {
+
+}
+
+void platform::set_window_size(const int index, const Extent extent) {
+
+}
+
+void platform::set_window_position(const int index, const Offset offset) {
+
+}
+
+void platform::close_window(const int index) {
+
+}
+
+char* platform::translate_keycode(const unsigned int keycode) {
+    return nullptr;
+}
+
+int platform::get_keycode(const InputButton button) {
+
+}
+
+Rectangle platform::get_monitor_resolution() {
+
+}
+
+Rectangle platform::get_monitor_work_area() {
+
+}
+
+Offset platform::get_screen_cursor_position() {
+
+}
+
+float platform::get_window_dpi(const int index) {
+    return 2.0f;
+}
+
+bool platform::get_mouse_button_down(const int index) {
+    return mouse_down;
+}
+
+float platform::get_monitor_dpi() {
+    return 2.0f;
+}
+
+std::tuple<float, float> platform::get_wheel_delta() {
+
+}

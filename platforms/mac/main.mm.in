@@ -1,0 +1,618 @@
+#import <Cocoa/Cocoa.h>
+#import <MetalKit/MetalKit.h>
+#import <Foundation/Foundation.h>
+#include <GameController/GameController.h>
+#include <mach/mach_time.h>
+#include <gfx_metal.hpp>
+#include <engine.hpp>
+#include <map>
+#include <file.hpp>
+
+#include <@APP_INCLUDE@>
+
+uint64_t last_time = 0;
+bool is_qutting = false;
+
+static std::map<InputButton, int> inputToKeyCode = { {
+    {InputButton::C, 8},
+    {InputButton::V, 9},
+    {InputButton::X, 7},
+    {InputButton::Q, 12},
+    {InputButton::Y, 16},
+    {InputButton::Z, 6},
+    {InputButton::Backspace, 51},
+    {InputButton::Enter, 36},
+    {InputButton::Space, 49},
+    {InputButton::Ctrl, 17},
+    {InputButton::Shift, 10},
+    {InputButton::A, 0},
+    {InputButton::W, 13},
+    {InputButton::S, 1},
+    {InputButton::D, 2},
+    {InputButton::Escape, 53},
+    {InputButton::Tab, 48},
+    {InputButton::LeftArrow, 123},
+    {InputButton::RightArrow, 124}
+}};
+
+struct NativeWindow;
+
+const char* platform::get_name() {
+    return "macOS";
+}
+
+int platform::get_keycode(InputButton key) {
+    if(inputToKeyCode.count(key))
+        return inputToKeyCode[key];
+    else
+        return -1;
+}
+
+GFX* interface = nullptr;
+
+@APP_CLASS@* app = nullptr;
+
+float scrollX = 0.0f, scrollY = 0.0f;
+
+std::array<bool, 8> inputKeys;
+
+float rightX = 0.0f, rightY = 0.0f;
+float leftX = 0.0f, leftY = 0.0f;
+
+@interface GameView : NSObject<NSWindowDelegate>
+
+@property NativeWindow *native;
+
+@end
+
+struct NativeWindow {
+    int index = 0;
+    NSWindow* window;
+    GameView* delegate;
+    CAMetalLayer* layer;
+    bool willCaptureMouse = false;
+    
+    int currentWidth = 0, currentHeight = 0;
+    int timeout = 0;
+    
+    NSPoint currentMousePos;
+    bool showingCursor = true;
+    bool inFocus = true;
+};
+
+std::vector<NativeWindow*> windows;
+
+NativeWindow* get_window(const int index) {
+    for(auto& window : windows) {
+        if(window->index == index)
+            return window;
+    }
+    
+    return nullptr;
+}
+
+@implementation GameView
+
+- (void)gameQuit {
+    engine->prepare_quit();
+}
+- (void)gameFocus {
+    if(![self native]->showingCursor)
+        [NSCursor hide];
+        
+    [self native]->inFocus = true;
+}
+- (void)gameLostFocus {
+    if(![self native]->showingCursor)
+        [NSCursor unhide];
+        
+    [self native]->inFocus = false;
+}
+
+const double NANOSECONDS_TO_MILLISECONDS = 1.0 / 1000000000.0;
+
+- (void)update {
+    const bool is_main_window = [self native]->index == 0;
+    
+    if(is_main_window) {
+        if([self native]->willCaptureMouse && [self native]->timeout > 5 && [self native]->inFocus) {
+            NSPoint point;
+            point.x = [self native]->window.frame.origin.x + ([self native]->currentWidth / 2);
+            point.y = [NSScreen mainScreen].frame.size.height - ([self native]->window.frame.origin.y + ([self native]->currentHeight / 2));
+
+            CGWarpMouseCursorPosition(point);
+            CGAssociateMouseAndMouseCursorPosition(true);
+
+            [self native]->currentMousePos.x = [self native]->currentWidth / 2;
+            [self native]->currentMousePos.y = [self native]->currentHeight / 2;
+                        
+            [self native]->timeout = 0;
+        }
+
+        [self native]->timeout++;
+    }
+}
+
+- (void)render {
+    engine->render([self native]->index);
+}
+
+- (void)windowDidResize:(NSNotification *)notification {
+    [self native]->currentWidth = [self native]->window.contentView.frame.size.width;
+    [self native]->currentHeight = [self native]->window.contentView.frame.size.height;
+    
+    NSRect bounds = [[self native]->layer bounds];
+    bounds = [[self native]->window convertRectToBacking:bounds];
+    
+    [self native]->layer.drawableSize = NSSizeToCGSize(bounds.size);;
+    
+    engine->resize([self native]->index, {static_cast<uint32_t>([self native]->currentWidth), static_cast<uint32_t>([self native]->currentHeight)});
+}
+
+-(void)windowWillClose:(NSNotification *)notification {
+    if([self native]->index == 0)
+        is_qutting = app->should_quit();
+}
+
+- (void) controllerConnected {
+    GCController* controller = [GCController controllers][0];
+    [[controller extendedGamepad] setValueChangedHandler:^(GCExtendedGamepad * _Nonnull gamepad, GCControllerElement * _Nonnull element) {
+        const auto& handle_element = [element](int index, GCControllerElement* e) {
+            if(element == e)
+                inputKeys[index] = [(GCControllerButtonInput*)e value] == 1.0f;
+        };
+        
+        handle_element(0, [[controller extendedGamepad] buttonA]);
+        handle_element(1, [[controller extendedGamepad] buttonB]);
+        handle_element(2, [[controller extendedGamepad] buttonX]);
+        handle_element(3, [[controller extendedGamepad] buttonY]);
+        
+        if(element == [[controller extendedGamepad] dpad]) {
+            inputKeys[4] = [[[[controller extendedGamepad] dpad] up] value] == 1.0f;
+            inputKeys[5] = [[[[controller extendedGamepad] dpad] down] value] == 1.0f;
+            inputKeys[6] = [[[[controller extendedGamepad] dpad] left] value] == 1.0f;
+            inputKeys[7] = [[[[controller extendedGamepad] dpad] right] value] == 1.0f;
+        }
+        
+        if(element == [[controller extendedGamepad] leftThumbstick]) {
+            leftX = [[[[controller extendedGamepad] leftThumbstick] xAxis] value];
+            leftY = [[[[controller extendedGamepad] leftThumbstick] yAxis] value];
+        }
+
+        if(element == [[controller extendedGamepad] rightThumbstick]) {
+            rightX = [[[[controller extendedGamepad] rightThumbstick] xAxis] value];
+            rightY = [[[[controller extendedGamepad] rightThumbstick] yAxis] value];
+        }
+    }];
+}
+
+@end
+
+std::map<int, bool> pressed;
+NSString* currentCharString = nil;
+
+bool platform::supports_feature(const PlatformFeature feature) {
+    switch(feature) {
+        case PlatformFeature::Windowing:
+            return true;
+    }
+    
+    return false;
+}
+
+bool platform::get_key_down(const InputButton key) {
+    if(key == InputButton::ButtonA)
+        return inputKeys[0];
+    
+    if(key == InputButton::ButtonB)
+        return inputKeys[1];
+    
+    if(key == InputButton::ButtonX)
+        return inputKeys[2];
+    
+    if(key == InputButton::ButtonY)
+        return inputKeys[3];
+    
+    if(key == InputButton::DPadUp)
+        return inputKeys[4];
+    
+    if(key == InputButton::DPadDown)
+        return inputKeys[5];
+    
+    if(key == InputButton::DPadLeft)
+        return inputKeys[6];
+    
+    if(key == InputButton::DPadRight)
+        return inputKeys[7];
+        
+    if(inputToKeyCode.count(key))
+        return pressed[inputToKeyCode[key]];
+    else
+        return false;
+}
+
+char* platform::translate_keycode(const unsigned int keycode) {
+    return const_cast<char*>([currentCharString UTF8String]);
+}
+
+inline std::string clean_path(const std::string_view path) {
+    auto p = replace_substring(path, "%20", " ");
+    
+    // this is a path returned by an editor, so skip it
+    // TODO: find a better way to do this!! NOO!!
+    if(p.find("file:///") != std::string::npos)
+        return p.substr(7, p.length());
+    else
+        return p;
+}
+
+void platform::open_dialog(const bool existing, std::function<void(std::string)> returnFunction, bool openDirectory) {
+    NSOpenPanel* openDlg = [NSOpenPanel openPanel];
+
+    [openDlg setCanChooseFiles:YES];
+
+    [openDlg setAllowsMultipleSelection:NO];
+
+    [openDlg setCanChooseDirectories:openDirectory];
+    
+    [openDlg setCanChooseFiles:!openDirectory];
+
+    if([openDlg runModal] == NSModalResponseOK)
+        returnFunction(clean_path([openDlg.URLs[0].absoluteString UTF8String]));
+}
+
+void platform::save_dialog(std::function<void(std::string)> returnFunction) {
+    NSSavePanel* openDlg = [NSSavePanel savePanel];
+
+    if ([openDlg runModal] == NSModalResponseOK)
+        returnFunction(clean_path([openDlg.URL.absoluteString UTF8String]));
+}
+
+void platform::capture_mouse(const bool capture) {
+    windows[0]->willCaptureMouse = capture;
+
+    if(windows[0]->showingCursor && capture) {
+        [NSCursor hide];
+        windows[0]->showingCursor = false;
+    } else if(!windows[0]->showingCursor && !capture) {
+        [NSCursor unhide];
+        windows[0]->showingCursor = true;
+    }
+}
+
+float platform::get_window_dpi(const int index) {
+    auto window = get_window(index);
+    return [window->window backingScaleFactor];
+}
+
+float platform::get_monitor_dpi() {
+    return [[NSScreen mainScreen] backingScaleFactor];
+}
+
+CGRect toTopLeftSpace(NSRect frame) {
+    frame.origin.y = NSMaxY([[NSScreen mainScreen] frame]) - NSMaxY(frame);
+    return NSRectToCGRect(frame);
+}
+
+Rectangle platform::get_monitor_resolution() {
+    auto frame = toTopLeftSpace([[NSScreen mainScreen] frame]);
+    
+    return {static_cast<int32_t>(frame.origin.x), static_cast<int32_t>(frame.origin.y), static_cast<uint32_t>(frame.size.width), static_cast<uint32_t>(frame.size.height)};
+}
+
+Rectangle platform::get_monitor_work_area() {
+    auto frame = toTopLeftSpace([[NSScreen mainScreen] visibleFrame]);
+    
+    return {static_cast<int32_t>(frame.origin.x), static_cast<int32_t>(frame.origin.y), static_cast<uint32_t>(frame.size.width), static_cast<uint32_t>(frame.size.height)};
+}
+
+NSPoint get_fixed_cursor_point(NSPoint point) {
+    return {point.x, std::max(windows[0]->currentHeight - point.y, 0.0)};
+}
+
+Offset platform::get_cursor_position() {
+    return {static_cast<int32_t>(windows[0]->currentMousePos.x), static_cast<int32_t>(windows[0]->currentMousePos.y)};
+}
+
+Offset platform::get_screen_cursor_position() {
+    return {static_cast<int32_t>([NSEvent mouseLocation].x), static_cast<int32_t>([[NSScreen mainScreen] frame].size.height - [NSEvent mouseLocation].y)};
+}
+
+std::tuple<float, float> platform::get_wheel_delta() {
+    return {scrollX, scrollY};
+}
+
+std::tuple<float, float> platform::get_left_stick_position() {
+    return {leftX, leftY};
+}
+
+std::tuple<float, float> platform::get_right_stick_position() {
+    return {rightX, rightY};
+}
+
+Extent platform::get_window_size(const int index) {
+    auto window = get_window(index);
+    return {static_cast<uint32_t>(window->currentWidth), static_cast<uint32_t>(window->currentHeight)};
+}
+
+Extent platform::get_window_drawable_size(const int index) {
+    auto window = get_window(index);
+    return {static_cast<uint32_t>(window->currentWidth * window->window.backingScaleFactor), static_cast<uint32_t>(window->currentHeight * window->window.backingScaleFactor)};
+}
+
+Offset platform::get_window_position(const int index) {
+    auto window = get_window(index);
+
+    auto frame = toTopLeftSpace([window->window contentRectForFrameRect:[window->window frame]]);
+    
+    return {static_cast<int32_t>(frame.origin.x), static_cast<int32_t>(frame.origin.y)};
+}
+
+bool platform::is_window_focused(const int index) {
+    auto window = get_window(index);
+
+    return [window->window isKeyWindow];
+}
+
+void platform::set_window_focused(const int index) {
+    auto window = get_window(index);
+    [window->window makeKeyWindow];
+}
+
+bool platform::get_mouse_button_down(const int button) {
+    return (button + 1) & [NSEvent pressedMouseButtons];
+}
+
+void platform::set_window_position(const int index, const Offset offset) {
+    auto window = get_window(index);
+
+    NSPoint p;
+    p.x = offset.x;
+    p.y = [[NSScreen mainScreen] frame].size.height - offset.y;
+    
+    [window->window setFrameTopLeftPoint:p];
+}
+
+void platform::set_window_size(const int index, const Extent extent) {
+    auto window = get_window(index);
+
+    NSSize size;
+    size.width = extent.width;
+    size.height = extent.height;
+    
+    [window->window setContentSize:size];
+}
+
+void platform::set_window_title(const int index, const std::string_view title) {
+    auto window = get_window(index);
+    [window->window setTitle:[NSString stringWithUTF8String:title.data()]];
+}
+
+void platform::mute_output() {}
+void platform::unmute_output() {}
+
+int platform::open_window(const std::string_view title, const Rectangle rect, const WindowFlags flags) {
+    NativeWindow* native = new NativeWindow();
+    native->index = windows.size();
+    GameView* del = [[GameView alloc] init];
+    native->delegate = del;
+    windows.push_back(native);
+
+    NSRect nrect = NSMakeRect(rect.offset.x, rect.offset.y, rect.extent.width, rect.extent.height);
+    
+    NSWindowStyleMask windowStyle = NSWindowStyleMaskTitled
+    | NSWindowStyleMaskClosable
+    | NSWindowStyleMaskMiniaturizable;
+    
+    if(flags == WindowFlags::Resizable)
+        windowStyle |= NSWindowStyleMaskResizable;
+    else if(flags == WindowFlags::Borderless)
+        windowStyle = NSWindowStyleMaskBorderless;
+    
+    native->window = [[NSWindow alloc]
+                        initWithContentRect: nrect
+                        styleMask:windowStyle
+                        backing: NSBackingStoreBuffered
+                        defer: NO];
+                        
+    native->currentWidth = rect.extent.width;
+    native->currentHeight = rect.extent.height;
+    
+    native->layer = [CAMetalLayer layer];
+        
+    NSView* view = [[NSView alloc] init];
+    view.wantsLayer = YES;
+    view.layer = native->layer;
+        
+    native->layer.contentsScale = [native->window backingScaleFactor];
+        
+    engine->add_window(view.layer, native->index, rect.extent);
+
+    [native->window setContentView:view];
+
+    if(native->index == 0)
+        app->initialize_render();
+        
+    [native->window setTitle:[NSString stringWithUTF8String:title.data()]];
+    
+    [del setNative:native];
+    
+    [native->window setDelegate:del];
+    [native->window orderFrontRegardless];
+    
+    if(native->index == 0) {
+        NSNotificationCenter* nc = [NSNotificationCenter defaultCenter];
+        [nc addObserver:del
+            selector:@selector(gameQuit)
+            name:NSApplicationWillTerminateNotification
+            object:nil];
+            
+        [nc addObserver:del
+            selector:@selector(gameFocus)
+            name:NSApplicationDidBecomeActiveNotification
+            object:nil];
+            
+        [nc addObserver:del
+            selector:@selector(gameLostFocus)
+            name:NSApplicationDidResignActiveNotification
+            object:nil];
+            
+        [nc addObserver:del
+            selector:@selector(controllerConnected)
+            name:GCControllerDidConnectNotification
+            object:nil];
+    }
+                
+    return native->index;
+}
+
+void platform::close_window(const int index) {
+    auto window = get_window(index);
+
+    engine->remove_window(window->index);
+
+    [window->window close];
+
+    utility::erase(windows, window);
+}
+
+void platform::force_quit() {
+    [NSApp terminate:nil];
+}
+
+int main(int argc, char* argv[]) {
+    NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
+    
+    NSApp = [NSApplication sharedApplication];
+    
+    engine = new Engine(argc, argv);
+    
+    app = new @APP_CLASS@();
+    engine->set_app(app);
+    
+    GFXCreateInfo createInfo = {};
+    createInfo.api_validation_enabled = true;
+    
+    interface = new GFXMetal();
+    if(interface->initialize(createInfo)) {
+        engine->set_gfx(interface);
+    } else {
+        NSLog(@"Failed to create Metal context!");
+        
+        return -1;
+    }
+    
+    app_main(engine);
+    
+    [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyDown handler:^(NSEvent *event) {
+        pressed[event.keyCode] = true;
+        currentCharString = event.characters;
+        
+        engine->process_key_down(event.keyCode);
+        
+        return (NSEvent*)nil;
+    }];
+    
+    [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskKeyUp handler:^(NSEvent *event) {
+         pressed[event.keyCode] = false;
+         
+         engine->process_key_up(event.keyCode);
+         
+         return (NSEvent*)nil;
+     }];
+     
+     [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskMouseMoved handler:^(NSEvent *event) {
+         windows[0]->currentMousePos = get_fixed_cursor_point(event.locationInWindow);
+                 
+         return event;
+     }];
+
+    [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDown handler:^(NSEvent *event) {
+        auto point = get_fixed_cursor_point(event.locationInWindow);
+        engine->process_mouse_down(0, {static_cast<int32_t>(point.x), static_cast<int32_t>(point.y)});
+        
+        return event;
+    }];
+
+    [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskRightMouseDown handler:^(NSEvent *event) {
+        auto point = get_fixed_cursor_point(event.locationInWindow);
+        engine->process_mouse_down(1, {static_cast<int32_t>(point.x), static_cast<int32_t>(point.y)});
+        
+        return event;
+    }];
+    
+    [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskRightMouseDragged handler:^(NSEvent *event) {
+        windows[0]->currentMousePos = get_fixed_cursor_point(event.locationInWindow);
+
+        return event;
+    }];
+
+    [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskLeftMouseDragged handler:^(NSEvent *event) {
+        windows[0]->currentMousePos = get_fixed_cursor_point(event.locationInWindow);
+        
+        return event;
+    }];
+    
+    [NSEvent addLocalMonitorForEventsMatchingMask:NSEventMaskScrollWheel handler:^(NSEvent *event) {
+          double wheel_dx = 0.0;
+          double wheel_dy = 0.0;
+
+          wheel_dx = [event scrollingDeltaX];
+          wheel_dy = [event scrollingDeltaY];
+          if ([event hasPreciseScrollingDeltas])
+          {
+              wheel_dx *= 0.1;
+              wheel_dy *= 0.1;
+          }
+      
+          scrollX += wheel_dx * 0.1f;
+          scrollY +=  wheel_dy * 0.1f;
+          
+          return event;
+    }];
+    
+    last_time = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+      
+    while (!is_qutting) {
+        @autoreleasepool {
+            NSEvent* event = nullptr;
+            do {
+                event = [NSApp nextEventMatchingMask: NSEventMaskAny
+                                        untilDate: nil
+                                           inMode: NSDefaultRunLoopMode
+                                          dequeue: YES];
+                if(event)
+                    [NSApp sendEvent: event];
+            } while(event);
+            
+            const uint64_t current = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
+            const uint64_t elapsed = current - last_time;
+            
+            for(auto& window : windows) {
+                if(window != nullptr)
+                    [window->delegate update];
+            }
+            
+            engine->update(elapsed * NANOSECONDS_TO_MILLISECONDS);
+            
+            engine->begin_frame(elapsed * NANOSECONDS_TO_MILLISECONDS);
+            
+            for(auto& window : windows) {
+                if(window != nullptr)
+                    [window->delegate render];
+            }
+            
+            scrollX = 0.0f;
+            scrollY = 0.0f;
+            
+            last_time = current;
+        }
+    }
+    
+    app->prepare_quit();
+    
+    [NSApp release];
+    [pool release];
+    
+    return 0;
+}
