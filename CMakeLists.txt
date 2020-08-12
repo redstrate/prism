@@ -7,6 +7,9 @@ list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake)
 # enable folders in IDEs that support this feature
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
+# enable lto
+set(CMAKE_INTERPROCEDURAL_OPTIMIZATION TRUE)
+
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/Common.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/AddPlatformExecutable.cmake)
 include(FetchContent)
