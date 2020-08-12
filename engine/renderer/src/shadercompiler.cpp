@@ -163,6 +163,7 @@ const std::vector<unsigned int> CompileGLSL(const std::string& filename, EShLang
     EShMessages messages = (EShMessages) (EShMsgSpvRules);
     
     DirStackFileIncluder includer;
+    includer.pushExternalLocalDirectory(file::get_domain_path(file::Domain::Internal));
 
     if (!Shader.parse(&Resources, 100, false, (EShMessages)0, includer)) {
         std::cout << Shader.getInfoLog() << std::endl;
