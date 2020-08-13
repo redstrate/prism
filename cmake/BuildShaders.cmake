@@ -1,7 +1,7 @@
 macro(compile_shader src)
     string(REGEX REPLACE "\\.[^.]*$" "" MYFILE_WITHOUT_EXT ${src})
 
-    set(SHADER_COMPILER_COMMAND "${CMAKE_BINARY_DIR}/bin/Debug/ShaderCompiler")
+    set(SHADER_COMPILER_COMMAND  $<TARGET_FILE:ShaderCompiler>)
     if(ENABLE_IOS)
 	set(SHADER_COMPILER_COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/../build/bin/Debug/ShaderCompiler")
     endif()

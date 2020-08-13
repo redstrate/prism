@@ -1,23 +1,15 @@
 include(../../cmake/AddPlatformExecutable.cmake)
 
-add_library(WindowsSupport
-	windows.cpp)
-target_link_libraries(WindowsSupport PRIVATE Platform)
-
 add_platform(
     MAIN_FILE
     main.cpp.in
+    SRC
+    ${CMAKE_CURRENT_SOURCE_DIR}/file.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/windows.cpp
     EXECUTABLE_PROPERTIES
     LINK_LIBRARIES
     Core
     GFXVulkan
-    FileWindows
-    LangWindows
-    WindowsSupport
-    GFXDummy
-    GFXOpenGL
-    Platform
-    COMPILE_OPTIONS
 )
 
 add_custom_target(PlatformWindows_IDE SOURCES
