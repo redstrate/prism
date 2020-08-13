@@ -19,35 +19,6 @@ set(SRC
     src/scenecapture.cpp
     src/shadercompiler.cpp
     src/dofpass.cpp)
-    
-if(NOT ENABLE_IOS AND NOT ENABLE_TVOS)
-    find_package(spirv_cross_core REQUIRED)
-    find_package(spirv_cross_glsl REQUIRED)
-    find_package(spirv_cross_cpp REQUIRED)
-    find_package(spirv_cross_msl REQUIRED)
-    find_package(glslang REQUIRED)
-
-    set(CROSS_LIBS
-        glslang::glslang
-        glslang::SPIRV
-        glslang::OSDependent
-        glslang::OGLCompiler
-        glslang::HLSL
-        spirv-cross-core
-        spirv-cross-glsl
-        spirv-cross-cpp
-        spirv-cross-msl
-    )
-else()
-    set(CROSS_LIBS
-        spirv-cross-core
-        spirv-cross-glsl
-        spirv-cross-cpp
-        spirv-cross-msl
-        glslang
-        SPIRV
-    )
-endif()
 
 add_library(Renderer STATIC ${SRC})
 target_link_libraries(Renderer

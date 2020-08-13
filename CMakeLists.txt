@@ -14,20 +14,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/cmake/Common.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/AddPlatformExecutable.cmake)
 include(FetchContent)
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-    message("Windows build detected!")
-
-    set(ENABLE_WINDOWS ON)
-    set(ENABLE_VULKAN ON)
-    set(ENABLE_OPENGL ON)
-endif()
-
-if(${CMAKE_SYSTEM_NAME} STREQUAL "WindowsStore")
-    message("UWP build detected!")
-
-    set(ENABLE_UWP TRUE)
-endif()
-
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" AND NOT IOS)
     message("macOS build detected!")
 
@@ -115,6 +101,53 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "tvOS")
 
     manual_download()
 endif()
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+    message("Windows build detected!")
+
+    set(ENABLE_WINDOWS ON)
+    set(ENABLE_VULKAN ON)
+
+    manual_download()
+endif()
+
+if(${CMAKE_SYSTEM_NAME} STREQUAL "WindowsStore")
+    message("UWP build detected!")
+
+    set(ENABLE_UWP TRUE)
+
+    manual_download()
+endif()
+
+if(NOT ENABLE_IOS AND NOT ENABLE_TVOS AND NOT ENABLE_WINDOWS)
+    find_package(spirv_cross_core REQUIRED)
+    find_package(spirv_cross_glsl REQUIRED)
+    find_package(spirv_cross_cpp REQUIRED)
+    find_package(spirv_cross_msl REQUIRED)
+    find_package(glslang REQUIRED)
+
+    set(CROSS_LIBS
+        glslang::glslang
+        glslang::SPIRV
+        glslang::OSDependent
+        glslang::OGLCompiler
+        glslang::HLSL
+        spirv-cross-core
+        spirv-cross-glsl
+        spirv-cross-cpp
+        spirv-cross-msl
+    )
+else()
+    set(CROSS_LIBS
+        spirv-cross-core
+        spirv-cross-glsl
+        spirv-cross-cpp
+        spirv-cross-msl
+        glslang
+        SPIRV
+    )
+endif()
+
 
 add_subdirectory(extern)
 add_subdirectory(platforms)
