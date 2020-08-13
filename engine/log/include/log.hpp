@@ -21,8 +21,12 @@ enum class Level {
 };
 
 namespace console {
-    template<typename Arg>
-    void internal_format(std::string& msg, const Arg& arg) {
+    inline void internal_format(std::string& msg, const std::string& arg) {
+        auto pos = msg.find_first_of("{}");
+        msg.replace(pos, 2, arg);
+    }
+
+    inline void internal_format(std::string& msg, const char*& arg) {
         auto pos = msg.find_first_of("{}");
         msg.replace(pos, 2, arg);
     }
@@ -33,7 +37,7 @@ namespace console {
     void internal_print(const Level level, const System system, const std::string_view format, Args&&... args) {
         auto msg = std::string(format);
         
-        ((internal_format<Args>(msg, args)), ...);
+        ((internal_format(msg, args)), ...);
         
         process_message(level, system, msg);
     }

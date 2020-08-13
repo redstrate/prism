@@ -97,7 +97,7 @@ Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     createBRDF();
 }
 
-void Renderer::resize(const Extent extent) {
+void Renderer::resize(const prism::Extent extent) {
     this->extent = extent;
 
     if(!viewport_mode) {
@@ -117,7 +117,7 @@ void Renderer::resize(const Extent extent) {
         pass->resize(extent);
 }
 
-void Renderer::resize_viewport(const Extent extent) {
+void Renderer::resize_viewport(const prism::Extent extent) {
     this->viewport_extent = extent;
 
     createOffscreenResources();

@@ -1,15 +1,7 @@
 #pragma once
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Weverything"
-
-#if defined(PLATFORM_MACOS) || defined(PLATFORM_IOS) || defined(PLATFORM_TVOS)
 #include <btBulletDynamicsCommon.h>
-#else
-#include <bullet/btBulletDynamicsCommon.h>
-#endif
 #include <memory>
-#pragma clang diagnostic pop
 
 #include "vector.hpp"
 #include "object.hpp"

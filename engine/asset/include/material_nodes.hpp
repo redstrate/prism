@@ -1,8 +1,8 @@
 #pragma once
 
 #include "renderer.hpp"
+#include "assetptr.hpp"
 
-class Texture;
 class MaterialNode;
 
 enum class DataType {
@@ -28,6 +28,8 @@ struct MaterialConnector {
 inline bool operator==(const MaterialConnector& a, const MaterialConnector& b) {
     return a.name == b.name;
 }
+
+class Texture;
 
 struct MaterialProperty {
     std::string name;

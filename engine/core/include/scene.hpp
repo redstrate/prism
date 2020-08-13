@@ -5,7 +5,7 @@
 #include <array>
 #include <functional>
 
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS)
+#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
 #include <sol.hpp>
 #endif
 
@@ -258,7 +258,7 @@ public:
     // script
     std::string script_path;
     
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS)
+#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
     sol::environment env;
 #endif
 };

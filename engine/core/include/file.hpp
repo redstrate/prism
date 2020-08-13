@@ -7,6 +7,8 @@
 #include <array>
 #include <filesystem>
 
+#include "log.hpp"
+
 namespace file {
     enum class Domain {
         System,
@@ -128,6 +130,13 @@ namespace file {
     Path root_path(const Path path);
     
     inline Path internal_domain = "/internal", app_domain = "/app";
+}
+
+namespace console {
+    inline void internal_format(std::string& msg, const file::Path& arg) {
+        auto pos = msg.find_first_of("{}");
+        msg.replace(pos, 2, arg.string());
+    }
 }
 
 inline std::array<std::string, 3> domain_data;

@@ -2,7 +2,7 @@
 
 #include <iostream>
 
-#if defined(PLATFORM_IOS) || defined(PLATFORM_TVOS)
+#if defined(PLATFORM_IOS) || defined(PLATFORM_TVOS) || defined(PLATFORM_WINDOWS)
 #include <spirv_cpp.hpp>
 #include <spirv_msl.hpp>
 #include <SPIRV/GlslangToSpv.h>
@@ -112,22 +112,20 @@ const TBuiltInResource DefaultTBuiltInResource = {
     /* .maxTaskWorkGroupSizeY_NV = */ 1,
     /* .maxTaskWorkGroupSizeZ_NV = */ 1,
     /* .maxMeshViewCountNV = */ 4,
-    
-#if defined(PLATFORM_IOS) || defined(PLATFORM_TVOS)
-    /* .maxDualSourceDrawBuffersEXT = */ 1,
-#endif
-    
-    /* .limits = */ {
-        /* .nonInductiveForLoops = */ 1,
-        /* .whileLoops = */ 1,
-        /* .doWhileLoops = */ 1,
-        /* .generalUniformIndexing = */ 1,
-        /* .generalAttributeMatrixVectorIndexing = */ 1,
-        /* .generalVaryingIndexing = */ 1,
-        /* .generalSamplerIndexing = */ 1,
-        /* .generalVariableIndexing = */ 1,
-        /* .generalConstantMatrixVectorIndexing = */ 1,
-}};
+    /* .maxDualSourceDrawBuffersEXT = */ 4,
+
+    /* .limits = */ TLimits{
+        /* .nonInductiveForLoops = */ true,
+        /* .whileLoops = */ true,
+        /* .doWhileLoops = */ true,
+        /* .generalUniformIndexing = */ true,
+        /* .generalAttributeMatrixVectorIndexing = */ true,
+        /* .generalVaryingIndexing = */ true,
+        /* .generalSamplerIndexing = */ true,
+        /* .generalVariableIndexing = */ true,
+        /* .generalConstantMatrixVectorIndexing = */ true,
+    }};
+
 
 const std::vector<unsigned int> CompileGLSL(const std::string& filename, EShLanguage ShaderType, bool skinned, bool cubemap) {
     std::string newString = "#version 430 core\n";
@@ -163,7 +161,7 @@ const std::vector<unsigned int> CompileGLSL(const std::string& filename, EShLang
     EShMessages messages = (EShMessages) (EShMsgSpvRules);
     
     DirStackFileIncluder includer;
-    includer.pushExternalLocalDirectory(file::get_domain_path(file::Domain::Internal));
+    includer.pushExternalLocalDirectory(file::get_domain_path(file::Domain::Internal).string());
 
     if (!Shader.parse(&Resources, 100, false, (EShMessages)0, includer)) {
         std::cout << Shader.getInfoLog() << std::endl;

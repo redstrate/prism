@@ -8,7 +8,7 @@
 #include <string>
 #include <string_view>
 
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS)
+#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
 #include <sol.hpp>
 #endif
 
@@ -199,7 +199,7 @@ public:
      @param identifier The identifier of the new window.
      @param extent The extent of the window.
      */
-    void add_window(void* native_handle, const int identifier, const Extent extent);
+    void add_window(void* native_handle, const int identifier, const prism::Extent extent);
     
     /** Removes the window from engine management. Should be called before the window is actually closed.
      @param identifier The identifier of the window to remove.
@@ -210,7 +210,7 @@ public:
      @param identifier The window that has been resized.
      @param extent The new extent of the window.
      */
-    void resize(const int identifier, const Extent extent);
+    void resize(const int identifier, const prism::Extent extent);
 
     /** Called when a key has been pressed.
      @param keyCode A platform-specific key code.
@@ -231,7 +231,7 @@ public:
      @param offset The mouse position relative to the window where the click occured.
      @note This function is only intended for debug purposes and all production code should be using the Input system instead.
      */
-    void process_mouse_down(const int button, const Offset offset);
+    void process_mouse_down(const int button, const prism::Offset offset);
 
     /** Pushes a UI event for the current screen. Does nothing if there is no screen set.
      @param name The name of the event.
@@ -323,7 +323,7 @@ public:
     /// If physics should upate. This is a control indepentent of the pause state.
     bool update_physics = true;
 
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS)
+#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
     sol::state lua;
 #endif
     
@@ -349,7 +349,7 @@ private:
 
     struct Window {
         int identifier = -1;
-        Extent extent;
+        prism::Extent extent;
         bool quitRequested = false;
 
         std::unique_ptr<Renderer> renderer = nullptr;

@@ -39,7 +39,7 @@ int platform::get_keycode(const InputButton key) {
 	return inputToKeyCode[key];
 }
 
-void platform::open_dialog(const bool existing, const std::function<void(std::string)> returnFunction) {
+void platform::open_dialog(const bool existing, const std::function<void(std::string)> returnFunction, const bool openDirectory) {
 	const auto openDialog = [returnFunction] {
 		const int BUFSIZE = 1024;
 		char buffer[BUFSIZE] = { 0 };

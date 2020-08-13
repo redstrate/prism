@@ -68,10 +68,10 @@
 // This will be inlined as part of ImVec2 and ImVec4 class declarations.
 
 #define IM_VEC2_CLASS_EXTRA                                                 \
-        ImVec2(const Offset& f) { x = static_cast<float>(f.x); y = static_cast<float>(f.y); }                       \
-        operator Offset() const { return Offset(static_cast<int32_t>(x), static_cast<int32_t>(y)); }                     \
-        ImVec2(const Extent& f) { x = static_cast<float>(f.width); y = static_cast<float>(f.height); }                       \
-        operator Extent() const { return Extent(static_cast<uint32_t>(x), static_cast<uint32_t>(y)); }
+        ImVec2(const prism::Offset& f) { x = static_cast<float>(f.x); y = static_cast<float>(f.y); }                       \
+        operator prism::Offset() const { return prism::Offset(static_cast<int32_t>(x), static_cast<int32_t>(y)); }                     \
+        ImVec2(const prism::Extent& f) { x = static_cast<float>(f.width); y = static_cast<float>(f.height); }                       \
+        operator prism::Extent() const { return prism::Extent(static_cast<uint32_t>(x), static_cast<uint32_t>(y)); }
 
 /*#define IM_VEC4_CLASS_EXTRA                                                 \
         ImVec4(const MyVec4& f) { x = f.x; y = f.y; z = f.z; w = f.w; }     \

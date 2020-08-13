@@ -30,7 +30,7 @@ std::unique_ptr<Mesh> load_mesh(const file::Path path) {
     }
 
     auto mesh = std::make_unique<Mesh>();
-    mesh->path = path;
+    mesh->path = path.string();
     
     enum MeshType : int {
         Static,
@@ -221,7 +221,7 @@ std::unique_ptr<Texture> load_texture(const file::Path path) {
     Expects(height > 0);
     
     auto texture = std::make_unique<Texture>();
-    texture->path = path;
+    texture->path = path.string();
     texture->width = width;
     texture->height = height;
     
@@ -264,7 +264,7 @@ std::unique_ptr<Material> load_material(const file::Path path) {
     file->read_as_stream() >> j;
 
     auto mat = std::make_unique<Material>();
-    mat->path = path;
+    mat->path = path.string();
     
     if(!j.count("version") || j["version"] != 2) {
         console::error(System::Core, "Material {} failed the version check!", path);

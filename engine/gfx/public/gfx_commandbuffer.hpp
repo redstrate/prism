@@ -18,7 +18,7 @@ struct GFXRenderPassBeginInfo {
         float r = 0.0f, g = 0.0f, b = 0.0f, a = 0.0f;
     } clear_color;
     
-    Rectangle render_area;
+    prism::Rectangle render_area;
     
     GFXRenderPass* render_pass = nullptr;
     GFXFramebuffer* framebuffer = nullptr;
@@ -132,7 +132,7 @@ struct GFXDrawCommand {
         } set_viewport;
         
         struct SetScissorData {
-            Rectangle rect;
+            prism::Rectangle rect;
         } set_scissor;
         
         struct GenerateMipmapData {
@@ -284,7 +284,7 @@ public:
         commands.push_back(command);
     }
     
-    void set_scissor(const Rectangle rect) {
+    void set_scissor(const prism::Rectangle rect) {
         GFXDrawCommand command;
         command.type = GFXCommandType::SetScissor;
         command.data.set_scissor.rect = rect;

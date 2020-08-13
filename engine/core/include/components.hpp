@@ -1,7 +1,6 @@
 #pragma once
 
 #include "assetptr.hpp"
-#include "screen.hpp"
 
 class btCollisionShape;
 class btRigidBody;
@@ -93,11 +92,15 @@ struct Light {
  
 struct Camera {
     float fov = 75.0f;
-    float near = 0.1f;
-    float exposure = 1.0;
+    float near = 1.0f;
+    float exposure = 1.0f;
 
     Matrix4x4 view, perspective;
 };
+
+namespace ui {
+    class Screen;
+}
 
 struct UI {
     int width = 1920, height = 1080;

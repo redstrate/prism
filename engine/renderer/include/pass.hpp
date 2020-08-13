@@ -17,7 +17,7 @@ public:
     
     virtual void initialize() {}
     
-    virtual void resize([[maybe_unused]] const Extent extent) {}
+    virtual void resize([[maybe_unused]] const prism::Extent extent) {}
 
 	virtual void render_scene([[maybe_unused]] Scene& scene,
                              [[maybe_unused]] GFXCommandBuffer* commandBuffer) {}

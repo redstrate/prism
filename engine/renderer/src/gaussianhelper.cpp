@@ -3,7 +3,7 @@
 #include "gfx_commandbuffer.hpp"
 #include "gfx.hpp"
 
-GaussianHelper::GaussianHelper(GFX* gfx, const Extent extent) : extent(extent) {
+GaussianHelper::GaussianHelper(GFX* gfx, const prism::Extent extent) : extent(extent) {
     // render pass
     GFXRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.attachments.push_back(GFXPixelFormat::RGBA_32F);

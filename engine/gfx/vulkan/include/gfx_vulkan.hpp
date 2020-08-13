@@ -52,7 +52,7 @@ public:
     // misc operations
 	GFXSize get_alignment(const GFXSize size) override;
 
-    void render(GFXCommandBuffer* command_buffer, const int identifier) override;
+    void submit(GFXCommandBuffer* command_buffer, const int identifier) override;
 
 private:
 	void createInstance(std::vector<const char*> layers, std::vector<const char*> extensions);

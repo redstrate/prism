@@ -15,7 +15,7 @@ class ImGuiPass : public Pass {
 public:
     void initialize() override;
     
-    void resize(const Extent extent) override;
+    void resize(const prism::Extent extent) override;
 
     void render_post(GFXCommandBuffer* command_buffer, const int index) override;
 

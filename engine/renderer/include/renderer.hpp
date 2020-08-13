@@ -2,6 +2,8 @@
 
 #include <string_view>
 #include <vector>
+#include <cmath>
+
 #include "file.hpp"
 #include "pass.hpp"
 #include "matrix.hpp"
@@ -85,8 +87,8 @@ class Renderer {
 public:
     Renderer(GFX* gfx, const bool enable_imgui = true);
 
-    void resize(const Extent extent);
-    void resize_viewport(const Extent extent);
+    void resize(const prism::Extent extent);
+    void resize_viewport(const prism::Extent extent);
 
     void set_screen(ui::Screen* screen);
     void init_screen(ui::Screen* screen);
@@ -145,15 +147,15 @@ public:
     GFXTexture* viewportColorTexture = nullptr;
 
     bool viewport_mode = false;
-    Extent viewport_extent;
+    prism::Extent viewport_extent;
     
     bool gui_only_mode = false;
 
-    Extent get_extent() const {
+    prism::Extent get_extent() const {
         return viewport_mode ? viewport_extent : extent;
     }
 
-    Extent get_render_extent() const {
+    prism::Extent get_render_extent() const {
         const auto extent = get_extent();
         
         return {static_cast<uint32_t>(std::max(int(extent.width * render_options.render_scale), 1)),
@@ -186,7 +188,7 @@ private:
     void createBRDF();
 
     GFX* gfx = nullptr;
-    Extent extent;
+    prism::Extent extent;
 
     ui::Screen* current_screen = nullptr;
 

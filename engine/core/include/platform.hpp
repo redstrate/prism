@@ -73,7 +73,7 @@ namespace platform {
      @note On platforms that do not support the Windowing feature, calling open_window more than once is not supported. In this case, the same identifier is returned.
      @return A valid window identifier.
      */
-    int open_window(const std::string_view title, const Rectangle rect, const WindowFlags flags);
+    int open_window(const std::string_view title, const prism::Rectangle rect, const WindowFlags flags);
 
     /** Closes a window.
      @param index The window to close.
@@ -90,19 +90,19 @@ namespace platform {
     float get_monitor_dpi();
     
     /// Get the monitor resolution.
-    Rectangle get_monitor_resolution();
+    prism::Rectangle get_monitor_resolution();
 
     /// Get the monitor work area. For example on macOS this may exclude the areas of the menu bar and dock.
-    Rectangle get_monitor_work_area();
+    prism::Rectangle get_monitor_work_area();
 
     /// Get the window position.
-    Offset get_window_position(const int index);
+    prism::Offset get_window_position(const int index);
 
     /// Get the window size, note that in hidpi scenarios this is the non-scaled resolution.
-    Extent get_window_size(const int index);
+    prism::Extent get_window_size(const int index);
 
     /// Get the window's drawable size. Always use this instead of manually multiplying the window size by the content scale.
-    Extent get_window_drawable_size(const int index);
+    prism::Extent get_window_drawable_size(const int index);
 
     /// Query whether or not the window is focused.
     bool is_window_focused(const int index);
@@ -111,10 +111,10 @@ namespace platform {
     void set_window_focused(const int index);
 
     /// Sets the window position to the offset provided.
-    void set_window_position(const int index, const Offset offset);
+    void set_window_position(const int index, const prism::Offset offset);
 
     /// Sets the window to the specified size. The platform will handle the subsequent resize events.
-    void set_window_size(const int index, const Extent extent);
+    void set_window_size(const int index, const prism::Extent extent);
 
     /// Sets the window title.
     void set_window_title(const int index, const std::string_view title);
@@ -126,10 +126,10 @@ namespace platform {
     int get_keycode(const InputButton key);
 
     /// Returns the current moue cursor position, relative to the window.
-    Offset get_cursor_position();
+    prism::Offset get_cursor_position();
 
     /// Returns the current moue cursor position, relative to the monitor.
-    Offset get_screen_cursor_position();
+    prism::Offset get_screen_cursor_position();
 
     /// Queries whether or not the mouse button requested is pressed or not.
     bool get_mouse_button_down(const int button);

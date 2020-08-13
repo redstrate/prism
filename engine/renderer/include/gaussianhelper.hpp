@@ -11,7 +11,7 @@ class GFXTexture;
 
 class GaussianHelper {
 public:
-    GaussianHelper(GFX* gfx, const Extent extent);
+    GaussianHelper(GFX* gfx, const prism::Extent extent);
     
     GFXTexture* render(GFXCommandBuffer* commandBuffer,GFXTexture* source);
     
@@ -23,5 +23,5 @@ public:
     GFXFramebuffer* fboA = nullptr, *fboB = nullptr;
     
 private:
-    Extent extent;
+    prism::Extent extent;
 };

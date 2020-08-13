@@ -2,6 +2,7 @@ set(CMAKE_FOLDER "GFX Backends")
 
 add_library(GFX INTERFACE)
 target_include_directories(GFX INTERFACE public)
+target_link_libraries(GFX INTERFACE Utility)
 
 add_custom_target(GFXInterface SOURCES
     public/gfx.hpp

@@ -148,7 +148,7 @@ Scene* Engine::load_scene(const file::Path path) {
     for(auto& [obj, toParent] : parentQueue)
         scene->get<Data>(obj).parent = scene->find_object(toParent);
 
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS)
+#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
     scene->env = sol::environment(lua, sol::create, lua.globals());
     scene->env["scene"] = scene.get();
 
@@ -163,7 +163,7 @@ Scene* Engine::load_scene(const file::Path path) {
     
     _scenes.push_back(std::move(scene));
     _current_scene = _scenes.back().get();
-    _path_to_scene[path] = _scenes.back().get();
+    _path_to_scene[path.string()] = _scenes.back().get();
     
     return _scenes.back().get();
 }
@@ -402,7 +402,7 @@ void Engine::save_prefab(const Object root, const std::string_view path) {
     out << j;
 }
 
-void Engine::add_window(void* native_handle, const int identifier, const Extent extent) {
+void Engine::add_window(void* native_handle, const int identifier, const prism::Extent extent) {
     Expects(native_handle != nullptr);
     Expects(identifier >= 0);
     
@@ -429,7 +429,7 @@ void Engine::remove_window(const int identifier) {
     });
 }
 
-void Engine::resize(const int identifier, const Extent extent) {
+void Engine::resize(const int identifier, const prism::Extent extent) {
     Expects(identifier >= 0);
     
     auto window = get_window(identifier);
@@ -466,7 +466,7 @@ void Engine::process_key_up(const unsigned int keyCode) {
     _imgui->process_key_up(keyCode);
 }
 
-void Engine::process_mouse_down(const int button, const Offset offset) {
+void Engine::process_mouse_down(const int button, const prism::Offset offset) {
     Expects(offset.x >= 0);
     Expects(offset.y >= 0);
     
@@ -820,7 +820,7 @@ void Engine::stop_animation(Object target) {
 }
 
 void Engine::create_lua_interface() {
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS)
+#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
     lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table, sol::lib::string, sol::lib::math);
     
     lua.new_usertype<Cutscene>("Cutscene");

@@ -78,7 +78,7 @@ void ui::Screen::process_mouse(const int x, const int y) {
     Expects(x >= 0);
     Expects(y >= 0);
     
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS)
+#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
     for(auto& element : elements) {
         if(x > element.absolute_x &&
            y > element.absolute_y &&
@@ -196,7 +196,7 @@ ui::Screen::Screen(const file::Path path) {
         elements.push_back(ue);
     }
 
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS)
+#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
     env = sol::environment(engine->lua, sol::create, engine->lua.globals());
     env["screen"] = this;
 
@@ -213,7 +213,7 @@ void ui::Screen::add_listener(const std::string& id, std::function<void()> callb
 }
 
 void ui::Screen::process_event(const std::string& type, const std::string data) {
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS)
+#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
     auto func = env["process_event"];
     func(type, data);
 #endif

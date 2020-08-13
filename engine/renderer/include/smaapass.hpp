@@ -26,7 +26,7 @@ private:
     void create_pipelines();
     void create_offscreen_resources();
     
-    Extent extent;
+    prism::Extent extent;
     Renderer* renderer = nullptr;
     
     GFXTexture* area_image = nullptr;

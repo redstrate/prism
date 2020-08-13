@@ -13,7 +13,7 @@ namespace std {
     template <>
     struct hash<file::Path> {
         std::size_t operator()(const file::Path& k) const {
-            return hash<std::string>()(k);
+            return (std::hash<std::string>()(k.string()));
         }
     };
 }

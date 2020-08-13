@@ -21,7 +21,7 @@ void ImGuiPass::initialize() {
     create_font_texture();
 }
 
-void ImGuiPass::resize(const Extent extent) {
+void ImGuiPass::resize(const prism::Extent extent) {
     GFXGraphicsPipelineCreateInfo createInfo;
     createInfo.label = "ImGui";
     createInfo.shaders.vertex_path = "imgui.vert";

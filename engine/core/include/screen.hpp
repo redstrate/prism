@@ -5,7 +5,7 @@
 #include <map>
 #include <functional>
 
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS)
+#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
 #include <sol.hpp>
 #endif
 
@@ -36,7 +36,7 @@ namespace ui {
 
         void add_listener(const std::string& id, std::function<void()> callback);
 
-        Extent extent;
+        prism::Extent extent;
         bool view_changed = false;
 
         GFXBuffer* glyph_buffer = nullptr;
@@ -45,7 +45,7 @@ namespace ui {
 
         std::string script_path;
         
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS)
+#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
         sol::environment env;
 #endif
     };

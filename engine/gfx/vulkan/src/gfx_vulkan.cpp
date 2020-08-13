@@ -542,16 +542,16 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 	vkDeviceWaitIdle(device);
 
 	// setup shader modules
-    auto vertex_shader = file::read_file(FileDomain::ShaderData, std::string(info.shaders.vertex_path.data()) + ".spv");
+    auto vertex_shader = file::open(file::internal_domain / (std::string(info.shaders.vertex_path) + ".spv"));
     vertex_shader->read_all();
 
-    auto fragment_shader = file::read_file(FileDomain::ShaderData, std::string(info.shaders.fragment_path.data()) + ".spv");
+    auto fragment_shader = file::open(file::internal_domain / (std::string(info.shaders.fragment_path) + ".spv"));
     fragment_shader->read_all();
 
-    auto vertex_module = createShaderModule(vertex_shader->unsigned_data(), vertex_shader->size());
+    auto vertex_module = createShaderModule(vertex_shader->cast_data<unsigned char>(), vertex_shader->size());
     name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vertex_module, info.shaders.vertex_path);
 
-    auto fragment_module = createShaderModule(fragment_shader->unsigned_data(), fragment_shader->size());
+    auto fragment_module = createShaderModule(fragment_shader->cast_data<unsigned char>(), fragment_shader->size());
     name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)fragment_module, info.shaders.fragment_path);
 
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
@@ -754,7 +754,7 @@ GFXSize GFXVulkan::get_alignment(GFXSize size) {
     return (size + minUboAlignment / 2) & ~int(minUboAlignment - 1);
 }
 
-void GFXVulkan::render(GFXCommandBuffer *command_buffer, const int identifier) {
+void GFXVulkan::submit(GFXCommandBuffer *command_buffer, const int identifier) {
 	vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
 	uint32_t imageIndex = 0;
@@ -831,8 +831,8 @@ void GFXVulkan::render(GFXCommandBuffer *command_buffer, const int identifier) {
                 vkCmdSetScissor(commandBuffers[imageIndex], 0, 1, &scissor);
 			}
 
-			renderPassInfo.renderArea.offset = { command.data.set_render_pass.viewport.x, command.data.set_render_pass.viewport.y };
-            renderPassInfo.renderArea.extent = { command.data.set_render_pass.viewport.width, command.data.set_render_pass.viewport.height };
+			renderPassInfo.renderArea.offset = { command.data.set_render_pass.render_area.offset.x, command.data.set_render_pass.render_area.offset.y };
+            renderPassInfo.renderArea.extent = { command.data.set_render_pass.render_area.extent.width, command.data.set_render_pass.render_area.extent.height };
 
 			std::vector<VkClearValue> clearColors;
 			if (renderPass != nullptr) {
@@ -888,7 +888,7 @@ void GFXVulkan::render(GFXCommandBuffer *command_buffer, const int identifier) {
         case GFXCommandType::SetPushConstant:
 		{
 			if(currentPipeline != nullptr)
-				vkCmdPushConstants(commandBuffers[imageIndex], currentPipeline->layout, VK_SHADER_STAGE_ALL, 0, command.data.set_push_constant.size, command.data.set_push_constant.bytes);
+				vkCmdPushConstants(commandBuffers[imageIndex], currentPipeline->layout, VK_SHADER_STAGE_ALL, 0, command.data.set_push_constant.size, command.data.set_push_constant.bytes.data());
 		}
 			break;
         case GFXCommandType::BindShaderBuffer:

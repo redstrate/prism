@@ -2,57 +2,22 @@
 #define UNICODE
 #endif 
 
-#include <fmt/printf.h>
+#define WIN32_LEAN_AND_MEAN
+#define NOMINMAX
 #include <windows.h>
 #include <windowsx.h>
+#undef far
+#undef near
 
 #include "platform.hpp"
 
 #include <gfx_vulkan.hpp>
-#include <gfx_dummy.hpp>
-#include <gfx_opengl.hpp>
 
-typedef HGLRC WINAPI wglCreateContextAttribsARB_type(HDC hdc, HGLRC hShareContext,
-        const int *attribList);
-wglCreateContextAttribsARB_type *wglCreateContextAttribsARB;
-
-// See https://www.opengl.org/registry/specs/ARB/wgl_create_context.txt for all values
-#define WGL_CONTEXT_MAJOR_VERSION_ARB             0x2091
-#define WGL_CONTEXT_MINOR_VERSION_ARB             0x2092
-#define WGL_CONTEXT_PROFILE_MASK_ARB              0x9126
-
-#define WGL_CONTEXT_CORE_PROFILE_BIT_ARB          0x00000001
-
-typedef BOOL WINAPI wglChoosePixelFormatARB_type(HDC hdc, const int *piAttribIList,
-        const FLOAT *pfAttribFList, UINT nMaxFormats, int *piFormats, UINT *nNumFormats);
-wglChoosePixelFormatARB_type *wglChoosePixelFormatARB;
-
-// See https://www.opengl.org/registry/specs/ARB/wgl_pixel_format.txt for all values
-#define WGL_DRAW_TO_WINDOW_ARB                    0x2001
-#define WGL_ACCELERATION_ARB                      0x2003
-#define WGL_SUPPORT_OPENGL_ARB                    0x2010
-#define WGL_DOUBLE_BUFFER_ARB                     0x2011
-#define WGL_PIXEL_TYPE_ARB                        0x2013
-#define WGL_COLOR_BITS_ARB                        0x2014
-#define WGL_DEPTH_BITS_ARB                        0x2022
-#define WGL_STENCIL_BITS_ARB                      0x2023
-
-#define WGL_FULL_ACCELERATION_ARB                 0x2027
-#define WGL_TYPE_RGBA_ARB                         0x202B
-
-#if @IS_GAME@
-#include <@GAME_INCLUDE@>
-#else
-#include <@EDITOR_INCLUDE@>
-#endif
+#include <@APP_INCLUDE@>
 #include <engine.hpp>
 
 GFX* ginterface = nullptr;
-#if @IS_GAME@
-@GAME_CLASS@* game = nullptr;
-#else
-@EDITOR_CLASS@* editor = nullptr;
-#endif
+@APP_CLASS@* app = nullptr;
 
 HINSTANCE instance = NULL;
 HWND window = NULL;
@@ -64,11 +29,7 @@ int defaultWidth, defaultHeight;
 
 bool shouldConfineMouse = false;
 
-#include <GL/GL.h>
-
-#pragma comment (lib, "opengl32.lib")
-
-const wchar_t CLASS_NAME[]  = L"@GAME_NAME@";
+const wchar_t CLASS_NAME[]  = L"@APP_NAME@";
 
 wchar_t* convertToUnicode(const char* str) {
 	size_t ret = 0;
@@ -81,24 +42,22 @@ wchar_t* convertToUnicode(const char* str) {
 	return buf;
 }
 
-void platform::openWindow(const char* title, int x, int y, int width, int height, WindowFlags flags) {
-	RECT wr = {0, 0, width, height};
+int platform::open_window(const std::string_view title, const prism::Rectangle rect, const WindowFlags flags) {
+	RECT wr = {rect.offset.x, rect.offset.y, rect.extent.width, rect.extent.height};
 	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);
 
-	defaultWidth = width;
-	defaultHeight = height;
+	defaultWidth = rect.extent.width;
+	defaultHeight = rect.extent.height;
 
-	std::string new_title = title + std::string(" (") + ginterface->getName() + ")";
-
-	wchar_t* title_uni = convertToUnicode(new_title.c_str());
+	wchar_t* title_uni = convertToUnicode(title.data());
 
     window = CreateWindowEx(
         0,
         CLASS_NAME,
         title_uni,
         flags == WindowFlags::Resizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX), // Window style
-        x,
-        y,
+        rect.offset.x,
+        rect.offset.y,
 		wr.right - wr.left,
         wr.bottom - wr.top,
         NULL,
@@ -111,16 +70,18 @@ void platform::openWindow(const char* title, int x, int y, int width, int height
 
     ShowWindow(window, cmdShow);
 
-	engine->addWindow(window, width, height);
+	engine->add_window(window, 0, rect.extent);
+
+	return 0;
 }
 
-void platform::closeWindow() {
+void platform::close_window(const int identifier) {
 	// does nothing
 }
 
 bool showingCursor = true;
 
-void platform::setCaptureMouse(bool capture) {
+void platform::capture_mouse(const bool capture) {
 	shouldConfineMouse = capture;
 
 	// the reason why we do this is because windows expects a ShowCursor(false) to be followed by a ShowCursor(true),
@@ -135,7 +96,7 @@ void platform::setCaptureMouse(bool capture) {
 	}
 }
 
-std::tuple<int, int> platform::getCursorPosition() {
+prism::Offset platform::get_cursor_position() {
 	POINT p;
 	GetCursorPos(&p);
 	ScreenToClient(window, &p);
@@ -143,105 +104,26 @@ std::tuple<int, int> platform::getCursorPosition() {
 	return {p.x, p.y};
 }
 
-std::tuple<int, int> platform::getWindowPosition() {
+prism::Offset platform::get_window_position(const int identifier) {
 	RECT rect;
     GetWindowRect(window, &rect);
 
 	return {rect.left, rect.top};
 }
 
-std::tuple<int, int> platform::getWindowSize() {
+prism::Extent platform::get_window_size(const int identifier) {
 	RECT rect;
 	GetClientRect(window, &rect);
 
 	int width = rect.right - rect.left;
 	int height = rect.bottom- rect.top;
 
-	return {width, height};
+	return {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
 }
-
-static void
-init_opengl_extensions(void)
-{
-	// Before we can load extensions, we need a dummy OpenGL context, created using a dummy window.
-	   // We use a dummy window because you can only set the pixel format for a window once. For the
-	   // real window, we want to use wglChoosePixelFormatARB (so we can potentially specify options
-	   // that aren't available in PIXELFORMATDESCRIPTOR), but we can't load and use that before we
-	   // have a context.
-	WNDCLASSA window_class = {};
-	window_class.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
-	window_class.lpfnWndProc = DefWindowProcA;
-	window_class.hInstance = GetModuleHandle(0);
-	window_class.lpszClassName = "Dummy_WGL_djuasiodwa";
-
-	if (!RegisterClassA(&window_class)) {
-		fmt::print("Failed to register dummy OpenGL window.\n");
-	}
-
-	HWND dummy_window = CreateWindowExA(
-		0,
-		window_class.lpszClassName,
-		"Dummy OpenGL Window",
-		0,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		CW_USEDEFAULT,
-		0,
-		0,
-		window_class.hInstance,
-		0);
-
-	if (!dummy_window) {
-		fmt::print("Failed to create dummy OpenGL window.\n");
-	}
-
-	HDC dummy_dc = GetDC(dummy_window);
-
-	PIXELFORMATDESCRIPTOR pfd = {};
-	pfd.nSize = sizeof(pfd);
-	pfd.nVersion = 1;
-	pfd.iPixelType = PFD_TYPE_RGBA;
-	pfd.dwFlags = PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER;
-	pfd.cColorBits = 32;
-	pfd.cAlphaBits = 8;
-	pfd.iLayerType = PFD_MAIN_PLANE;
-	pfd.cDepthBits = 24;
-	pfd.cStencilBits = 8;
-
-	int pixel_format = ChoosePixelFormat(dummy_dc, &pfd);
-	if (!pixel_format) {
-		fmt::print("Failed to find a suitable pixel format.\n");
-	}
-	if (!SetPixelFormat(dummy_dc, pixel_format, &pfd)) {
-		fmt::print("Failed to set the pixel format.");
-	}
-
-	HGLRC dummy_context = wglCreateContext(dummy_dc);
-	if (!dummy_context) {
-		fmt::print("Failed to create a dummy OpenGL rendering context.\n");
-	}
-
-	if (!wglMakeCurrent(dummy_dc, dummy_context)) {
-		fmt::print("Failed to activate dummy OpenGL rendering context.\n");
-	}
-
-	wglCreateContextAttribsARB = (wglCreateContextAttribsARB_type*)wglGetProcAddress(
-		"wglCreateContextAttribsARB");
-	wglChoosePixelFormatARB = (wglChoosePixelFormatARB_type*)wglGetProcAddress(
-		"wglChoosePixelFormatARB");
-
-	wglMakeCurrent(dummy_dc, 0);
-	wglDeleteContext(dummy_context);
-	ReleaseDC(dummy_window, dummy_dc);
-	DestroyWindow(dummy_window);
-}
-
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam);
 
-int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow)
-{
+int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow) {
 	AllocConsole();
     FILE* stream;
 	freopen_s(&stream, "CONOUT$", "w", stdout);
@@ -258,30 +140,21 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 	instance = hInstance;
 	cmdShow = nCmdShow;
 
-	engine = new Engine();
+	engine = new Engine(0, nullptr);
     
     ginterface = new GFXVulkan();
-    if(ginterface->initialize()) {    
-        engine->setGFX(ginterface);    
+    if(ginterface->initialize(GFXCreateInfo())) {    
+        engine->set_gfx(ginterface);    
     } else {
         return -1;
     }
 
-    #if @IS_GAME@
-    game = new @GAME_CLASS@();
-    engine->setGame(game);
-    #else
-    editor = new @EDITOR_CLASS@();
-    engine->setEditor(editor);
-    #endif
+	app = new @APP_CLASS@();
+	engine->set_app(app);
 
-    app::open(engine);
+    app_main(engine);
 
-	#if @IS_GAME@
-    game->initializeRender();
-    #else
-    editor->initializeRender();
-    #endif
+	app->initialize_render();
 
     MSG msg = { };
     while (GetMessage(&msg, NULL, 0, 0))
@@ -290,11 +163,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
         DispatchMessage(&msg);
     }
 
-	#if @IS_GAME@
-	delete game;
-	#else
-	delete editor;
-	#endif
+	delete app;
 
 	delete ginterface;
 	delete engine;
@@ -308,59 +177,9 @@ int timeout = 0;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
-		case WM_CREATE:
-		{
-			if(ginterface->requiredContext() == GFXContext::OpenGL) {
-				fmt::print("Creating OpenGL context...\n");
-
-				init_opengl_extensions();
-
-				PIXELFORMATDESCRIPTOR pfd =
-				{
-					sizeof(PIXELFORMATDESCRIPTOR),
-					1,
-					PFD_DRAW_TO_WINDOW | PFD_SUPPORT_OPENGL | PFD_DOUBLEBUFFER,    //Flags
-					PFD_TYPE_RGBA,        // The kind of framebuffer. RGBA or palette.
-					32,                   // Colordepth of the framebuffer.
-					0, 0, 0, 0, 0, 0,
-					0,
-					0,
-					0,
-					0, 0, 0, 0,
-					24,                   // Number of bits for the depthbuffer
-					8,                    // Number of bits for the stencilbuffer
-					0,                    // Number of Aux buffers in the framebuffer.
-					PFD_MAIN_PLANE,
-					0,
-					0, 0, 0
-				};
-
-				HDC ourWindowHandleToDeviceContext = GetDC(hwnd);
-
-				int  letWindowsChooseThisPixelFormat;
-				letWindowsChooseThisPixelFormat = ChoosePixelFormat(ourWindowHandleToDeviceContext, &pfd); 
-				SetPixelFormat(ourWindowHandleToDeviceContext,letWindowsChooseThisPixelFormat, &pfd);
-
-				int attribs[] =
-				{
-					WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
-					WGL_CONTEXT_MINOR_VERSION_ARB, 3,
-					WGL_CONTEXT_PROFILE_MASK_ARB,  WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
-					0,
-				};
-
-				HGLRC ourOpenGLRenderingContext = wglCreateContextAttribsARB(ourWindowHandleToDeviceContext,0, attribs);
-				wglMakeCurrent (ourWindowHandleToDeviceContext, ourOpenGLRenderingContext);
-
-				windowDC =  GetDC(hwnd);
-				
-				MessageBoxA(0,(char*)glGetString(GL_VERSION), "OPENGL VERSION",0);
-			}
-		}
-			return 0;
 		case WM_DESTROY:
 		{
-			engine->prepareQuit();
+			engine->prepare_quit();
 			PostQuitMessage(0);
 		}
 			return 0;
@@ -388,19 +207,12 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			HCURSOR arrowCursor = LoadCursor(NULL, IDC_ARROW); 
 			SetCursor(arrowCursor);
 
-	#if @IS_GAME@
-
-	#else
-		editor->beginFrame();
-	#endif
+			engine->begin_frame(1.0f / 60.0f);
 			engine->update(1.0f / 60.0f);
-			engine->render();
+			engine->render(0);
 
-			if(ginterface->requiredContext() == GFXContext::OpenGL)
-				SwapBuffers(windowDC);
-
-			if(engine->isQuitting()) {
-				engine->prepareQuit();
+			if(engine->is_quitting()) {
+				engine->prepare_quit();
 				PostQuitMessage(0);
 			}
 		 }
@@ -410,41 +222,17 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			int xPos = GET_X_LPARAM(lParam); 
 			int yPos = GET_Y_LPARAM(lParam); 
 
-			engine->processMouse(0, xPos, yPos);
-		}
-			return 0;
-		case WM_LBUTTONUP: 
-		{
-			engine->processMouseReleased(0);
-		}
-			return 0;
-		case WM_RBUTTONDOWN:
-		{
-
-			engine->processMouse(1, 0, 0);
-		}
-			return 0;
-		case WM_RBUTTONUP: 
-		{
-			engine->processMouseReleased(1);
-		}
-			return 0;
-		case WM_MOUSEMOVE: 
-		{
-			int xPos = GET_X_LPARAM(lParam); 
-			int yPos = GET_Y_LPARAM(lParam); 
-
-			engine->processMouseMove(xPos, yPos);
+			engine->process_mouse_down(0, {xPos, yPos});
 		}
 			return 0;
 		case WM_KEYDOWN:
 		{
-			engine->processKey((unsigned int)wParam);
+			engine->process_key_down((unsigned int)wParam);
 		}
 			return 0;
 		case WM_KEYUP:
 		{
-			engine->processKeyUp((unsigned int)wParam);
+			engine->process_key_up((unsigned int)wParam);
 		}
 			return 0;
 		case WM_SIZE:
@@ -458,7 +246,7 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			if(width == defaultWidth && height == defaultHeight) {
 				// don't resize when the window was first created!!			
 			} else {
-				engine->resize(width, height);
+				engine->resize(0, {static_cast<uint32_t>(width), static_cast<uint32_t>(height)});
 			}
 
 		}
@@ -468,8 +256,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
     return DefWindowProc(hwnd, uMsg, wParam, lParam);
 }
 
-void platform::setWindowTitle(const char* title) {
-	std::string new_title = title + std::string(" (") + ginterface->getName() + ")";
-
-	SetWindowTextA(window, new_title.c_str());
+void platform::set_window_title(const int identifier, const std::string_view title) {
+	SetWindowTextA(window, title.data());
 }

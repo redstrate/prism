@@ -23,7 +23,7 @@ std::optional<file::File> file::open(const file::Path path, const bool binary_mo
         fixed_path = domain_data[static_cast<int>(Domain::Internal)] / path.lexically_relative(root_path(path));
     }
     
-    FILE* file = fopen(fixed_path.c_str(), binary_mode ? "rb" : "r");
+    FILE* file = fopen(fixed_path.string().c_str(), binary_mode ? "rb" : "r");
     if(file == nullptr) {
         console::error(System::File, "Failed to open file handle from {}!", path);
         return {};
