@@ -11,6 +11,10 @@ add_platform(
     Core
     GFXVulkan
 )
-
 add_custom_target(PlatformWindows_IDE SOURCES
     main.cpp.in)
+
+function(add_platform_commands target)
+    set_target_properties(${target} PROPERTIES
+    LINK_FLAGS /SUBSYSTEM:WINDOWS)
+endfunction()

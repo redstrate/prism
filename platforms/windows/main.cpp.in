@@ -259,3 +259,65 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 void platform::set_window_title(const int identifier, const std::string_view title) {
 	SetWindowTextA(window, title.data());
 }
+
+std::tuple<float, float> platform::get_right_stick_position() {
+    return {0.0f, 0.0f};
+}
+
+std::tuple<float, float> platform::get_left_stick_position() {
+    return {0.0f, 0.0f};
+}
+
+bool platform::is_window_focused(const int index) {
+	return false;
+}
+
+void platform::set_window_focused(const int index) {
+
+}
+
+prism::Extent platform::get_window_drawable_size(const int identifier) {
+	RECT rect;
+	GetClientRect(window, &rect);
+
+	int width = rect.right - rect.left;
+	int height = rect.bottom- rect.top;
+
+	return {static_cast<uint32_t>(width), static_cast<uint32_t>(height)};
+}
+
+void platform::set_window_size(const int index, const prism::Extent extent) {
+
+}
+
+void platform::set_window_position(const int index, const prism::Offset offset) {
+
+}
+
+prism::Rectangle platform::get_monitor_resolution() {
+	return prism::Rectangle();
+}
+
+prism::Rectangle platform::get_monitor_work_area() {
+	return prism::Rectangle();
+}
+
+prism::Offset platform::get_screen_cursor_position() {
+	return prism::Offset();
+}
+
+float platform::get_window_dpi(const int index) {
+    return 1.0f;
+}
+
+bool platform::get_mouse_button_down(const int index) {
+    return false;
+}
+
+float platform::get_monitor_dpi() {
+    return 1.0f;
+}
+
+std::tuple<float, float> platform::get_wheel_delta() {
+	return {0.0f, 0.0f};
+}

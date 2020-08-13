@@ -82,3 +82,11 @@ char* platform::translate_keycode(const unsigned int keycode) {
 
 	return uc;
 }
+
+void platform::mute_output() {
+
+}
+
+void platform::unmute_output() {
+
+}
