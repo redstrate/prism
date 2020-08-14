@@ -22,7 +22,7 @@ public:
     
     constexpr inline void operator*=(const Matrix rhs);
 
-    using VectorType = Vector<N, float>;
+    using VectorType = Vector<N, T>;
     
     constexpr VectorType& operator[](const size_t index) { return columns[index]; }
     constexpr VectorType operator[](const size_t index) const { return columns[index]; }
