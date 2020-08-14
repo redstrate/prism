@@ -1,18 +1,10 @@
 #include <fstream>
 #include <sstream>
 
-#ifdef PLATFORM_WINDOWS
 #include <spirv_cpp.hpp>
 #include <spirv_msl.hpp>
 #include <glslang/Public/ShaderLang.h>
 #include <SPIRV/GlslangToSpv.h>
-#else
-#include <spirv_cross/spirv_cpp.hpp>
-#include <spirv_cross/spirv_msl.hpp>
-#include <glslang/Public/ShaderLang.h>
-#include <SPIRV/GlslangToSpv.h>
-#endif
-
 
 #include "DirStackIncluder.h"
 #include "log.hpp"

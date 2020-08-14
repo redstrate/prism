@@ -14,16 +14,6 @@ include(${CMAKE_CURRENT_LIST_DIR}/cmake/Common.cmake)
 include(${CMAKE_CURRENT_LIST_DIR}/cmake/AddPlatformExecutable.cmake)
 include(FetchContent)
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" AND NOT IOS)
-    message("macOS build detected!")
-
-    set(ENABLE_METAL TRUE)
-    set(ENABLE_DARWIN TRUE)
-    set(ENABLE_MACOS TRUE)
-
-    set(CMAKE_XCODE_GENERATE_SCHEME OFF)
-endif()
-
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     message("Linux build detected!")
 
@@ -83,6 +73,18 @@ macro(manual_download)
     set(CMAKE_FOLDER "")
 endmacro()
 
+if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" AND NOT IOS)
+    message("macOS build detected!")
+
+    set(ENABLE_METAL TRUE)
+    set(ENABLE_DARWIN TRUE)
+    set(ENABLE_MACOS TRUE)
+
+    set(CMAKE_XCODE_GENERATE_SCHEME OFF)
+
+    manual_download()
+endif()
+
 if(${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
     message("iOS build detected!")
 
@@ -120,7 +122,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "WindowsStore")
     manual_download()
 endif()
 
-if(NOT ENABLE_IOS AND NOT ENABLE_TVOS AND NOT ENABLE_WINDOWS)
+if(NOT TARGET spirv-cross-cpp)
     find_package(spirv_cross_core REQUIRED)
     find_package(spirv_cross_glsl REQUIRED)
     find_package(spirv_cross_cpp REQUIRED)

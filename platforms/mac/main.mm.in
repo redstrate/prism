@@ -294,13 +294,13 @@ CGRect toTopLeftSpace(NSRect frame) {
     return NSRectToCGRect(frame);
 }
 
-Rectangle platform::get_monitor_resolution() {
+prism::Rectangle platform::get_monitor_resolution() {
     auto frame = toTopLeftSpace([[NSScreen mainScreen] frame]);
     
     return {static_cast<int32_t>(frame.origin.x), static_cast<int32_t>(frame.origin.y), static_cast<uint32_t>(frame.size.width), static_cast<uint32_t>(frame.size.height)};
 }
 
-Rectangle platform::get_monitor_work_area() {
+prism::Rectangle platform::get_monitor_work_area() {
     auto frame = toTopLeftSpace([[NSScreen mainScreen] visibleFrame]);
     
     return {static_cast<int32_t>(frame.origin.x), static_cast<int32_t>(frame.origin.y), static_cast<uint32_t>(frame.size.width), static_cast<uint32_t>(frame.size.height)};
@@ -310,11 +310,11 @@ NSPoint get_fixed_cursor_point(NSPoint point) {
     return {point.x, std::max(windows[0]->currentHeight - point.y, 0.0)};
 }
 
-Offset platform::get_cursor_position() {
+prism::Offset platform::get_cursor_position() {
     return {static_cast<int32_t>(windows[0]->currentMousePos.x), static_cast<int32_t>(windows[0]->currentMousePos.y)};
 }
 
-Offset platform::get_screen_cursor_position() {
+prism::Offset platform::get_screen_cursor_position() {
     return {static_cast<int32_t>([NSEvent mouseLocation].x), static_cast<int32_t>([[NSScreen mainScreen] frame].size.height - [NSEvent mouseLocation].y)};
 }
 
@@ -330,17 +330,17 @@ std::tuple<float, float> platform::get_right_stick_position() {
     return {rightX, rightY};
 }
 
-Extent platform::get_window_size(const int index) {
+prism::Extent platform::get_window_size(const int index) {
     auto window = get_window(index);
     return {static_cast<uint32_t>(window->currentWidth), static_cast<uint32_t>(window->currentHeight)};
 }
 
-Extent platform::get_window_drawable_size(const int index) {
+prism::Extent platform::get_window_drawable_size(const int index) {
     auto window = get_window(index);
     return {static_cast<uint32_t>(window->currentWidth * window->window.backingScaleFactor), static_cast<uint32_t>(window->currentHeight * window->window.backingScaleFactor)};
 }
 
-Offset platform::get_window_position(const int index) {
+prism::Offset platform::get_window_position(const int index) {
     auto window = get_window(index);
 
     auto frame = toTopLeftSpace([window->window contentRectForFrameRect:[window->window frame]]);
@@ -363,7 +363,7 @@ bool platform::get_mouse_button_down(const int button) {
     return (button + 1) & [NSEvent pressedMouseButtons];
 }
 
-void platform::set_window_position(const int index, const Offset offset) {
+void platform::set_window_position(const int index, const prism::Offset offset) {
     auto window = get_window(index);
 
     NSPoint p;
@@ -373,7 +373,7 @@ void platform::set_window_position(const int index, const Offset offset) {
     [window->window setFrameTopLeftPoint:p];
 }
 
-void platform::set_window_size(const int index, const Extent extent) {
+void platform::set_window_size(const int index, const prism::Extent extent) {
     auto window = get_window(index);
 
     NSSize size;
@@ -391,7 +391,7 @@ void platform::set_window_title(const int index, const std::string_view title) {
 void platform::mute_output() {}
 void platform::unmute_output() {}
 
-int platform::open_window(const std::string_view title, const Rectangle rect, const WindowFlags flags) {
+int platform::open_window(const std::string_view title, const prism::Rectangle rect, const WindowFlags flags) {
     NativeWindow* native = new NativeWindow();
     native->index = windows.size();
     GameView* del = [[GameView alloc] init];

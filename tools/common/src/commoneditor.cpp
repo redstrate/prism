@@ -18,6 +18,7 @@
 #include "gfx.hpp"
 #include "gfx_commandbuffer.hpp"
 #include "imgui_utility.hpp"
+#include "screen.hpp"
 
 const std::map<ImGuiKey, InputButton> imToPl = {
     {ImGuiKey_Tab, InputButton::Tab},

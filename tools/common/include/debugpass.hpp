@@ -47,7 +47,7 @@ class DebugPass : public Pass {
 public:
     void initialize() override;
 
-    void resize(const Extent extent) override;
+    void resize(const prism::Extent extent) override;
     
 	void render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) override;
 
@@ -70,7 +70,7 @@ public:
 private:
     void createOffscreenResources();
     
-    Extent extent;
+    prism::Extent extent;
     
     std::vector<SelectableObject> selectable_objects;
     

@@ -1,17 +1,8 @@
 #include "shadercompiler.hpp"
 
-#include <iostream>
-
-#if defined(PLATFORM_IOS) || defined(PLATFORM_TVOS) || defined(PLATFORM_WINDOWS)
 #include <spirv_cpp.hpp>
 #include <spirv_msl.hpp>
 #include <SPIRV/GlslangToSpv.h>
-#else
-#include <spirv_cross/spirv_cpp.hpp>
-#include <spirv_cross/spirv_msl.hpp>
-#include <glslang/Public/ShaderLang.h>
-#include <SPIRV/GlslangToSpv.h>
-#endif
 
 #include "file.hpp"
 #include "log.hpp"
