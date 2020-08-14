@@ -1,5 +1,7 @@
 #include "file.hpp"
 
+#include <cstdio>
+
 #include "string_utils.hpp"
 #include "log.hpp"
 #include "assertions.hpp"

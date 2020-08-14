@@ -186,7 +186,7 @@ const std::vector<unsigned int> CompileGLSL(const std::string& filename, EShLang
     return SpirV;
 }
 
-std::string get_shader(std::string filename, bool skinned, bool cubemap) {
+std::variant<std::string, std::vector<uint32_t>> get_shader(std::string filename, bool skinned, bool cubemap) {
     auto shader_file = file::open(file::internal_domain / filename);
     if(!shader_file) {
         std::cerr << "Failed to open " << filename << "!!" << std::endl;
@@ -202,15 +202,19 @@ std::string get_shader(std::string filename, bool skinned, bool cubemap) {
     
     auto vertexSPIRV = CompileGLSL(shader_file->read_as_string(), lang, skinned, cubemap);
     
+#ifdef PLATFORM_MACOS
     spirv_cross::CompilerMSL msl(std::move(vertexSPIRV));
-    
+
     spirv_cross::CompilerMSL::Options opts;
     opts.platform = spirv_cross::CompilerMSL::Options::Platform::macOS;
     opts.enable_decoration_binding = true;
-    
+
     msl.set_msl_options(opts);
-    
+
     return msl.compile();
+#else
+    return vertexSPIRV;
+#endif
 }
 
 GFXPipeline* ShaderCompiler::create_static_pipeline(GFXGraphicsPipelineCreateInfo createInfo, bool positions_only, bool cubemap) {
@@ -218,8 +222,7 @@ GFXPipeline* ShaderCompiler::create_static_pipeline(GFXGraphicsPipelineCreateInf
     std::string vertex_path = createInfo.shaders.vertex_path.data();
     vertex_path += ".glsl";
     
-    std::string vertex_src = get_shader(vertex_path, false, cubemap);
-    createInfo.shaders.vertex_src = vertex_src;
+    createInfo.shaders.vertex_src = get_shader(vertex_path, false, cubemap);
     createInfo.shaders.vertex_path = "";
     
     if(positions_only) {
@@ -258,8 +261,7 @@ GFXPipeline* ShaderCompiler::create_skinned_pipeline(GFXGraphicsPipelineCreateIn
     std::string vertex_path = createInfo.shaders.vertex_path.data();
     vertex_path += ".glsl";
     
-    std::string vertex_src = get_shader(vertex_path, true, false);
-    createInfo.shaders.vertex_src = vertex_src;
+    createInfo.shaders.vertex_src = get_shader(vertex_path, true, false);
     createInfo.shaders.vertex_path = "";
     
     if(positions_only) {
@@ -371,7 +373,7 @@ layout(push_constant, binding = 0) uniform PushConstant {\n \
     int materialOffset;\n \
 };\n";
 
-std::string ShaderCompiler::compile_material_fragment(Material& material, bool use_ibl) {
+std::variant<std::string, std::vector<uint32_t>> ShaderCompiler::compile_material_fragment(Material& material, bool use_ibl) {
     walked_nodes.clear();
     
     if(!render_options.enable_ibl)
@@ -576,13 +578,17 @@ std::string ShaderCompiler::compile_material_fragment(Material& material, bool u
             
     auto vertexSPIRV = CompileGLSL(src, EShLangFragment, false, false);
     
+#ifdef PLATFORM_MACOS
     spirv_cross::CompilerMSL msl(std::move(vertexSPIRV));
-    
+
     spirv_cross::CompilerMSL::Options opts;
     opts.platform = spirv_cross::CompilerMSL::Options::Platform::macOS;
     opts.enable_decoration_binding = true;
-    
+
     msl.set_msl_options(opts);
-    
+
     return msl.compile();
+#else
+    return vertexSPIRV;
+#endif
 }

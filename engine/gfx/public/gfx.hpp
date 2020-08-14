@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <variant>
 
 class GFXBuffer;
 class GFXPipeline;
@@ -143,7 +144,8 @@ struct GFXGraphicsPipelineCreateInfo {
     
     struct Shaders {
         std::string_view vertex_path, fragment_path;
-        std::string vertex_src, fragment_src;
+
+        std::variant<std::string, std::vector<uint32_t>> vertex_src, fragment_src;
         
         GFXShaderConstants vertex_constants, fragment_constants;
     } shaders;

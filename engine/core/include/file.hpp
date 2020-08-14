@@ -27,7 +27,8 @@ namespace file {
             data(std::move(f.data)) {}
         
         ~File() {
-            fclose(handle);
+            if(handle != nullptr)
+                fclose(handle);
         }
         
         /** Loads a type.

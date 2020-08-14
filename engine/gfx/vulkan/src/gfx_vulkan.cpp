@@ -541,17 +541,36 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 
 	vkDeviceWaitIdle(device);
 
-	// setup shader modules
-    auto vertex_shader = file::open(file::internal_domain / (std::string(info.shaders.vertex_path) + ".spv"));
-    vertex_shader->read_all();
+	VkShaderModule vertex_module = VK_NULL_HANDLE, fragment_module = VK_NULL_HANDLE;
 
-    auto fragment_shader = file::open(file::internal_domain / (std::string(info.shaders.fragment_path) + ".spv"));
-    fragment_shader->read_all();
+	const bool vertex_use_shader_source = info.shaders.vertex_path.empty();
+	const bool fragment_use_shader_source = info.shaders.fragment_path.empty();
 
-    auto vertex_module = createShaderModule(vertex_shader->cast_data<unsigned char>(), vertex_shader->size());
+	if (vertex_use_shader_source) {
+		auto& vertex_shader_vector = std::get<std::vector<uint32_t>>(info.shaders.vertex_src);
+
+		vertex_module = createShaderModule(vertex_shader_vector.data(), vertex_shader_vector.size() * sizeof(uint32_t));
+	}
+	else {
+		auto vertex_shader = file::open(file::internal_domain / (std::string(info.shaders.vertex_path) + ".spv"));
+		vertex_shader->read_all();
+
+		vertex_module = createShaderModule(vertex_shader->cast_data<uint32_t>(), vertex_shader->size());
+	}
+
+	if (fragment_use_shader_source) {
+		auto& fragment_shader_vector = std::get<std::vector<uint32_t>>(info.shaders.fragment_src);
+
+		fragment_module = createShaderModule(fragment_shader_vector.data(), fragment_shader_vector.size() * sizeof(uint32_t));
+	}
+	else {
+		auto fragment_shader = file::open(file::internal_domain / (std::string(info.shaders.fragment_path) + ".spv"));
+		fragment_shader->read_all();
+
+		fragment_module = createShaderModule(fragment_shader->cast_data<uint32_t>(), fragment_shader->size());
+	}
+
     name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vertex_module, info.shaders.vertex_path);
-
-    auto fragment_module = createShaderModule(fragment_shader->cast_data<unsigned char>(), fragment_shader->size());
     name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)fragment_module, info.shaders.fragment_path);
 
 	VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
@@ -754,15 +773,13 @@ GFXSize GFXVulkan::get_alignment(GFXSize size) {
     return (size + minUboAlignment / 2) & ~int(minUboAlignment - 1);
 }
 
-void GFXVulkan::submit(GFXCommandBuffer *command_buffer, const int identifier) {
+void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 	vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
 	uint32_t imageIndex = 0;
 	VkResult result = vkAcquireNextImageKHR(device, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR) {
-		//std::cout << "oops??" << std::endl;
+	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		return;
-	}
 
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1004,7 +1021,7 @@ VkResult CreateDebugUtilsMessengerEXT(
 void GFXVulkan::createInstance(std::vector<const char*> layers, std::vector<const char*> extensions) {
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
     debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-    debugCreateInfo.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+    debugCreateInfo.messageSeverity =  VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
     debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT ;
     debugCreateInfo.pfnUserCallback = DebugCallback;    // global function
 
@@ -1476,7 +1493,7 @@ void GFXVulkan::transitionImageLayout(VkImage image, VkFormat format, VkImageAsp
 	endSingleTimeCommands(commandBuffer);
 }
 
-VkShaderModule GFXVulkan::createShaderModule(const unsigned char* code, const int length) {
+VkShaderModule GFXVulkan::createShaderModule(const uint32_t* code, const int length) {
 	VkShaderModuleCreateInfo createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
 	createInfo.codeSize = length;

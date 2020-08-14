@@ -21,7 +21,7 @@ public:
     // generates static and skinned versions of the pipeline provided
     std::tuple<GFXPipeline*, GFXPipeline*> create_pipeline_permutations(GFXGraphicsPipelineCreateInfo& createInfo, bool positions_only = false);
     
-    std::string compile_material_fragment(Material& material, bool use_ibl = true);
+    std::variant<std::string, std::vector<uint32_t>> compile_material_fragment(Material& material, bool use_ibl = true);
 };
 
 static ShaderCompiler shader_compiler;
