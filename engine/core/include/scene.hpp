@@ -5,10 +5,6 @@
 #include <array>
 #include <functional>
 
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
-#include <sol.hpp>
-#endif
-
 #include <nlohmann/json.hpp>
 
 #include "vector.hpp"
@@ -254,13 +250,6 @@ public:
     std::array<bool, max_environment_probes> environment_dirty;
 
     GFXTexture *irradianceCubeArray = nullptr, *prefilteredCubeArray = nullptr;
-    
-    // script
-    std::string script_path;
-    
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
-    sol::environment env;
-#endif
 };
 
 /** Positions and rotates a camera to look at a target from a position.

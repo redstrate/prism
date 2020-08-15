@@ -27,8 +27,6 @@ Engine::Engine(const int argc, char* argv[]) {
     _physics = std::make_unique<Physics>();
     _imgui = std::make_unique<ImGuiLayer>();
     assetm = std::make_unique<AssetManager>();
-
-    create_lua_interface();
 }
 
 void Engine::set_app(App* app) {
@@ -122,9 +120,6 @@ Scene* Engine::load_scene(const file::Path path) {
 
     auto scene = std::make_unique<Scene>();
 
-    if(j.contains("script"))
-        scene->script_path = j["script"];
-
     std::map<Object, std::string> parentQueue;
 
     for(auto& obj : j["objects"]) {
@@ -147,17 +142,6 @@ Scene* Engine::load_scene(const file::Path path) {
 
     for(auto& [obj, toParent] : parentQueue)
         scene->get<Data>(obj).parent = scene->find_object(toParent);
-
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
-    scene->env = sol::environment(lua, sol::create, lua.globals());
-    scene->env["scene"] = scene.get();
-
-    if(!scene->script_path.empty()) {
-        auto script_file = file::open(file::root_path(path) / scene->script_path);
-        if(script_file != std::nullopt)
-            engine->lua.safe_script(script_file->read_as_string(), scene->env);
-    }
-#endif
     
     setup_scene(*scene);
     
@@ -177,8 +161,6 @@ void Engine::save_scene(const std::string_view path) {
         if(!_current_scene->get(obj).editor_object)
             j["objects"].push_back(save_object(obj));
     }
-
-    j["script"] = _current_scene->script_path;
 
     std::ofstream out(path.data());
     out << j;
@@ -817,74 +799,6 @@ void Engine::stop_animation(Object target) {
         if(animation.target == target)
             utility::erase(_animation_targets, animation);
     }
-}
-
-void Engine::create_lua_interface() {
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
-    lua.open_libraries(sol::lib::base, sol::lib::package, sol::lib::table, sol::lib::string, sol::lib::math);
-    
-    lua.new_usertype<Cutscene>("Cutscene");
-    
-    lua.new_usertype<InputBindingData>("InputBindingData",
-                                       "name", &InputBindingData::name);
-    
-    lua.new_usertype<Input>("Input",
-                            "get_bindings", sol::readonly_property(&Input::get_bindings));
-    
-    lua.new_usertype<Engine>("Engine",
-                             "pause", &Engine::pause,
-                             "unpause", &Engine::unpause,
-                             "clear_cutscene", [this] {
-        cutscene = nullptr;
-    },
-                             "update_screen", [this] {
-        get_renderer()->update_screen();
-    },
-                             "quit", &Engine::quit,
-                             "get_input", sol::readonly_property(&Engine::get_input),
-                             "push_event", &Engine::push_event);
-    
-    lua["engine"] = this;
-    
-    lua.new_usertype<ui::Screen>("UIScreen",
-                                 "find_element", &ui::Screen::find_element,
-                                 "add_element", [](ui::Screen* screen, UIElement& element) {
-        screen->elements.push_back(element);
-    });
-    
-    lua.new_usertype<UIElement::Background>("UIElementBackground",
-                                            "image", &UIElement::Background::image);
-    
-    lua.new_usertype<UIElement::UIElement::Metrics::Metric>("UIElementMetric",
-                                                            "value", &UIElement::Metrics::Metric::value);
-    
-    lua.new_usertype<UIElement::UIElement::Metrics>("UIElementMetrics",
-                                                    "x", &UIElement::Metrics::x,
-                                                    "y", &UIElement::Metrics::y,
-                                                    "width", &UIElement::Metrics::width,
-                                                    "height", &UIElement::Metrics::height);
-    
-    lua.new_usertype<UIElement>("UIElement",
-                                "id", &UIElement::id,
-                                "text", &UIElement::text,
-                                "=background", &UIElement::background,
-                                "visible", &UIElement::visible,
-                                "metrics", &UIElement::metrics);
-    
-    lua.new_usertype<Scene>("Scene");
-    
-    lua["get_transform"] = [](Object o) -> Transform& {
-        return engine->get_scene()->get<Transform>(o);
-    };
-    
-    lua.new_usertype<Transform>("Transform",
-                                "position", &Transform::position);
-    
-    lua.new_usertype<Vector3>("Vector3",
-                              "x", &Vector3::x,
-                              "y", &Vector3::y,
-                              "z", &Vector3::z);
-#endif
 }
 
 void Engine::setup_scene(Scene& scene) {

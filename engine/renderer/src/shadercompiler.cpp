@@ -155,7 +155,7 @@ const std::vector<unsigned int> CompileGLSL(const std::string& filename, EShLang
     includer.pushExternalLocalDirectory(file::get_domain_path(file::Domain::Internal).string());
 
     if (!Shader.parse(&Resources, 100, false, (EShMessages)0, includer)) {
-        std::cout << Shader.getInfoLog() << std::endl;
+        console::error(System::Renderer, "{}", Shader.getInfoLog());
         
         return {};
     }
@@ -179,8 +179,8 @@ const std::vector<unsigned int> CompileGLSL(const std::string& filename, EShLang
 
 std::variant<std::string, std::vector<uint32_t>> get_shader(std::string filename, bool skinned, bool cubemap) {
     auto shader_file = file::open(file::internal_domain / filename);
-    if(!shader_file) {
-        std::cerr << "Failed to open " << filename << "!!" << std::endl;
+    if(!shader_file.has_value()) {
+        console::error(System::Renderer, "Failed to open shader file {}!", filename);
         return "";
     }
     

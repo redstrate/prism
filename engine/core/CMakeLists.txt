@@ -33,7 +33,7 @@ set(SRC
     src/debug.cpp)
 
 if(NOT ENABLE_IOS AND NOT ENABLE_TVOS)
-    set(EXTRA_LIBRARIES Audio sol)
+    set(EXTRA_LIBRARIES Audio)
 endif()
 
 add_library(Core STATIC ${SRC})

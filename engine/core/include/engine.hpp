@@ -8,10 +8,6 @@
 #include <string>
 #include <string_view>
 
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
-#include <sol.hpp>
-#endif
-
 #include "scene.hpp"
 #include "renderer.hpp"
 #include "input.hpp"
@@ -323,10 +319,6 @@ public:
     /// If physics should upate. This is a control indepentent of the pause state.
     bool update_physics = true;
 
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
-    sol::state lua;
-#endif
-    
 #if defined(PLATFORM_TVOS) || defined(PLATFORM_IOS)
     bool debug_enabled = true;
 #else
@@ -334,7 +326,6 @@ public:
 #endif
 
 private:
-    void create_lua_interface();
     void setup_scene(Scene& scene);
     
     void on_remove(Object object);

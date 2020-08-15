@@ -22,12 +22,6 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
 endif()
 
 FetchContent_Declare(
-  lua
-  GIT_REPOSITORY https://github.com/NLua/lua.git
-  GIT_TAG master
-)
-
-FetchContent_Declare(
   bullet
   GIT_REPOSITORY https://github.com/bulletphysics/bullet3.git
   GIT_TAG 2.89
@@ -59,16 +53,11 @@ macro(manual_download)
     set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "" FORCE)
     set(USE_MSVC_RUNTIME_LIBRARY_DLL ON CACHE BOOL "" FORCE)
 
-    add_definitions(-DLUA_USE_APPLE)
-
     set(CMAKE_FOLDER "External")
 
-    FetchContent_MakeAvailable(lua)
     FetchContent_MakeAvailable(bullet)
     FetchContent_MakeAvailable(spirv-cross)
     FetchContent_MakeAvailable(glslang)
-
-    remove_definitions(LUA_USE_MACOSX)
 
     set(CMAKE_FOLDER "")
 endmacro()

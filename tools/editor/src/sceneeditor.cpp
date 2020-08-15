@@ -133,7 +133,7 @@ void SceneEditor::draw(CommonEditor* editor) {
     if(scene != nullptr) {
         if(showSceneSettings) {
             if(begin("Scene Settings", &showSceneSettings)) {
-                ImGui::InputText("Script Path", &scene->script_path);
+
             }
 
             ImGui::End();

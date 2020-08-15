@@ -5,10 +5,6 @@
 #include <map>
 #include <functional>
 
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
-#include <sol.hpp>
-#endif
-
 #include "uielement.hpp"
 #include "file.hpp"
 
@@ -42,11 +38,5 @@ namespace ui {
         GFXBuffer* glyph_buffer = nullptr;
         GFXBuffer* instance_buffer = nullptr;
         GFXBuffer* elements_buffer = nullptr;
-
-        std::string script_path;
-        
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
-        sol::environment env;
-#endif
     };
 }

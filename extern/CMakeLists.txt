@@ -13,7 +13,6 @@ add_subdirectory(stb)
 add_subdirectory(imgui)
 add_subdirectory(magic_enum)
 add_subdirectory(smaa)
-add_subdirectory(sol)
 add_subdirectory(doctest)
 
 include(FetchContent)

@@ -77,19 +77,6 @@ void ui::Screen::calculate_sizes() {
 void ui::Screen::process_mouse(const int x, const int y) {
     Expects(x >= 0);
     Expects(y >= 0);
-    
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
-    for(auto& element : elements) {
-        if(x > element.absolute_x &&
-           y > element.absolute_y &&
-           x < (element.absolute_x + element.absolute_width) &&
-           y < (element.absolute_y + element.absolute_height)) {
-
-            if(!element.on_click_script.empty())
-                engine->lua.safe_script(element.on_click_script, env);
-        }
-    }
-#endif
 }
 
 UIElement* ui::Screen::find_element(const std::string& id) {
@@ -115,9 +102,6 @@ ui::Screen::Screen(const file::Path path) {
 
     nlohmann::json j;
     file->read_as_stream() >> j;
-
-    if(j.count("script"))
-        script_path = j["script"];
 
     for(auto& element : j["elements"]) {
         UIElement ue;
@@ -195,17 +179,6 @@ ui::Screen::Screen(const file::Path path) {
 
         elements.push_back(ue);
     }
-
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
-    env = sol::environment(engine->lua, sol::create, engine->lua.globals());
-    env["screen"] = this;
-
-    if(!script_path.empty()) {
-        auto script_file = file::open(file::app_domain / script_path);
-        if(script_file != std::nullopt)
-            engine->lua.safe_script(script_file->read_as_string(), env);
-    }
-#endif
 }
 
 void ui::Screen::add_listener(const std::string& id, std::function<void()> callback) {
@@ -213,8 +186,5 @@ void ui::Screen::add_listener(const std::string& id, std::function<void()> callb
 }
 
 void ui::Screen::process_event(const std::string& type, const std::string data) {
-#if !defined(PLATFORM_IOS) && !defined(PLATFORM_TVOS) && !defined(PLATFORM_WINDOWS)
-    auto func = env["process_event"];
-    func(type, data);
-#endif
+
 }
