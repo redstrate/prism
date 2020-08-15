@@ -13,7 +13,7 @@ ComputedSurfaceInfo compute_surface(const vec3 diffuse, const vec3 normal, const
  
     info.N = normalize(normal);
     info.V = normalize(scene.camPos.xyz - in_frag_pos);
-    info.NdotV = clamp(dot(info.N, info.V), 0.0, 1.0);
+    info.NdotV = max(dot(info.N, info.V), 0.0);
     
     info.metallic = metallic;
     info.roughness = max(0.0001, roughness * roughness);
