@@ -6,6 +6,7 @@
 #include "math.hpp"
 #include "material_nodes.hpp"
 #include "aabb.hpp"
+#include "utility.hpp"
 
 class GFXBuffer;
 class GFXTexture;
@@ -21,6 +22,24 @@ class GFXPipeline;
 class Material : public Asset {
 public:
     std::vector<std::unique_ptr<MaterialNode>> nodes;
+    
+    void delete_node(MaterialNode* node) {
+        // disconnect all inputs from their node outputs
+        for(auto& input : node->inputs) {
+            if(input.is_connected())
+                input.disconnect();
+        }
+        
+        // disconnect all our outputs from other node's inputs
+        for(auto& output : node->outputs) {
+            if(output.is_connected())
+                output.connected_connector->disconnect();
+        }
+        
+        utility::erase_if(nodes, [node](std::unique_ptr<MaterialNode>& other_node) {
+            return node == other_node.get();
+        });
+    }
     
     GFXPipeline* static_pipeline = nullptr;
     GFXPipeline* skinned_pipeline = nullptr;

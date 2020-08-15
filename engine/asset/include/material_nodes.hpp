@@ -15,6 +15,16 @@ struct MaterialConnector {
     MaterialConnector(std::string n, DataType t) : name(n), type(t) {}
     MaterialConnector(std::string n, DataType t, bool isn) : name(n), type(t), is_normal_map(isn) {}
     
+    bool is_connected() const {
+        return connected_connector != nullptr && connected_node != nullptr && connected_index != -1;
+    }
+    
+    void disconnect() {
+        connected_connector = nullptr;
+        connected_node = nullptr;
+        connected_index = -1;
+    }
+    
     std::string name;
     DataType type;
 

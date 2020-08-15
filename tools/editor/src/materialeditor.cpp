@@ -146,6 +146,8 @@ void MaterialEditor::draw(CommonEditor* editor) {
         static MaterialConnector* drag_connector = nullptr;
         static int drag_index = 0;
         
+        std::vector<MaterialNode*> deferred_deletions;
+        
         for(auto& node : material->nodes) {
             const auto rect = get_window_rect(*node);
             
@@ -231,6 +233,13 @@ void MaterialEditor::draw(CommonEditor* editor) {
                 dragging_connector = false;
             }
             
+            if(ImGui::BeginPopupContextItem()) {
+                if(ImGui::Selectable("Delete"))
+                    deferred_deletions.push_back(node.get());
+                
+                ImGui::EndPopup();
+            }
+            
             if(dragging_connector && node.get() == dragging_node) {
                 const auto output_rect = get_output_rect(*node, drag_index);
                 draw_list->AddLine(output_rect.GetCenter(), ImGui::GetIO().MousePos, IM_COL32(255, 255, 255, 255));
@@ -251,6 +260,11 @@ void MaterialEditor::draw(CommonEditor* editor) {
                         changed |= editor->edit_asset(property.name.c_str(), property.value_tex);
                         break;
                 }
+            }
+            
+            for(auto& node : deferred_deletions) {
+                material->delete_node(node);
+                changed = true;
             }
             
             if(changed)
