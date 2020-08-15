@@ -110,6 +110,9 @@ void MaterialEditor::draw(CommonEditor* editor) {
             if(ImGui::MenuItem("Float Constant"))
                 material->nodes.push_back(std::make_unique<FloatConstant>());
             
+            if(ImGui::MenuItem("Vec3 Constant"))
+                material->nodes.push_back(std::make_unique<Vector3Constant>());
+            
             ImGui::EndMenu();
         }
         
