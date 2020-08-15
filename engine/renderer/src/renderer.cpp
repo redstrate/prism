@@ -480,16 +480,16 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
     
     struct SkyPushConstant {
         Matrix4x4 view;
-        Vector4 aspectFovY;
-        Vector4 sunPosition;
+        Vector4 sun_position_fov;
+        float aspect;
     } pc;
     
     pc.view = matrix_from_quat(scene.get<Transform>(camera_object).rotation) * correction_matrix;
-    pc.aspectFovY = Vector4(static_cast<float>(extent.width) / static_cast<float>(extent.height), radians(camera.fov), 0, 0);
+    pc.aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
     
     for(const auto& [obj, light] : scene.get_all<Light>()) {
         if(light.type == Light::Type::Sun)
-            pc.sunPosition = Vector4(scene.get<Transform>(obj).get_world_position());
+            pc.sun_position_fov = Vector4(scene.get<Transform>(obj).get_world_position(), radians(camera.fov));
     }
     
     command_buffer->set_pipeline(skyPipeline);
@@ -887,7 +887,7 @@ void Renderer::createSkyPipeline() {
     };
 
     pipelineInfo.shader_input.push_constants = {
-        {sizeof(Matrix4x4) + sizeof(Vector4) + sizeof(Vector4), 0}
+        {sizeof(Matrix4x4) + sizeof(Vector4) + sizeof(float), 0}
     };
 
     pipelineInfo.depth.depth_mode = GFXDepthMode::LessOrEqual;
