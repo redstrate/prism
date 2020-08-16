@@ -97,21 +97,26 @@ std::optional<ShaderSource> ShaderCompiler::compile(const ShaderLanguage from_la
         return std::nullopt;
     }
     
-#ifdef PLATFORM_MACOS
-    spirv_cross::CompilerMSL msl(std::move(spirv));
-    
-    spirv_cross::CompilerMSL::Options opts;
-    if(options.is_apple_mobile) {
-        opts.platform = spirv_cross::CompilerMSL::Options::Platform::macOS;
-    } else {
-        opts.platform = spirv_cross::CompilerMSL::Options::Platform::iOS;
+    switch(to_language) {
+        case ShaderLanguage::MSL:
+        {
+            spirv_cross::CompilerMSL msl(std::move(spirv));
+            
+            spirv_cross::CompilerMSL::Options opts;
+            if(options.is_apple_mobile) {
+                opts.platform = spirv_cross::CompilerMSL::Options::Platform::macOS;
+            } else {
+                opts.platform = spirv_cross::CompilerMSL::Options::Platform::iOS;
+            }
+            opts.enable_decoration_binding = true;
+            
+            msl.set_msl_options(opts);
+            
+            return msl.compile();
+        }
+        case ShaderLanguage::SPIRV:
+            return spirv;
+        default:
+            return {};
     }
-    opts.enable_decoration_binding = true;
-    
-    msl.set_msl_options(opts);
-    
-    return msl.compile();
-#else
-    return spirv;
-#endif
 }
