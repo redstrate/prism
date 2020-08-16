@@ -44,5 +44,5 @@ vec2 IntegrateBRDF(float NdotV, float roughness) {
 }
 
 void main() {
-    outColor = normalize(IntegrateBRDF(inUV.x, inUV.y));
+    outColor = IntegrateBRDF(inUV.x, inUV.y);
 }
