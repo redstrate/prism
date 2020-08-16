@@ -13,7 +13,7 @@ constexpr int tangent_buffer_index = 5;
 constexpr int bitangent_buffer_index = 6;
 constexpr int bone_buffer_index = 7;
 
-class ShaderCompiler {
+class MaterialCompiler {
 public:
     GFXPipeline* create_static_pipeline(GFXGraphicsPipelineCreateInfo createInfo, bool positions_only = false, bool cubemap = false);
     GFXPipeline* create_skinned_pipeline(GFXGraphicsPipelineCreateInfo createInfo, bool positions_only = false);
@@ -24,4 +24,4 @@ public:
     std::variant<std::string, std::vector<uint32_t>> compile_material_fragment(Material& material, bool use_ibl = true);
 };
 
-static ShaderCompiler shader_compiler;
+static MaterialCompiler material_compiler;

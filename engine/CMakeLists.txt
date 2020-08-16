@@ -5,6 +5,7 @@ add_subdirectory(gfx)
 add_subdirectory(math)
 add_subdirectory(log)
 add_subdirectory(asset)
+add_subdirectory(shadercompiler)
 
 if(NOT ENABLE_IOS AND NOT ENABLE_TVOS)
     add_subdirectory(audio)

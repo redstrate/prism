@@ -7,8 +7,7 @@ set(SRC
     include/imguipass.hpp
     include/smaapass.hpp
     include/scenecapture.hpp
-    include/shadercompiler.hpp
-    include/DirStackIncluder.h
+    include/materialcompiler.hpp
     include/dofpass.hpp
 
     src/renderer.cpp
@@ -17,7 +16,7 @@ set(SRC
     src/imguipass.cpp
     src/smaapass.cpp
     src/scenecapture.cpp
-    src/shadercompiler.cpp
+    src/materialcompiler.cpp
     src/dofpass.cpp)
 
 add_library(Renderer STATIC ${SRC})
@@ -32,11 +31,9 @@ target_link_libraries(Renderer
     Core
     imgui
     SMAA::SMAA
-    ${CROSS_LIBS})
+    ShaderCompiler)
 target_include_directories(Renderer PUBLIC include)
-set_target_properties(Renderer PROPERTIES CXX_STANDARD 17)
-target_compile_features(Renderer PUBLIC cxx_std_17)
-set_target_properties(Renderer PROPERTIES CXX_EXTENSIONS OFF)
+set_engine_properties(Renderer)
 
 include(../../cmake/BuildShaders.cmake)
 

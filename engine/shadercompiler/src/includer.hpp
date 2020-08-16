@@ -43,8 +43,6 @@
 
 #include <glslang/Public/ShaderLang.h>
 
-#include "file.hpp"
-
 // Default include class for normal include convention of search backward
 // through the stack of active include paths (for nested includes).
 // Can be overridden to customize.
@@ -136,6 +134,7 @@ protected:
     // If no path markers, return current working directory.
     // Otherwise, strip file name and return path leading up to it.
     virtual std::string getDirectory(const std::string) const {
-        return file::get_domain_path(file::Domain::Internal).string();
+        //return file::get_domain_path(file::Domain::Internal).string();
+        return "";
     }
 };

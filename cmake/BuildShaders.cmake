@@ -1,9 +1,9 @@
 macro(compile_shader src)
     string(REGEX REPLACE "\\.[^.]*$" "" MYFILE_WITHOUT_EXT ${src})
 
-    set(SHADER_COMPILER_COMMAND  $<TARGET_FILE:ShaderCompiler>)
+    set(SHADER_COMPILER_COMMAND  $<TARGET_FILE:ShaderCompilerTool>)
     if(ENABLE_IOS)
-	set(SHADER_COMPILER_COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/../build/bin/Debug/ShaderCompiler")
+	set(SHADER_COMPILER_COMMAND "${CMAKE_CURRENT_SOURCE_DIR}/../build/bin/Debug/ShaderCompilerTool")
     endif()
 
     set(EXTRA_PLATFORM_ARG "0")
@@ -36,7 +36,7 @@ function(add_shader)
 
         file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/shaders)
 
-        add_custom_target(BuildShaders DEPENDS ${SPV_FILES} ShaderCompiler)
+        add_custom_target(BuildShaders DEPENDS ${SPV_FILES} ShaderCompilerTool)
         add_dependencies(${add_shader_TARGET} BuildShaders)
         
         set(ALL_SHADER_FILES ${SPV_FILES} CACHE INTERNAL "" FORCE)

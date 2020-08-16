@@ -1,181 +1,10 @@
-#include "shadercompiler.hpp"
-
-#include <spirv_cpp.hpp>
-#include <spirv_msl.hpp>
-#include <SPIRV/GlslangToSpv.h>
+#include "materialcompiler.hpp"
 
 #include "file.hpp"
 #include "log.hpp"
 #include "engine.hpp"
 #include "string_utils.hpp"
-#include "DirStackIncluder.h"
-
-const TBuiltInResource DefaultTBuiltInResource = {
-    /* .MaxLights = */ 32,
-    /* .MaxClipPlanes = */ 6,
-    /* .MaxTextureUnits = */ 32,
-    /* .MaxTextureCoords = */ 32,
-    /* .MaxVertexAttribs = */ 64,
-    /* .MaxVertexUniformComponents = */ 4096,
-    /* .MaxVaryingFloats = */ 64,
-    /* .MaxVertexTextureImageUnits = */ 32,
-    /* .MaxCombinedTextureImageUnits = */ 80,
-    /* .MaxTextureImageUnits = */ 32,
-    /* .MaxFragmentUniformComponents = */ 4096,
-    /* .MaxDrawBuffers = */ 32,
-    /* .MaxVertexUniformVectors = */ 128,
-    /* .MaxVaryingVectors = */ 8,
-    /* .MaxFragmentUniformVectors = */ 16,
-    /* .MaxVertexOutputVectors = */ 16,
-    /* .MaxFragmentInputVectors = */ 15,
-    /* .MinProgramTexelOffset = */ -8,
-    /* .MaxProgramTexelOffset = */ 7,
-    /* .MaxClipDistances = */ 8,
-    /* .MaxComputeWorkGroupCountX = */ 65535,
-    /* .MaxComputeWorkGroupCountY = */ 65535,
-    /* .MaxComputeWorkGroupCountZ = */ 65535,
-    /* .MaxComputeWorkGroupSizeX = */ 1024,
-    /* .MaxComputeWorkGroupSizeY = */ 1024,
-    /* .MaxComputeWorkGroupSizeZ = */ 64,
-    /* .MaxComputeUniformComponents = */ 1024,
-    /* .MaxComputeTextureImageUnits = */ 16,
-    /* .MaxComputeImageUniforms = */ 8,
-    /* .MaxComputeAtomicCounters = */ 8,
-    /* .MaxComputeAtomicCounterBuffers = */ 1,
-    /* .MaxVaryingComponents = */ 60,
-    /* .MaxVertexOutputComponents = */ 64,
-    /* .MaxGeometryInputComponents = */ 64,
-    /* .MaxGeometryOutputComponents = */ 128,
-    /* .MaxFragmentInputComponents = */ 128,
-    /* .MaxImageUnits = */ 8,
-    /* .MaxCombinedImageUnitsAndFragmentOutputs = */ 8,
-    /* .MaxCombinedShaderOutputResources = */ 8,
-    /* .MaxImageSamples = */ 0,
-    /* .MaxVertexImageUniforms = */ 0,
-    /* .MaxTessControlImageUniforms = */ 0,
-    /* .MaxTessEvaluationImageUniforms = */ 0,
-    /* .MaxGeometryImageUniforms = */ 0,
-    /* .MaxFragmentImageUniforms = */ 8,
-    /* .MaxCombinedImageUniforms = */ 8,
-    /* .MaxGeometryTextureImageUnits = */ 16,
-    /* .MaxGeometryOutputVertices = */ 256,
-    /* .MaxGeometryTotalOutputComponents = */ 1024,
-    /* .MaxGeometryUniformComponents = */ 1024,
-    /* .MaxGeometryVaryingComponents = */ 64,
-    /* .MaxTessControlInputComponents = */ 128,
-    /* .MaxTessControlOutputComponents = */ 128,
-    /* .MaxTessControlTextureImageUnits = */ 16,
-    /* .MaxTessControlUniformComponents = */ 1024,
-    /* .MaxTessControlTotalOutputComponents = */ 4096,
-    /* .MaxTessEvaluationInputComponents = */ 128,
-    /* .MaxTessEvaluationOutputComponents = */ 128,
-    /* .MaxTessEvaluationTextureImageUnits = */ 16,
-    /* .MaxTessEvaluationUniformComponents = */ 1024,
-    /* .MaxTessPatchComponents = */ 120,
-    /* .MaxPatchVertices = */ 32,
-    /* .MaxTessGenLevel = */ 64,
-    /* .MaxViewports = */ 16,
-    /* .MaxVertexAtomicCounters = */ 0,
-    /* .MaxTessControlAtomicCounters = */ 0,
-    /* .MaxTessEvaluationAtomicCounters = */ 0,
-    /* .MaxGeometryAtomicCounters = */ 0,
-    /* .MaxFragmentAtomicCounters = */ 8,
-    /* .MaxCombinedAtomicCounters = */ 8,
-    /* .MaxAtomicCounterBindings = */ 1,
-    /* .MaxVertexAtomicCounterBuffers = */ 0,
-    /* .MaxTessControlAtomicCounterBuffers = */ 0,
-    /* .MaxTessEvaluationAtomicCounterBuffers = */ 0,
-    /* .MaxGeometryAtomicCounterBuffers = */ 0,
-    /* .MaxFragmentAtomicCounterBuffers = */ 1,
-    /* .MaxCombinedAtomicCounterBuffers = */ 1,
-    /* .MaxAtomicCounterBufferSize = */ 16384,
-    /* .MaxTransformFeedbackBuffers = */ 4,
-    /* .MaxTransformFeedbackInterleavedComponents = */ 64,
-    /* .MaxCullDistances = */ 8,
-    /* .MaxCombinedClipAndCullDistances = */ 8,
-    /* .MaxSamples = */ 4,
-    /* .maxMeshOutputVerticesNV = */ 256,
-    /* .maxMeshOutputPrimitivesNV = */ 512,
-    /* .maxMeshWorkGroupSizeX_NV = */ 32,
-    /* .maxMeshWorkGroupSizeY_NV = */ 1,
-    /* .maxMeshWorkGroupSizeZ_NV = */ 1,
-    /* .maxTaskWorkGroupSizeX_NV = */ 32,
-    /* .maxTaskWorkGroupSizeY_NV = */ 1,
-    /* .maxTaskWorkGroupSizeZ_NV = */ 1,
-    /* .maxMeshViewCountNV = */ 4,
-    /* .maxDualSourceDrawBuffersEXT = */ 4,
-
-    /* .limits = */ TLimits{
-        /* .nonInductiveForLoops = */ true,
-        /* .whileLoops = */ true,
-        /* .doWhileLoops = */ true,
-        /* .generalUniformIndexing = */ true,
-        /* .generalAttributeMatrixVectorIndexing = */ true,
-        /* .generalVaryingIndexing = */ true,
-        /* .generalSamplerIndexing = */ true,
-        /* .generalVariableIndexing = */ true,
-        /* .generalConstantMatrixVectorIndexing = */ true,
-    }};
-
-
-const std::vector<unsigned int> CompileGLSL(const std::string& filename, EShLanguage ShaderType, bool skinned, bool cubemap) {
-    std::string newString = "#version 430 core\n";
-    
-    newString += "#extension GL_GOOGLE_include_directive : enable\n";
-    newString += "#extension GL_GOOGLE_cpp_style_line_directive : enable\n";
-    
-    if(skinned)
-        newString += "#define BONE\n";
-    
-    if(cubemap)
-        newString += "#define CUBEMAP\n";
-    
-    newString += "#line 1\n";
-    
-    newString += filename;
-    
-    const char* InputCString = newString.c_str();
-    
-    glslang::TShader Shader(ShaderType);
-    
-    Shader.setStrings(&InputCString, 1);
-    
-    int ClientInputSemanticsVersion = 100; // maps to, say, #define VULKAN 100
-    glslang::EShTargetClientVersion VulkanClientVersion = glslang::EShTargetVulkan_1_1;
-    glslang::EShTargetLanguageVersion TargetVersion = glslang::EShTargetSpv_1_0;
-    
-    Shader.setEnvInput(glslang::EShSourceGlsl, ShaderType, glslang::EShClientVulkan, ClientInputSemanticsVersion);
-    Shader.setEnvClient(glslang::EShClientVulkan, VulkanClientVersion);
-    Shader.setEnvTarget(glslang::EShTargetSpv, TargetVersion);
-    
-    TBuiltInResource Resources = DefaultTBuiltInResource;
-    EShMessages messages = (EShMessages) (EShMsgSpvRules);
-    
-    DirStackFileIncluder includer;
-    includer.pushExternalLocalDirectory(file::get_domain_path(file::Domain::Internal).string());
-
-    if (!Shader.parse(&Resources, 100, false, (EShMessages)0, includer)) {
-        console::error(System::Renderer, "{}", Shader.getInfoLog());
-        
-        return {};
-    }
-    
-    glslang::TProgram Program;
-    Program.addShader(&Shader);
-    
-    if(!Program.link(messages)) {
-        console::error(System::None, "Failed to link shader: {} {} {}", filename, Shader.getInfoLog(), Shader.getInfoDebugLog());
-        
-        return {};
-    }
-    
-    std::vector<unsigned int> SpirV;
-    spv::SpvBuildLogger logger;
-    glslang::SpvOptions spvOptions;
-    glslang::GlslangToSpv(*Program.getIntermediate(ShaderType), SpirV, &logger, &spvOptions);
-    
-    return SpirV;
-}
+#include "shadercompiler.hpp"
 
 std::variant<std::string, std::vector<uint32_t>> get_shader(std::string filename, bool skinned, bool cubemap) {
     auto shader_file = file::open(file::internal_domain / filename);
@@ -184,31 +13,24 @@ std::variant<std::string, std::vector<uint32_t>> get_shader(std::string filename
         return "";
     }
     
-    EShLanguage lang;
+    ShaderStage stage;
     if(filename.find("vert") != std::string::npos) {
-        lang = EShLangVertex;
+        stage = ShaderStage::Vertex;
     } else {
-        lang = EShLangFragment;
+        stage = ShaderStage::Fragment;
     }
     
-    auto vertexSPIRV = CompileGLSL(shader_file->read_as_string(), lang, skinned, cubemap);
+    CompileOptions options;
+    if(skinned)
+        options.add_definition("BONE");
     
-#ifdef PLATFORM_MACOS
-    spirv_cross::CompilerMSL msl(std::move(vertexSPIRV));
-
-    spirv_cross::CompilerMSL::Options opts;
-    opts.platform = spirv_cross::CompilerMSL::Options::Platform::macOS;
-    opts.enable_decoration_binding = true;
-
-    msl.set_msl_options(opts);
-
-    return msl.compile();
-#else
-    return vertexSPIRV;
-#endif
+    if(cubemap)
+        options.add_definition("CUBEMAP");
+    
+    return shader_compiler.compile(ShaderLanguage::GLSL, stage, shader_file->read_as_string(), ShaderLanguage::MSL, options)->source;
 }
 
-GFXPipeline* ShaderCompiler::create_static_pipeline(GFXGraphicsPipelineCreateInfo createInfo, bool positions_only, bool cubemap) {
+GFXPipeline* MaterialCompiler::create_static_pipeline(GFXGraphicsPipelineCreateInfo createInfo, bool positions_only, bool cubemap) {
     // take vertex src
     std::string vertex_path = createInfo.shaders.vertex_path.data();
     vertex_path += ".glsl";
@@ -245,7 +67,7 @@ GFXPipeline* ShaderCompiler::create_static_pipeline(GFXGraphicsPipelineCreateInf
     return engine->get_gfx()->create_graphics_pipeline(createInfo);
 }
 
-GFXPipeline* ShaderCompiler::create_skinned_pipeline(GFXGraphicsPipelineCreateInfo createInfo, bool positions_only) {
+GFXPipeline* MaterialCompiler::create_skinned_pipeline(GFXGraphicsPipelineCreateInfo createInfo, bool positions_only) {
     createInfo.label += " (Skinned)";
     
     // take vertex src
@@ -290,9 +112,7 @@ GFXPipeline* ShaderCompiler::create_skinned_pipeline(GFXGraphicsPipelineCreateIn
     return engine->get_gfx()->create_graphics_pipeline(createInfo);
 }
 
-std::tuple<GFXPipeline*, GFXPipeline*> ShaderCompiler::create_pipeline_permutations(GFXGraphicsPipelineCreateInfo& createInfo, bool positions_only) {
-    glslang::InitializeProcess();
-    
+std::tuple<GFXPipeline*, GFXPipeline*> MaterialCompiler::create_pipeline_permutations(GFXGraphicsPipelineCreateInfo& createInfo, bool positions_only) {
     auto st = create_static_pipeline(createInfo, positions_only);
     auto ss = create_skinned_pipeline(createInfo, positions_only);
     
@@ -364,7 +184,7 @@ layout(push_constant, binding = 0) uniform PushConstant {\n \
     int materialOffset;\n \
 };\n";
 
-std::variant<std::string, std::vector<uint32_t>> ShaderCompiler::compile_material_fragment(Material& material, bool use_ibl) {
+std::variant<std::string, std::vector<uint32_t>> MaterialCompiler::compile_material_fragment(Material& material, bool use_ibl) {
     walked_nodes.clear();
     
     if(!render_options.enable_ibl)
@@ -567,19 +387,5 @@ std::variant<std::string, std::vector<uint32_t>> ShaderCompiler::compile_materia
     
     src += "}\n";
             
-    auto vertexSPIRV = CompileGLSL(src, EShLangFragment, false, false);
-    
-#ifdef PLATFORM_MACOS
-    spirv_cross::CompilerMSL msl(std::move(vertexSPIRV));
-
-    spirv_cross::CompilerMSL::Options opts;
-    opts.platform = spirv_cross::CompilerMSL::Options::Platform::macOS;
-    opts.enable_decoration_binding = true;
-
-    msl.set_msl_options(opts);
-
-    return msl.compile();
-#else
-    return vertexSPIRV;
-#endif
+    return shader_compiler.compile(ShaderLanguage::GLSL, ShaderStage::Fragment, src, ShaderLanguage::MSL)->source;
 }

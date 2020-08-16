@@ -5,7 +5,7 @@
 #include "gfx.hpp"
 #include "log.hpp"
 #include "engine.hpp"
-#include "shadercompiler.hpp"
+#include "materialcompiler.hpp"
 #include "assertions.hpp"
 #include "frustum.hpp"
 
@@ -325,7 +325,7 @@ void ShadowPass::create_pipelines() {
     {
         pipelineInfo.label = "Sun Shadow";
 
-        auto [static_pipeline, skinned_pipeline] = shader_compiler.create_pipeline_permutations(pipelineInfo, true);
+        auto [static_pipeline, skinned_pipeline] = material_compiler.create_pipeline_permutations(pipelineInfo, true);
         
         static_sun_pipeline = static_pipeline;
         skinned_sun_pipeline = skinned_pipeline;
@@ -337,7 +337,7 @@ void ShadowPass::create_pipelines() {
 
         pipelineInfo.render_pass = cube_render_pass;
         
-        auto [static_pipeline, skinned_pipeline] = shader_compiler.create_pipeline_permutations(pipelineInfo, true);
+        auto [static_pipeline, skinned_pipeline] = material_compiler.create_pipeline_permutations(pipelineInfo, true);
         
         static_spot_pipeline = static_pipeline;
         skinned_spot_pipeline = skinned_pipeline;
@@ -349,7 +349,7 @@ void ShadowPass::create_pipelines() {
 
         pipelineInfo.shaders.fragment_path = "omnishadow.frag";
         
-        auto [static_pipeline, skinned_pipeline] = shader_compiler.create_pipeline_permutations(pipelineInfo, true);
+        auto [static_pipeline, skinned_pipeline] = material_compiler.create_pipeline_permutations(pipelineInfo, true);
         
         static_point_pipeline = static_pipeline;
         skinned_point_pipeline = skinned_pipeline;

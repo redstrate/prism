@@ -7,7 +7,7 @@
 #include "engine.hpp"
 #include "renderer.hpp"
 #include "shadowpass.hpp"
-#include "shadercompiler.hpp"
+#include "materialcompiler.hpp"
 #include "frustum.hpp"
 
 struct PushConstant {

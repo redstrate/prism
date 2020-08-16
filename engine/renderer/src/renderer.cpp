@@ -18,10 +18,11 @@
 #include "shadowpass.hpp"
 #include "smaapass.hpp"
 #include "scenecapture.hpp"
-#include "shadercompiler.hpp"
+#include "materialcompiler.hpp"
 #include "assertions.hpp"
 #include "dofpass.hpp"
 #include "frustum.hpp"
+#include "shadercompiler.hpp"
 
 struct ElementInstance {
     Vector4 color;
@@ -83,6 +84,8 @@ struct UIPushConstant {
 Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     Expects(gfx != nullptr);
     
+    shader_compiler.set_include_path(file::get_domain_path(file::Domain::Internal).string());
+        
     createDummyTexture();
 
     shadow_pass = std::make_unique<ShadowPass>(gfx);
@@ -691,19 +694,19 @@ void Renderer::create_mesh_pipeline(Material& material) {
     pipelineInfo.blending.src_rgb = GFXBlendFactor::SrcAlpha;
     pipelineInfo.blending.dst_rgb = GFXBlendFactor::OneMinusSrcAlpha;
     
-    pipelineInfo.shaders.fragment_src = shader_compiler.compile_material_fragment(material);
+    pipelineInfo.shaders.fragment_src = material_compiler.compile_material_fragment(material);
     pipelineInfo.shaders.fragment_path = "";
     
-    auto [static_pipeline, skinned_pipeline] = shader_compiler.create_pipeline_permutations(pipelineInfo);
+    auto [static_pipeline, skinned_pipeline] = material_compiler.create_pipeline_permutations(pipelineInfo);
     
     material.static_pipeline = static_pipeline;
     material.skinned_pipeline = skinned_pipeline;
     
     pipelineInfo.render_pass = scene_capture->renderPass;
     
-    pipelineInfo.shaders.fragment_src = shader_compiler.compile_material_fragment(material, false); // scene capture does not use IBL
+    pipelineInfo.shaders.fragment_src = material_compiler.compile_material_fragment(material, false); // scene capture does not use IBL
 
-    material.capture_pipeline = shader_compiler.create_static_pipeline(pipelineInfo, false, true);
+    material.capture_pipeline = material_compiler.create_static_pipeline(pipelineInfo, false, true);
 }
 
 void Renderer::createDummyTexture() {

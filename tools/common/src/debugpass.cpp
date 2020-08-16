@@ -8,7 +8,7 @@
 #include "gfx.hpp"
 #include "asset.hpp"
 #include "log.hpp"
-#include "shadercompiler.hpp"
+#include "materialcompiler.hpp"
 
 struct BillPushConstant {
     Matrix4x4 view, mvp;
