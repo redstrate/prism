@@ -4,6 +4,8 @@
 #include <vector>
 #include <variant>
 
+#include "shadercompiler.hpp"
+
 class GFXBuffer;
 class GFXPipeline;
 class GFXCommandBuffer;
@@ -145,7 +147,7 @@ struct GFXGraphicsPipelineCreateInfo {
     struct Shaders {
         std::string_view vertex_path, fragment_path;
 
-        std::variant<std::string, std::vector<uint32_t>> vertex_src, fragment_src;
+        ShaderSource vertex_src, fragment_src;
         
         GFXShaderConstants vertex_constants, fragment_constants;
     } shaders;
@@ -269,6 +271,7 @@ public:
 	// check for runtime support
 	virtual bool is_supported() { return false; }
 	virtual GFXContext required_context() { return GFXContext::None; }
+    virtual ShaderLanguage accepted_shader_language() {}
     virtual const char* get_name() { return nullptr; }
     
     virtual bool supports_feature([[maybe_unused]] const GFXFeature feature) { return true; }

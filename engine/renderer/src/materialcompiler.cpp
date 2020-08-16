@@ -6,11 +6,11 @@
 #include "string_utils.hpp"
 #include "shadercompiler.hpp"
 
-std::variant<std::string, std::vector<uint32_t>> get_shader(std::string filename, bool skinned, bool cubemap) {
+ShaderSource get_shader(std::string filename, bool skinned, bool cubemap) {
     auto shader_file = file::open(file::internal_domain / filename);
     if(!shader_file.has_value()) {
         console::error(System::Renderer, "Failed to open shader file {}!", filename);
-        return "";
+        return {};
     }
     
     ShaderStage stage;
@@ -27,7 +27,7 @@ std::variant<std::string, std::vector<uint32_t>> get_shader(std::string filename
     if(cubemap)
         options.add_definition("CUBEMAP");
     
-    return shader_compiler.compile(ShaderLanguage::GLSL, stage, shader_file->read_as_string(), ShaderLanguage::MSL, options)->source;
+    return *shader_compiler.compile(ShaderLanguage::GLSL, stage, shader_file->read_as_string(), engine->get_gfx()->accepted_shader_language(), options);
 }
 
 GFXPipeline* MaterialCompiler::create_static_pipeline(GFXGraphicsPipelineCreateInfo createInfo, bool positions_only, bool cubemap) {
@@ -184,7 +184,7 @@ layout(push_constant, binding = 0) uniform PushConstant {\n \
     int materialOffset;\n \
 };\n";
 
-std::variant<std::string, std::vector<uint32_t>> MaterialCompiler::compile_material_fragment(Material& material, bool use_ibl) {
+ShaderSource MaterialCompiler::compile_material_fragment(Material& material, bool use_ibl) {
     walked_nodes.clear();
     
     if(!render_options.enable_ibl)
@@ -387,5 +387,5 @@ std::variant<std::string, std::vector<uint32_t>> MaterialCompiler::compile_mater
     
     src += "}\n";
             
-    return shader_compiler.compile(ShaderLanguage::GLSL, ShaderStage::Fragment, src, ShaderLanguage::MSL)->source;
+    return *shader_compiler.compile(ShaderLanguage::GLSL, ShaderStage::Fragment, src, engine->get_gfx()->accepted_shader_language());
 }

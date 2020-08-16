@@ -30,6 +30,8 @@ public:
 
 class ShaderSource {
 public:
+    ShaderSource() {}
+    ShaderSource(const ShaderSource& rhs) : source (rhs.source) {}
     ShaderSource(const std::string source_string) : source(source_string) {}
     ShaderSource(const std::vector<uint32_t> source_bytecode) : source(source_bytecode) {}
         

@@ -9,6 +9,7 @@ class GFXMetal : public GFX {
 public:
     bool is_supported() override;
     GFXContext required_context() override { return GFXContext::Metal; }
+    ShaderLanguage accepted_shader_language() override { return ShaderLanguage::MSL; }
     const char* get_name() override;
     
     bool supports_feature(const GFXFeature feature) override;

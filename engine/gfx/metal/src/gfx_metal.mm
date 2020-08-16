@@ -431,7 +431,7 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
     {
         std::string vertex_src;
         if(info.shaders.vertex_path.empty()) {
-            vertex_src = std::get<std::string>(info.shaders.vertex_src);
+            vertex_src = info.shaders.vertex_src.as_string();
         } else {
             const auto vertex_path = utility::format("{}.msl", info.shaders.vertex_path);
 
@@ -453,7 +453,7 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
     {
         std::string fragment_src;
         if(info.shaders.fragment_path.empty()) {
-            fragment_src = std::get<std::string>(info.shaders.fragment_src);
+            fragment_src = info.shaders.fragment_src.as_string();
         } else {
             const auto fragment_path = utility::format("{}.msl", info.shaders.fragment_path);
             
