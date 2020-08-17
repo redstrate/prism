@@ -50,37 +50,25 @@ void prepScene() {
 
     scene->add<Camera>(camera);
     
-    camera_look_at(*scene, camera, Vector3(2), Vector3(0));
+    camera_look_at(*scene, camera, Vector3(0, 2, 3), Vector3(0));
 }
 
 void prepThreePointLighting() {
     auto scene = engine->get_scene();
+    
+    auto probe = scene->add_object();
+    scene->add<EnvironmentProbe>(probe).is_sized = false;
 
-    auto keyLight = scene->add_object();
-    scene->get(keyLight).name = "key light";
-    scene->get(keyLight).editor_object = true;
+    auto sun_light = scene->add_object();
+    scene->get(sun_light).name = "sun light";
+    scene->get(sun_light).editor_object = true;
 
-    scene->get<Transform>(keyLight).position = Vector3(-1, 2, 2);
+    scene->get<Transform>(sun_light).position = Vector3(15);
+    scene->add<Light>(sun_light).type = Light::Type::Sun;
+    scene->get<Light>(sun_light).power = 5.0f;
 
-    scene->add<Light>(keyLight).color = Vector3(1);
-
-    auto fillLight = scene->add_object();
-    scene->get(fillLight).name = "key light";
-    scene->get(fillLight).editor_object = true;
-
-    scene->get<Transform>(fillLight).position = Vector3(3, 2, 4);
-
-    scene->add<Light>(fillLight).color = Vector3(1);
-    scene->get<Light>(fillLight).power = 6.0f;
-
-    auto backLight = scene->add_object();
-    scene->get(backLight).name = "back light";
-    scene->get(backLight).editor_object = true;
-
-    scene->get<Transform>(backLight).position = Vector3(2, 0, -4);
-
-    scene->add<Light>(backLight).color = Vector3(1);
-    scene->get<Light>(backLight).power = 2.0f;
+    scene->reset_shadows();
+    scene->reset_environment();
 }
 
 void prepPrefabScene() {
@@ -101,10 +89,6 @@ void prepPrefabScene() {
 Renderable* prepMaterialScene() {
     auto scene = engine->get_scene();
     
-    auto probe = scene->add_object();
-    scene->get<Transform>(probe).position = Vector3(5);
-    scene->add<EnvironmentProbe>(probe);
-
     auto plane = scene->add_object();
     scene->get(plane).name = "plane";
     scene->get(plane).editor_object = true;
@@ -115,15 +99,17 @@ Renderable* prepMaterialScene() {
     scene->add<Renderable>(plane).mesh = assetm->get<Mesh>(file::app_domain / "models/plane.model");
     scene->get<Renderable>(plane).materials.push_back(assetm->get<Material>(file::app_domain / "materials/Material.material"));
     
-    auto cube = scene->add_object();
-    scene->get(cube).name = "cube";
-    scene->get(cube).editor_object = true;
+    auto sphere = scene->add_object();
+    scene->get(sphere).name = "sphere";
+    scene->get(sphere).editor_object = true;
 
-    scene->add<Renderable>(cube).mesh = assetm->get<Mesh>(file::app_domain / "models/sphere.model");
+    scene->get<Transform>(sphere).rotation = euler_to_quat(Vector3(radians(90.0f), 0, 0));
+    
+    scene->add<Renderable>(sphere).mesh = assetm->get<Mesh>(file::app_domain / "models/sphere.model");
 
     prepThreePointLighting();
     
-    return &scene->get<Renderable>(cube);
+    return &scene->get<Renderable>(sphere);
 }
 
 struct OpenAssetRequest {
