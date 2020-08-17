@@ -254,7 +254,7 @@ void Renderer::render(Scene* scene, int index) {
                 
                 commandbuffer->push_group("render camera");
 
-                render_camera(commandbuffer, *scene, obj, camera, continuity);
+                render_camera(commandbuffer, *scene, obj, camera, get_render_extent(), continuity);
                 
                 commandbuffer->pop_group();
             }
@@ -345,12 +345,10 @@ void Renderer::render(Scene* scene, int index) {
     gfx->submit(commandbuffer, index);
 }
 
-void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Object camera_object, Camera& camera, ControllerContinuity& continuity) {
+void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Object camera_object, Camera& camera, prism::Extent extent, ControllerContinuity& continuity) {
     // frustum test
     const auto frustum = normalize_frustum(camera_extract_frustum(scene, camera_object));
-        
-    const auto extent = get_render_extent();
-    
+            
     SceneInformation sceneInfo = {};
     sceneInfo.lightspace = scene.lightSpace;
     sceneInfo.options = Vector4(1, 0, 0, 0);

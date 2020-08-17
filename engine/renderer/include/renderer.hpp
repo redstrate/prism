@@ -114,7 +114,7 @@ public:
     void render(Scene* scene, int index);
 
     void render_screen(GFXCommandBuffer* commandBuffer, ui::Screen* screen, ControllerContinuity& continuity, RenderScreenOptions options = RenderScreenOptions());
-    void render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Object camera_object, Camera& camera, ControllerContinuity& continuity);
+    void render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Object camera_object, Camera& camera, prism::Extent extent, ControllerContinuity& continuity);
     
     void create_mesh_pipeline(Material& material);
     

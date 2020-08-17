@@ -798,7 +798,7 @@ GFXTexture* CommonEditor::get_material_preview(Material& material) {
     scene.add<Renderable>(sphere).mesh = assetm->get<Mesh>(file::app_domain / "models" / "sphere.model");
     scene.get<Renderable>(sphere).materials.push_back(assetm->get<Material>(file::app_domain / material.path)); // we throw away our material handle here :-(
     
-    return generate_common_preview(scene);
+    return generate_common_preview(scene, Vector3(0, 0, 3));
 }
 
 GFXTexture* CommonEditor::get_mesh_preview(Mesh& mesh) {
@@ -806,9 +806,23 @@ GFXTexture* CommonEditor::get_mesh_preview(Mesh& mesh) {
     
     auto mesh_obj = scene.add_object();
     scene.add<Renderable>(mesh_obj).mesh = assetm->get<Mesh>(file::app_domain / mesh.path);
-    scene.get<Renderable>(mesh_obj).materials.push_back(assetm->get<Material>(file::app_domain / "materials" / "Material.material"));
     
-    return generate_common_preview(scene);
+    float biggest_component = 0.0f;
+    for(const auto& part : scene.get<Renderable>(mesh_obj).mesh->parts) {
+        const auto find_biggest_component = [&biggest_component](const Vector3 vec) {
+            for(auto& component : vec.data) {
+                if(std::fabsf(component) > biggest_component)
+                    biggest_component = component;
+            }
+        };
+        
+        find_biggest_component(part.aabb.min);
+        find_biggest_component(part.aabb.max);
+        
+        scene.get<Renderable>(mesh_obj).materials.push_back(assetm->get<Material>(file::app_domain / "materials" / "Material.material"));
+    }
+    
+    return generate_common_preview(scene, Vector3(biggest_component * 2.0f));
 }
 
 GFXTexture* CommonEditor::get_texture_preview(Texture& texture) {
@@ -868,7 +882,7 @@ GFXTexture* CommonEditor::get_texture_preview(Texture& texture) {
     return final_texture;
 }
 
-GFXTexture* CommonEditor::generate_common_preview(Scene& scene) {
+GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 camera_position) {
     auto gfx = engine->get_gfx();
     
     // setup scene
@@ -878,7 +892,7 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene) {
     auto camera = scene.add_object();
     scene.add<Camera>(camera);
     
-    camera_look_at(scene, camera, Vector3(0, 0, 3), Vector3(0));
+    camera_look_at(scene, camera, camera_position, Vector3(0));
     
     auto light = scene.add_object();
     scene.get<Transform>(light).position = Vector3(5);
@@ -948,7 +962,7 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene) {
     command_buffer->set_render_pass(begin_info);
     
     Renderer::ControllerContinuity continuity;
-    renderer->render_camera(command_buffer, scene, camera, scene.get<Camera>(camera), continuity);
+    renderer->render_camera(command_buffer, scene, camera, scene.get<Camera>(camera), begin_info.render_area.extent, continuity);
     
     // render post
     begin_info.framebuffer = final_framebuffer;

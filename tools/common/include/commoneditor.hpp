@@ -144,7 +144,7 @@ public:
     GFXTexture* get_material_preview(Material& material);
     GFXTexture* get_mesh_preview(Mesh& mesh);
     GFXTexture* get_texture_preview(Texture& texture);
-    GFXTexture* generate_common_preview(Scene& scene);
+    GFXTexture* generate_common_preview(Scene& scene, const Vector3 camera_position);
 
     template<typename T>
     GFXTexture* get_asset_thumbnail(AssetPtr<T>& asset) {
