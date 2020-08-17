@@ -735,14 +735,40 @@ void CommonEditor::set_undo_stack(UndoStack *stack) {
     current_stack = stack;
 }
 
+bool mesh_readable(const file::Path path) {
+    auto file = file::open(path);
+    if(!file.has_value()) {
+        console::error(System::Renderer, "Failed to load mesh from {}!", path);
+        return false;
+    }
+    
+    int version = 0;
+    file->read(&version);
+    
+    return version == 5 || version == 6;
+}
+
+bool material_readable(const file::Path path) {
+    auto file = file::open(path);
+    if(!file.has_value()) {
+        console::error(System::Core, "Failed to load material from {}!", path);
+        return false;
+    }
+    
+    nlohmann::json j;
+    file->read_as_stream() >> j;
+    
+    return j.count("version") && j["version"] == 2;
+}
+
 void cacheAssetFilesystem() {
     asset_files.clear();
     
     auto data_directory = "../../../data";
     for(auto& p : std::filesystem::recursive_directory_iterator(data_directory)) {
-        if(p.path().extension() == ".model") {
+        if(p.path().extension() == ".model" && mesh_readable(p.path())) {
             asset_files[std::filesystem::relative(p, data_directory)] = AssetType::Mesh;
-        } else if(p.path().extension() == ".material") {
+        } else if(p.path().extension() == ".material" && material_readable(p.path())) {
             asset_files[std::filesystem::relative(p, data_directory)] = AssetType::Material;
         } else if(p.path().extension() == ".png") {
             asset_files[std::filesystem::relative(p, data_directory)] = AssetType::Texture;
