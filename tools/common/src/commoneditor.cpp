@@ -825,6 +825,8 @@ GFXTexture* CommonEditor::get_material_preview(Material& material) {
     scene.add<Renderable>(sphere).mesh = assetm->get<Mesh>(file::app_domain / "models" / "sphere.model");
     scene.get<Renderable>(sphere).materials.push_back(assetm->get<Material>(file::app_domain / material.path)); // we throw away our material handle here :-(
     
+    scene.get<Transform>(sphere).rotation = euler_to_quat(Vector3(radians(90.0f), 0, 0));
+
     return generate_common_preview(scene, Vector3(0, 0, 3));
 }
 
