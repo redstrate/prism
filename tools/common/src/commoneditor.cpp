@@ -284,7 +284,7 @@ void CommonEditor::begin_frame() {
         
         ImGui::SetWindowSize(ImVec2(500, 500));
         
-        ImGui::BeginChild("assetbox", ImVec2(-1, -1), true);
+        ImGui::BeginChild("assetbox", ImVec2(-1, 400), true);
         
         int column = 0;
         for(auto& [p, a_type] : asset_files) {
@@ -756,10 +756,15 @@ void CommonEditor::drawAssets() {
     if(!filesystem_cached)
         cacheAssetFilesystem();
     
-    auto window_size = ImGui::GetWindowSize();
+    const float window_width = ImGui::GetWindowWidth();
+    const float item_spacing = ImGui::GetStyle().ItemSpacing.x;
+    const float frame_padding = ImGui::GetStyle().FramePadding.x;
+    const float window_padding = ImGui::GetStyle().WindowPadding.x;
     
-    const int max_columns = (static_cast<int>(window_size.x) % 70) - 2;
+    const float column_width = 64.0f + item_spacing + (frame_padding * 2.0f);
     
+    const int max_columns = std::floor((window_width - window_padding) / column_width);
+        
     int column = 0;
     for(auto& [p, type] : asset_files) {
         ImGui::PushID(&p);
@@ -781,7 +786,7 @@ void CommonEditor::drawAssets() {
         
         column++;
         
-        if(column == max_columns) {
+        if(column >= max_columns) {
             column = 0;
         } else {
             ImGui::SameLine();
