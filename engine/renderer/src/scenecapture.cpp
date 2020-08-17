@@ -47,8 +47,8 @@ const int mipLevels = 5;
 const std::array<Matrix4x4, 6> sceneTransforms = {
     transform::look_at(Vector3(0), Vector3(1.0, 0.0, 0.0), Vector3(0.0, -1.0, 0.0)),
     transform::look_at(Vector3(0), Vector3(-1.0, 0.0, 0.0), Vector3(0.0, -1.0, 0.0)),
-    transform::look_at(Vector3(0), Vector3( 0.0, -1.0, 0.0), Vector3(0.0, 0.0,1.0)),
-    transform::look_at(Vector3(0), Vector3( 0.0, 1.0, 0.0), Vector3(0.0, 0.0,-1.0)),
+    transform::look_at(Vector3(0), Vector3( 0.0, -1.0, 0.0), Vector3(0.0, 0.0,-1.0)),
+    transform::look_at(Vector3(0), Vector3( 0.0, 1.0, 0.0), Vector3(0.0, 0.0,1.0)),
     transform::look_at(Vector3(0), Vector3( 0.0, 0.0, 1.0), Vector3(0.0, -1.0, 0.0)),
     transform::look_at(Vector3(0), Vector3( 0.0, 0.0, -1.0), Vector3(0.0, -1.0, 0.0))
 };
@@ -165,8 +165,8 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 Vector3 front = Vector3(0.0f, 0.0f, 1.0f) * scene->get<Transform>(obj).rotation;
                 
                 sl.directionPower = Vector4(-front, light.power);
-                sl.colorSize = Vector4(light.color, radians(light.size));
-                sl.shadowsEnable = Vector4(light.enable_shadows, 0, 0, 0);
+                sl.colorSize = Vector4(light.color, radians(light.spot_size));
+                sl.shadowsEnable = Vector4(light.enable_shadows, radians(light.size), 0, 0);
                 
                 sceneInfo.lights[sceneInfo.numLights++] = sl;
             }

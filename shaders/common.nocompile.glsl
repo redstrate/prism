@@ -88,10 +88,14 @@ float geometry_slick_direct(const vec3 N, const vec3 V, const float roughness) {
 
 // GGX Smith Geometry, using GGX slick but combining both the view direction and the light direction
 float geometry_smith(const vec3 N, const vec3 V, const vec3 L, float roughness) {
-    float ggx2  = geometry_slick_direct(N, V, roughness);
-    float ggx1  = geometry_slick_direct(N, L, roughness);
-    
-    return ggx1 * ggx2;
+    const float dotNV = max(dot(N, V), 0.0);
+    const float dotNL = max(dot(N, L), 0.0);
+
+	const float k = (roughness * roughness) / 2.0;
+	const float GL = dotNL / (dotNL * (1.0 - k) + k);
+	const float GV = dotNV / (dotNV * (1.0 - k) + k);
+
+	return GL * GV;
 }
 
 // Fresnel Shlick

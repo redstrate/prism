@@ -292,6 +292,18 @@ ShaderSource MaterialCompiler::compile_material_fragment(Material& material, boo
             }\n";
     }
     
+    if(use_ibl) {
+        src += "vec3 ibl(const int probe, const ComputedSurfaceInfo surface_info, const float intensity) {\n \
+            const vec3 R = get_reflect(probe, surface_info.N);\n \
+            const vec2 brdf = texture(brdfSampler, vec2(surface_info.NdotV, surface_info.roughness)).rg; \n \
+            const vec3 sampledIrradiance = texture(irrandianceSampler, vec4(surface_info.N, probe)).xyz;\n \
+            const vec3 prefilteredColor = textureLod(prefilterSampler, vec4(R, probe), surface_info.roughness * 4).xyz;\n \
+            const vec3 diffuse = sampledIrradiance * surface_info.diffuse_color;\n \
+            const vec3 specular = prefilteredColor * (surface_info.F0 * brdf.x + 1.0 * brdf.y);\n \
+            return (diffuse + specular) * intensity;\n \
+        }\n";
+    }
+    
     src += "void main() {\n";
     
     bool has_output = false;
@@ -335,47 +347,33 @@ ShaderSource MaterialCompiler::compile_material_fragment(Material& material, boo
                 light_info = calculate_sun(scene.lights[i]);\n \
                 break;\n \
         }\n \
-    ComputedLightSurfaceInfo light_surface_info = compute_light_surface(light_info.direction, surface_info);\n";
+    SurfaceBRDF surface_brdf = brdf(light_info.direction, surface_info);\n";
     
     if(render_options.enable_normal_mapping && has_normal_mapping && render_options.enable_normal_shadowing) {
         src += std::string("light_info.radiance *= calculate_normal_lighting(") + normal_map_property_name + ", final_normal, light_info.direction);\n";
     }
-    
-    src += "Lo += (light_surface_info.kD * final_diffuse_color.rgb / PI + light_surface_info.specular) * light_surface_info.NdotL * scene.lights[i].colorSize.xyz * light_info.radiance;\n \
+        
+    src += "Lo += ((surface_brdf.specular + surface_brdf.diffuse) * light_info.radiance * surface_brdf.NdotL) * scene.lights[i].colorSize.rgb;\n \
     }\n";
-    
+        
     if(use_ibl) {
         src +=
-        "const vec3 F = fresnel_schlick_roughness(surface_info.NdotV, surface_info.F0, surface_info.roughness); \n \
-        const vec3 kD = (1.0 - F) * (1.0 - surface_info.metallic); \n \
-        vec3 ambient = vec3(0.0); \
+        "vec3 ambient = vec3(0.0); \
         float sum = 0.0;\n \
         for(int i = 0; i < max_probes; i++) { \
             if(scene.probes[i].position.w == 1) {\n \
-                vec3 position = scene.probes[i].position.xyz; \
-                vec3 probe_min = position - (scene.probes[i].size.xyz / 2.0); \
-                vec3 probe_max = position + (scene.probes[i].size.xyz / 2.0); \
-                if(all(greaterThan(in_frag_pos, probe_min)) && all(lessThan(in_frag_pos, probe_max)) && scene.probes[i].position.w == 1) { \
+                const vec3 position = scene.probes[i].position.xyz; \
+                const vec3 probe_min = position - (scene.probes[i].size.xyz / 2.0); \
+                const vec3 probe_max = position + (scene.probes[i].size.xyz / 2.0); \
+                if(all(greaterThan(in_frag_pos, probe_min)) && all(lessThan(in_frag_pos, probe_max))) { \
                     float intensity = 1.0 - length(abs(in_frag_pos - position) / (scene.probes[i].size.xyz / 2.0));\n \
                     intensity = clamp(intensity, 0.0, 1.0) * scene.probes[i].size.w;\n \
-                    const vec3 R = get_reflect(i, surface_info.N);\n \
-                    const vec2 brdf = texture(brdfSampler, vec2(surface_info.NdotV, surface_info.roughness)).rg; \n \
-                    const vec3 sampledIrradiance = texture(irrandianceSampler, vec4(surface_info.N, i)).xyz;\n \
-                    const vec3 prefilteredColor = textureLod(prefilterSampler, vec4(R, i), surface_info.roughness * 4).xyz;\n \
-                    const vec3 diffuse = sampledIrradiance * final_diffuse_color.rgb;\n \
-                    const vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);\n \
-                    ambient += (kD * diffuse + specular) * intensity;\n \
+                    ambient += ibl(i, surface_info, intensity);\n \
                     sum += intensity; \n \
                 } \
             } else if(scene.probes[i].position.w == 2) {\n \
-                const vec3 R = reflect(-surface_info.V, surface_info.N);\n \
-                const vec2 brdf = texture(brdfSampler, vec2(surface_info.NdotV, surface_info.roughness)).rg; \n \
-                const vec3 sampledIrradiance = texture(irrandianceSampler, vec4(surface_info.N, i)).xyz;\n \
-                const vec3 prefilteredColor = textureLod(prefilterSampler, vec4(R, i), surface_info.roughness * 4).xyz;\n \
-                const vec3 diffuse = sampledIrradiance * final_diffuse_color.rgb;\n \
-                const vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);\n \
-                ambient += (kD * diffuse + specular) * scene.probes[i].size.w;\n \
-                sum += 1.0; \n \
+                ambient += ibl(i, surface_info, scene.probes[i].size.w);\n \
+                sum += scene.probes[i].size.w; \n \
             }\n \
         }\n \
         ambient /= sum;\n";

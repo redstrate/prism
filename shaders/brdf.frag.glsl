@@ -21,7 +21,7 @@ vec2 IntegrateBRDF(float NdotV, float roughness) {
         // preferred alignment direction (importance sampling).
         const vec2 Xi = hammersley(i, SAMPLE_COUNT);
         const vec3 H = importance_sample_ggx(Xi, N, roughness);
-        const vec3 L = normalize(2.0 * dot(V, H) * H - V);
+        const vec3 L = 2.0 * dot(V, H) * H - V;
         
         const float NdotL = max(L.z, 0.0);
         const float NdotH = max(H.z, 0.0);

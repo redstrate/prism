@@ -705,6 +705,8 @@ void Renderer::create_mesh_pipeline(Material& material) {
     pipelineInfo.render_pass = scene_capture->renderPass;
     
     pipelineInfo.shaders.fragment_src = material_compiler.compile_material_fragment(material, false); // scene capture does not use IBL
+    
+    pipelineInfo.rasterization.culling_mode = GFXCullingMode::Frontface;
 
     material.capture_pipeline = material_compiler.create_static_pipeline(pipelineInfo, false, true);
 }

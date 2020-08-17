@@ -1,7 +1,7 @@
 struct ComputedSurfaceInfo {
     vec3 N;
     vec3 V;
-    vec3 F0;
+    vec3 F0, diffuse_color;
     
     float NdotV;
     
@@ -16,46 +16,43 @@ ComputedSurfaceInfo compute_surface(const vec3 diffuse, const vec3 normal, const
     info.NdotV = max(dot(info.N, info.V), 0.0);
     
     info.metallic = metallic;
-    info.roughness = max(0.0001, roughness * roughness);
+    info.roughness = max(0.0001, roughness);
     
-    info.F0 = mix(vec3(0.04), diffuse, info.metallic);
+    info.F0 = 0.16 * (1.0 - info.metallic) + diffuse * info.metallic;
+    info.diffuse_color = (1.0 - info.metallic) * diffuse;
 
     return info;
 }
 
-struct ComputedLightSurfaceInfo {
-    vec3 kD;
-    vec3 specular;
+struct SurfaceBRDF {
+    vec3 diffuse, specular;
     float NdotL;
 };
 
-ComputedLightSurfaceInfo compute_light_surface(const vec3 L, const ComputedSurfaceInfo surface_info) {
-    ComputedLightSurfaceInfo info;
+SurfaceBRDF brdf(const vec3 L, const ComputedSurfaceInfo surface_info) {
+    SurfaceBRDF info;
     
     // half-vector
     const vec3 H = normalize(surface_info.V + L);
     const float HdotV = clamp(dot(H, surface_info.V), 0.0, 1.0);
 
-    const vec3 F = fresnel_schlick(HdotV, surface_info.F0);
-    
-    info.kD = (vec3(1.0) - F) * (1.0 - surface_info.metallic);
-    
+    // fresnel reflectance function
+    const vec3 F = fresnel_schlick(surface_info.NdotV, surface_info.F0);    
+
+    // geometry function
     const float D = ggx_distribution(surface_info.N, H, surface_info.roughness);
+
+    // normal distribution function
     const float G = geometry_smith(surface_info.N, surface_info.V, L, surface_info.roughness);
-        
-    /*
-     F = fresnel reflectance function
-     G = geometry function
-     D = NDF (normal distribution function)
-     */
+
     const vec3 numerator = F * G * D;
-    
-    /*
-     Correction factor
-     */
     const float denominator = 4.0 * surface_info.NdotV * clamp(dot(surface_info.N, L), 0.0, 1.0);
     
+    // cook-torrance specular brdf
     info.specular = numerator / (denominator + 0.001);
+
+    // lambertian diffuse
+    info.diffuse = surface_info.diffuse_color * (1.0 / PI);
     
     info.NdotL = clamp(dot(surface_info.N, L), 0.0, 1.0);
     
