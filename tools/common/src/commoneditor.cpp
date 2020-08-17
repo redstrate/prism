@@ -60,26 +60,7 @@ CommonEditor::CommonEditor(std::string id) : id(id) {
     
     ImGui::LoadIniSettingsFromDisk(io.IniFilename);
     
-    // load options file
-    std::ifstream i(file::get_writeable_directory() / (id + "options.json"));
-    if (i.is_open()) {
-        nlohmann::json j;
-        i >> j;
-        
-        defaultX = j["x"];
-        defaultY = j["y"];
-        defaultWidth = j["width"];
-        defaultHeight = j["height"];
-        
-        for (auto& file : j["files"])
-            lastOpenedFiles.push_back(file.get<std::string>());
-    }
-    else {
-        defaultX = 0;
-        defaultY = 0;
-        defaultWidth = 1280;
-        defaultHeight = 720;
-    }
+    load_options();
     
     Input* input = engine->get_input();
     input->add_binding("movementX");
@@ -107,32 +88,7 @@ CommonEditor::CommonEditor(std::string id) : id(id) {
 void CommonEditor::initialize_render() {
     engine->get_renderer()->gui_only_mode = true;
     
-    // load thumbnail cache, if it exists
-    auto thumbnail_cache = file::open("./thumbnail-cache");
-    if(thumbnail_cache != std::nullopt) {
-        int size;
-        thumbnail_cache->read(&size);
-        
-        for(int i = 0; i < size; i++) {
-            std::string filename;
-            thumbnail_cache->read_string(filename);
-            
-            std::vector<uint8_t> image(thumbnail_resolution * thumbnail_resolution * 4);
-            thumbnail_cache->read(image.data(), thumbnail_resolution * thumbnail_resolution * 4);
-            
-            GFXTextureCreateInfo info;
-            info.width = thumbnail_resolution;
-            info.height = thumbnail_resolution;
-            info.format = GFXPixelFormat::RGBA8_UNORM;
-            info.usage = GFXTextureUsage::Sampled;
-            
-            GFXTexture* texture = engine->get_gfx()->create_texture(info);
-            
-            engine->get_gfx()->copy_texture(texture, image.data(), image.size());
-                        
-            asset_thumbnails[filename] = texture;
-        }
-    }
+    load_thumbnail_cache();
 }
 
 static float yaw = 0.0f;
@@ -297,47 +253,11 @@ void CommonEditor::update(float deltaTime) {
 }
 
 void CommonEditor::prepare_quit() {
-    const auto& [x, y] = platform::get_window_position(0);
-    const auto& [width, height] = platform::get_window_size(0);
-    
-    nlohmann::json j;
-    j["x"] = x;
-    j["y"] = y;
-    j["width"] = width;
-    j["height"] = height;
-    j["files"] = lastOpenedFiles;
-    
-    std::ofstream out(file::get_writeable_directory() / (id + "options.json"));
-    out << j;
+    save_options();
     
     ImGui::SaveIniSettingsToDisk(iniFileName.c_str());
     
-    // save thumbnails
-    GFXBuffer* thumbnailBuffer = engine->get_gfx()->create_buffer(nullptr, thumbnail_resolution * thumbnail_resolution * 4, false, GFXBufferUsage::Storage);
-    
-    FILE* file = fopen("thumbnail-cache", "wb");
-    
-    int size = asset_thumbnails.size();
-    fwrite(&size, sizeof(int), 1, file);
-    
-    for(auto [p, thumbnail] : asset_thumbnails) {
-        unsigned int len = strlen(p.c_str());
-        fwrite(&len, sizeof(unsigned int), 1, file);
-        
-        const char* str = p.c_str();
-        fwrite(str, sizeof(char) * len, 1, file);
-        
-        // dump image to memory
-        engine->get_gfx()->copy_texture(thumbnail, thumbnailBuffer);
-
-        uint8_t* map = reinterpret_cast<uint8_t*>(engine->get_gfx()->get_buffer_contents(thumbnailBuffer));
-        
-        fwrite(map, thumbnail_resolution * thumbnail_resolution * 4, 1, file);
-        
-        engine->get_gfx()->release_buffer_contents(thumbnailBuffer, map);
-    }
-    
-    fclose(file);
+    save_thumbnail_cache();
 }
 
 bool CommonEditor::should_quit() {
@@ -1052,4 +972,97 @@ void CommonEditor::drawConsole() {
         ImGui::TextWrapped("%s", message.c_str());
     
     ImGui::EndChild();
+}
+
+void CommonEditor::load_options() {
+    std::ifstream i(file::get_writeable_directory() / (id + "options.json"));
+    if (i.is_open()) {
+        nlohmann::json j;
+        i >> j;
+        
+        defaultX = j["x"];
+        defaultY = j["y"];
+        defaultWidth = j["width"];
+        defaultHeight = j["height"];
+        
+        for (auto& file : j["files"])
+            lastOpenedFiles.push_back(file.get<std::string>());
+    }
+    else {
+        defaultX = 0;
+        defaultY = 0;
+        defaultWidth = 1280;
+        defaultHeight = 720;
+    }
+}
+
+void CommonEditor::save_options() {
+    const auto& [x, y] = platform::get_window_position(0);
+    const auto& [width, height] = platform::get_window_size(0);
+    
+    nlohmann::json j;
+    j["x"] = x;
+    j["y"] = y;
+    j["width"] = width;
+    j["height"] = height;
+    j["files"] = lastOpenedFiles;
+    
+    std::ofstream out(file::get_writeable_directory() / (id + "options.json"));
+    out << j;
+}
+
+void CommonEditor::load_thumbnail_cache() {
+    auto thumbnail_cache = file::open("./thumbnail-cache");
+    if(thumbnail_cache != std::nullopt) {
+        int size;
+        thumbnail_cache->read(&size);
+        
+        for(int i = 0; i < size; i++) {
+            std::string filename;
+            thumbnail_cache->read_string(filename);
+            
+            std::vector<uint8_t> image(thumbnail_resolution * thumbnail_resolution * 4);
+            thumbnail_cache->read(image.data(), thumbnail_resolution * thumbnail_resolution * 4);
+            
+            GFXTextureCreateInfo info;
+            info.width = thumbnail_resolution;
+            info.height = thumbnail_resolution;
+            info.format = GFXPixelFormat::RGBA8_UNORM;
+            info.usage = GFXTextureUsage::Sampled;
+            
+            GFXTexture* texture = engine->get_gfx()->create_texture(info);
+            
+            engine->get_gfx()->copy_texture(texture, image.data(), image.size());
+            
+            asset_thumbnails[filename] = texture;
+        }
+    }
+}
+
+void CommonEditor::save_thumbnail_cache() {
+    GFXBuffer* thumbnailBuffer = engine->get_gfx()->create_buffer(nullptr, thumbnail_resolution * thumbnail_resolution * 4, false, GFXBufferUsage::Storage);
+    
+    FILE* file = fopen("thumbnail-cache", "wb");
+    
+    int size = asset_thumbnails.size();
+    fwrite(&size, sizeof(int), 1, file);
+    
+    for(auto [p, thumbnail] : asset_thumbnails) {
+        unsigned int len = strlen(p.c_str());
+        fwrite(&len, sizeof(unsigned int), 1, file);
+        
+        const char* str = p.c_str();
+        fwrite(str, sizeof(char) * len, 1, file);
+        
+        // dump image to memory
+        engine->get_gfx()->copy_texture(thumbnail, thumbnailBuffer);
+        
+        uint8_t* map = reinterpret_cast<uint8_t*>(engine->get_gfx()->get_buffer_contents(thumbnailBuffer));
+        
+        fwrite(map, thumbnail_resolution * thumbnail_resolution * 4, 1, file);
+        
+        engine->get_gfx()->release_buffer_contents(thumbnailBuffer, map);
+    }
+    
+    fclose(file);
 }

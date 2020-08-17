@@ -291,6 +291,12 @@ public:
     int viewport_width = 1, viewport_height = 1;
     
 private:
+    void load_options();
+    void save_options();
+    
+    void load_thumbnail_cache();
+    void save_thumbnail_cache();
+    
 	std::string id;
     std::string iniFileName;
     
