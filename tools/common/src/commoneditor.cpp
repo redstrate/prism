@@ -765,6 +765,18 @@ void CommonEditor::drawAssets() {
         if(ImGui::ImageButton(get_asset_thumbnail(file::app_domain / p), ImVec2(64, 64)))
             asset_selected(p, type);
         
+        if(ImGui::BeginPopupContextItem()) {
+            ImGui::TextDisabled("%s", p.string().c_str());
+                        
+            ImGui::Separator();
+            
+            if(ImGui::Button("Regenerate thumbnail")) {
+                asset_thumbnails.erase(asset_thumbnails.find(file::app_domain / p));
+            }
+            
+            ImGui::EndPopup();
+        }
+        
         column++;
         
         if(column == max_columns) {
@@ -779,7 +791,7 @@ GFXTexture* CommonEditor::get_material_preview(Material& material) {
     Scene scene;
     
     auto sphere = scene.add_object();
-    scene.add<Renderable>(sphere).mesh = assetm->get<Mesh>(file::app_domain / "models/sphere.model");
+    scene.add<Renderable>(sphere).mesh = assetm->get<Mesh>(file::app_domain / "models" / "sphere.model");
     scene.get<Renderable>(sphere).materials.push_back(assetm->get<Material>(file::app_domain / material.path)); // we throw away our material handle here :-(
     
     return generate_common_preview(scene);
@@ -790,14 +802,14 @@ GFXTexture* CommonEditor::get_mesh_preview(Mesh& mesh) {
     
     auto mesh_obj = scene.add_object();
     scene.add<Renderable>(mesh_obj).mesh = assetm->get<Mesh>(file::app_domain / mesh.path);
-    scene.get<Renderable>(mesh_obj).materials.push_back(assetm->get<Material>(file::app_domain / "materials/Material.material"));
+    scene.get<Renderable>(mesh_obj).materials.push_back(assetm->get<Material>(file::app_domain / "materials" / "Material.material"));
     
     return generate_common_preview(scene);
 }
 
 GFXTexture* CommonEditor::get_texture_preview(Texture& texture) {
     auto gfx = engine->get_gfx();
-
+    
     GFXTextureCreateInfo texture_create_info = {};
     texture_create_info.width = thumbnail_resolution;
     texture_create_info.height = thumbnail_resolution;
@@ -823,6 +835,12 @@ GFXTexture* CommonEditor::get_texture_preview(Texture& texture) {
     
     command_buffer->set_render_pass(begin_info);
     
+    Viewport viewport = {};
+    viewport.width = thumbnail_resolution;
+    viewport.height = thumbnail_resolution;
+    
+    command_buffer->set_viewport(viewport);
+    
     command_buffer->set_pipeline(renderer->renderToUnormTexturePipeline);
     
     command_buffer->bind_texture(texture.handle, 1);
@@ -832,13 +850,9 @@ GFXTexture* CommonEditor::get_texture_preview(Texture& texture) {
     
     struct PostPushConstants {
         Vector4 viewport;
-        float fade;
-        unsigned int performGammaCorrection;
-        unsigned int performAA;
+        Vector4 options;
     } pc;
-    pc.fade = 0.0;
-    pc.performGammaCorrection = false;
-    pc.performAA = false;
+    pc.options.w = 1.0;
     pc.viewport = Vector4(1.0 / (float)thumbnail_resolution, 1.0 / (float)thumbnail_resolution, thumbnail_resolution, thumbnail_resolution);
     
     command_buffer->set_push_constant(&pc, sizeof(PostPushConstants));

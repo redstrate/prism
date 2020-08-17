@@ -43,6 +43,12 @@ float calculate_sobel() {
 }
 
 void main() {
+    // passthrough
+    if(options.w == 1) {
+        outColor = texture(colorSampler, inUV);
+        return;
+    }
+    
     vec3 sceneColor = vec3(0);
     if(options.x == 1) // enable AA
         sceneColor = SMAANeighborhoodBlendingPS(inUV, inOffset, colorSampler, blendSampler).rgb;
