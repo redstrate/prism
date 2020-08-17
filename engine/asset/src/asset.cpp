@@ -241,6 +241,7 @@ std::unique_ptr<Texture> load_texture(const file::Path path) {
     if(createInfo.mip_count > 1) {
         GFXCommandBuffer* cmd_buf = engine->get_gfx()->acquire_command_buffer();
         
+        
         cmd_buf->generate_mipmaps(texture->handle, createInfo.mip_count);
         
         engine->get_gfx()->submit(cmd_buf);

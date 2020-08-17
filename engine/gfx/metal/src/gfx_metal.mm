@@ -622,19 +622,22 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
 }
 
 GFXCommandBuffer* GFXMetal::acquire_command_buffer() {
-    for(const auto [i, buffer_status] : utility::enumerate(free_command_buffers)) {
-        if(buffer_status) {
-            GFXCommandBuffer* buffer = command_buffers[i];
-            
-            free_command_buffers[i] = false;
-            
-            buffer->commands.clear();
-            
-            return buffer;
+    GFXCommandBuffer* cmdbuf = nullptr;
+    while(cmdbuf == nullptr) {
+        for(const auto [i, buffer_status] : utility::enumerate(free_command_buffers)) {
+            if(buffer_status) {
+                GFXCommandBuffer* buffer = command_buffers[i];
+                
+                free_command_buffers[i] = false;
+                
+                buffer->commands.clear();
+                
+                return buffer;
+            }
         }
     }
-    
-    return nullptr;
+
+    return cmdbuf;
 }
 
 void GFXMetal::submit(GFXCommandBuffer* command_buffer, const int window) {
@@ -981,11 +984,13 @@ void GFXMetal::submit(GFXCommandBuffer* command_buffer, const int window) {
         
         if(blitEncoder != nil)
             [blitEncoder endEncoding];
-
-        for(auto [i, buffer] : utility::enumerate(command_buffers)) {
-            if(buffer == command_buffer)
-                free_command_buffers[i] = true;
-        }
+        
+        [commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> _Nonnull) {
+            for(auto [i, buffer] : utility::enumerate(command_buffers)) {
+                if(buffer == command_buffer)
+                    free_command_buffers[i] = true;
+            }
+        }];
         
         if(window != -1) {
             [commandBuffer presentDrawable:drawable];
