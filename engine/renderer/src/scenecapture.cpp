@@ -53,6 +53,16 @@ const std::array<Matrix4x4, 6> sceneTransforms = {
     transform::look_at(Vector3(0), Vector3( 0.0, 0.0, -1.0), Vector3(0.0, -1.0, 0.0))
 };
 
+// for some reason, our sky shader does not like the up/down transforms, so we reverse them here...
+const std::array<Matrix4x4, 6> skyTransforms = {
+    transform::look_at(Vector3(0), Vector3(1.0, 0.0, 0.0), Vector3(0.0, -1.0, 0.0)),
+    transform::look_at(Vector3(0), Vector3(-1.0, 0.0, 0.0), Vector3(0.0, -1.0, 0.0)),
+    transform::look_at(Vector3(0), Vector3( 0.0, 1.0, 0.0), Vector3(0.0, 0.0, 1.0)),
+    transform::look_at(Vector3(0), Vector3( 0.0, -1.0, 0.0), Vector3(0.0, 0.0, -1.0)),
+    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, 1.0), Vector3(0.0, -1.0, 0.0)),
+    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, -1.0), Vector3(0.0, -1.0, 0.0))
+};
+
 inline AssetPtr<Mesh> cubeMesh;
 
 SceneCapture::SceneCapture(GFX* gfx) {
@@ -283,7 +293,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                     float aspect;
                 } pc;
                 
-                pc.view = sceneTransforms[face];
+                pc.view = skyTransforms[face];
                 pc.view[3] = Vector4(0, 0, 0, 1); // zero out translation
                 pc.aspect = 1.0f;
                 
