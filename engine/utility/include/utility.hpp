@@ -22,7 +22,7 @@ namespace utility {
     }
 
     template<class T, class V>
-    void erase(std::vector<T>& vec, const V& t) {
+    void erase(T& vec, const V& t) {
         vec.erase(std::remove(vec.begin(), vec.end(), t), vec.end());
     }
 

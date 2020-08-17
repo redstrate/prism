@@ -14,9 +14,10 @@ void console::process_message(const Level level, const System system, const std:
     date.resize(30);
     
     std::strftime(&date[0], date.size(), "%Y-%m-%d %H:%M:%S", std::localtime(&t_c));
+    utility::erase(date, '\0'); // strftime will insert \0 for us, but it's not needed here
 
     std::string s = utility::format("{} {} {}: {}", date, utility::enum_to_string(system), utility::enum_to_string(level), message);
-    
+
     std::cout << s << '\n';
     
     stored_output.push_back(s);

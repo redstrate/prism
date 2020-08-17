@@ -1029,7 +1029,7 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
 void CommonEditor::drawConsole() {
     ImGui::BeginChild("console_output", ImVec2(-1, -1), true);
     
-    for(auto message : console::stored_output)
+    for(const auto& message : console::stored_output)
         ImGui::TextWrapped("%s", message.c_str());
     
     ImGui::EndChild();
