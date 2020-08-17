@@ -83,7 +83,7 @@ void MaterialEditor::draw(CommonEditor* editor) {
                         save_material(*material, path);
                     });
                 } else {
-                    //save_material(*material, file::get_file_path(FileDomain::GameData, path));
+                    save_material(*material, file::get_file_path(path));
                 }
             }
             

@@ -341,7 +341,7 @@ std::unique_ptr<Material> load_material(const file::Path path) {
     return mat;
 }
 
-void save_material(Material* material, const std::string_view path) {
+void save_material(Material* material, const file::Path path) {
     Expects(material != nullptr);
     Expects(!path.empty());
     
@@ -383,6 +383,6 @@ void save_material(Material* material, const std::string_view path) {
         j["nodes"].push_back(n);
     }
 
-    std::ofstream out(path.data());
+    std::ofstream out(path);
     out << j;
 }

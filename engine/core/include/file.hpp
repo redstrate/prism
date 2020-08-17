@@ -129,6 +129,7 @@ namespace file {
     std::optional<File> open(const Path path, const bool binary_mode = false);
     
     Path root_path(const Path path);
+    Path get_file_path(const Path path);
     
     inline Path internal_domain = "/internal", app_domain = "/app";
 }

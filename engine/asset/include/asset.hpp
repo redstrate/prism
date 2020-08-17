@@ -130,7 +130,7 @@ std::unique_ptr<Mesh> load_mesh(const file::Path path);
 std::unique_ptr<Material> load_material(const file::Path path);
 std::unique_ptr<Texture> load_texture(const file::Path path);
 
-void save_material(Material* material, const std::string_view path);
+void save_material(Material* material, const file::Path path);
 
 template<typename T>
 std::unique_ptr<T> load_asset(const file::Path path) {
