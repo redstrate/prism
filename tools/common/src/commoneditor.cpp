@@ -762,8 +762,10 @@ void CommonEditor::drawAssets() {
     
     int column = 0;
     for(auto& [p, type] : asset_files) {
+        ImGui::PushID(&p);
+        
         if(ImGui::ImageButton(get_asset_thumbnail(file::app_domain / p), ImVec2(64, 64)))
-            asset_selected(p, type);
+            asset_selected(file::app_domain / p, type);
         
         if(ImGui::BeginPopupContextItem()) {
             ImGui::TextDisabled("%s", p.string().c_str());
@@ -784,6 +786,8 @@ void CommonEditor::drawAssets() {
         } else {
             ImGui::SameLine();
         }
+        
+        ImGui::PopID();
     }
 }
 
@@ -881,7 +885,7 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene) {
     scene.add<Light>(light).type = Light::Type::Sun;
     
     auto probe = scene.add_object();
-    scene.add<EnvironmentProbe>(probe);
+    scene.add<EnvironmentProbe>(probe).is_sized = false;
     scene.get<Transform>(probe).position = Vector3(3);
     
     engine->update_scene(scene);
@@ -952,6 +956,12 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene) {
     
     command_buffer->set_render_pass(begin_info);
     
+    Viewport viewport = {};
+    viewport.width = thumbnail_resolution;
+    viewport.height = thumbnail_resolution;
+    
+    command_buffer->set_viewport(viewport);
+    
     command_buffer->set_pipeline(renderer->renderToUnormTexturePipeline);
     
     command_buffer->bind_texture(offscreen_color_texture, 1);
@@ -961,13 +971,9 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene) {
     
     struct PostPushConstants {
         Vector4 viewport;
-        float fade;
-        unsigned int performGammaCorrection;
-        unsigned int performAA;
+        Vector4 options;
     } pc;
-    pc.fade = 0.0;
-    pc.performGammaCorrection = true;
-    pc.performAA = false;
+    pc.options.w = 1.0;
     pc.viewport = Vector4(1.0 / (float)thumbnail_resolution, 1.0 / (float)thumbnail_resolution, thumbnail_resolution, thumbnail_resolution);
     
     command_buffer->set_push_constant(&pc, sizeof(PostPushConstants));

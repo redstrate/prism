@@ -70,6 +70,9 @@ void recompile(Material* material) {
 }
 
 void MaterialEditor::draw(CommonEditor* editor) {
+    if(!material)
+        return;
+    
     if (ImGui::BeginMenuBar()) {
         if (ImGui::BeginMenu("File")) {
             if(ImGui::MenuItem("Save", "CTRL+S")) {
