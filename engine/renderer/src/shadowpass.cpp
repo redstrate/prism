@@ -139,10 +139,8 @@ void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, c
             command_buffer->set_depth_bias(1.25f, 0.00f, 1.75f);
 
             for (auto& part : mesh.mesh->parts) {
-                if(render_options.enable_frustum_culling && !test_aabb_frustum(frustum, get_aabb_for_part(scene.get<Transform>(obj), part))) {
-                    console::debug(System::Renderer, "Shadow Culled {}!", scene.get(obj).name);
+                if(render_options.enable_frustum_culling && !test_aabb_frustum(frustum, get_aabb_for_part(scene.get<Transform>(obj), part)))
                     continue;
-                }
                 
                 command_buffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset);
             }
@@ -165,10 +163,8 @@ void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, c
             command_buffer->set_depth_bias(1.25f, 0.00f, 1.75f);
 
             for (auto& part : mesh.mesh->parts) {
-                if(render_options.enable_frustum_culling && !test_aabb_frustum(frustum, get_aabb_for_part(scene.get<Transform>(obj), part))) {
-                    console::debug(System::Renderer, "Shadow Culled {}!", scene.get(obj).name);
+                if(render_options.enable_frustum_culling && !test_aabb_frustum(frustum, get_aabb_for_part(scene.get<Transform>(obj), part)))
                     continue;
-                }
                 
                 command_buffer->bind_shader_buffer(part.bone_batrix_buffer, 0, 1, sizeof(Matrix4x4) * 128);
                 command_buffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset);

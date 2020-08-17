@@ -255,10 +255,8 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                                 if(mesh.materials[material_index].handle == nullptr || mesh.materials[material_index]->static_pipeline == nullptr)
                                     continue;
                                 
-                                if(render_options.enable_frustum_culling && !test_aabb_frustum(frustum, get_aabb_for_part(scene->get<Transform>(obj), part))) {
-                                    console::debug(System::Renderer, "Scene Culled {}!", scene->get(obj).name);
+                                if(render_options.enable_frustum_culling && !test_aabb_frustum(frustum, get_aabb_for_part(scene->get<Transform>(obj), part)))
                                     continue;
-                                }
                                 
                                 command_buffer->set_pipeline( mesh.materials[material_index]->capture_pipeline);
              

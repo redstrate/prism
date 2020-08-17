@@ -162,8 +162,6 @@ void CommonEditor::update(float deltaTime) {
                     }
                     
                     if(object.type == SelectableObject::Type::Handle) {
-                        console::debug(System::Game, "Selected axis {}!", utility::enum_to_string(object.axis));
-                        
                         transforming_axis = true;
                         axis = object.axis;
                         previous_intersect = 0.0;
@@ -229,9 +227,7 @@ void CommonEditor::update(float deltaTime) {
                     previous_intersect = current_intersect;
                 
                 const float delta = current_intersect - previous_intersect;
-                
-                console::debug(System::Game, "{} {}", std::to_string(current_intersect), std::to_string(previous_intersect));
-                
+                                
                 previous_intersect = current_intersect;
                 
                 switch(axis) {

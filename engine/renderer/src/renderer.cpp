@@ -442,10 +442,8 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
             if(mesh.materials[material_index].handle == nullptr || mesh.materials[material_index]->static_pipeline == nullptr)
                 continue;
             
-            if(render_options.enable_frustum_culling && !test_aabb_frustum(frustum, get_aabb_for_part(scene.get<Transform>(obj), part))) {
-                console::debug(System::Renderer, "Culled {}!", scene.get(obj).name);
+            if(render_options.enable_frustum_culling && !test_aabb_frustum(frustum, get_aabb_for_part(scene.get<Transform>(obj), part)))
                 continue;
-            }
             
             command_buffer->set_pipeline(mesh.mesh->bones.empty() ? mesh.materials[material_index]->static_pipeline : mesh.materials[material_index]->skinned_pipeline);
             
