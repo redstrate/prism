@@ -165,12 +165,6 @@ public:
     std::unique_ptr<ShadowPass> shadow_pass;
     std::unique_ptr<SceneCapture> scene_capture;
 
-    /*
-     This is applied to most framebuffer pass projection-view matrices.
-     For example, under Metal the y is flipped because the framebuffer sample coordinates are flipped.
-     */
-    Matrix4x4 correction_matrix;
-    
     GFXTexture* dummyTexture = nullptr;
     GFXRenderPass* unormRenderPass = nullptr;
     GFXPipeline* renderToUnormTexturePipeline = nullptr;

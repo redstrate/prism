@@ -14,7 +14,7 @@ vec3 sky_ray(const vec2 uv) {
     const float d = 0.5 / tan(sun_position_fov.w / 2.0);
     return normalize(vec3((uv.x - 0.5) * aspect,
                            uv.y - 0.5,
-                           -d));
+                           d));
 }
 
 void main() {

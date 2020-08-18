@@ -110,7 +110,7 @@ float pcss_sun(const vec4 shadowCoords, float light_size_uv) {
     if(num_blockers < 1)
         return 1.0;
     
-    const float penumbraWidth = penumbra_size(shadowCoords.z, average_blocker_depth);
+    const float penumbraWidth = penumbra_size(-shadowCoords.z, average_blocker_depth);
     
     const float uvRadius = penumbraWidth * light_size_uv * 0.1 / shadowCoords.z;
     return pcf_sun(shadowCoords, uvRadius);
@@ -163,7 +163,7 @@ void blocker_distance_spot(const vec3 shadowCoords, const int index, const float
     for(int i = 0; i < numBlockerSearchSamples; i++) {
         const float z = texture(sampler2DArray(spot_shadow, shadow_sampler),
                                 vec3(shadowCoords.xy + PoissonOffsets[i] * searchWidth, index)).r;
-        if(z > shadowCoords.z) {
+        if(z < shadowCoords.z) {
             blockerSum += z;
             blockers++;
         }
@@ -179,7 +179,7 @@ float pcss_spot(const vec4 shadowCoords, const int index, float light_size_uv) {
     if(num_blockers < 1)
         return 1.0;
     
-    const float penumbraWidth = penumbra_size(shadowCoords.z, average_blocker_depth);
+    const float penumbraWidth = penumbra_size(-shadowCoords.z, average_blocker_depth);
     
     const float uvRadius = penumbraWidth * light_size_uv * 0.1 / shadowCoords.z;
     return pcf_spot(shadowCoords, index, uvRadius);
@@ -196,18 +196,16 @@ ComputedLightInformation calculate_spot(Light light) {
     float shadow = 1.0;
     if(light.shadowsEnable.x == 1.0) {
         const vec4 shadowCoord = fragPostSpotLightSpace[last_spot_light] / fragPostSpotLightSpace[last_spot_light].w;
-        
-        if(shadowCoord.z > -1.0 && shadowCoord.z < 1.0) {
+
 #ifdef SHADOW_FILTER_NONE
             shadow = (texture(sampler2DArray(spot_shadow, shadow_sampler), vec3(shadowCoord.xy, last_spot_light)).r < shadowCoord.z) ? 0.0 : 1.0;
 #endif
 #ifdef SHADOW_FILTER_PCF
-            shadow = pcf_spot(shadowCoord, last_spot_light, 0.1);
+            shadow = pcf_spot(shadowCoord, last_spot_light, 0.01);
 #endif
 #ifdef SHADOW_FILTER_PCSS
             shadow = pcss_spot(shadowCoord, last_spot_light, light.shadowsEnable.y);
 #endif
-        }
         
         last_spot_light++;
     }
@@ -215,7 +213,7 @@ ComputedLightInformation calculate_spot(Light light) {
     const float inner_cutoff = light.colorSize.w + radians(5);
     const float outer_cutoff = light.colorSize.w;
     
-    const float theta = dot(light_info.direction, normalize(-light.directionPower.xyz));
+    const float theta = dot(light_info.direction, normalize(light.directionPower.xyz));
     const float epsilon = inner_cutoff - outer_cutoff;
     const float intensity = clamp((theta - outer_cutoff) / epsilon, 0.0, 1.0);
     
@@ -263,7 +261,7 @@ float pcss_point(const vec3 shadowCoords, const int index, float light_size_uv) 
         return 1.0;
     
     const float depth = length(shadowCoords);
-    const float penumbraWidth = penumbra_size(depth, average_blocker_depth);
+    const float penumbraWidth = penumbra_size(-depth, average_blocker_depth);
     
     const float uvRadius = penumbraWidth * light_size_uv;
     return pcf_point(shadowCoords, index, uvRadius);

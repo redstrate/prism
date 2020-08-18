@@ -159,7 +159,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
             
             const Vector3 lightPos = scene->get<Transform>(obj).get_world_position();
             
-            const Matrix4x4 projection = transform::perspective(radians(90.0f), 1.0f, 0.1f);
+            const Matrix4x4 projection = transform::infinite_perspective(radians(90.0f), 1.0f, 0.1f);
             const Matrix4x4 model = transform::translate(Matrix4x4(), Vector3(-lightPos.x, -lightPos.y, -lightPos.z));
             
             SceneInformation sceneInfo = {};
@@ -294,7 +294,6 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 } pc;
                 
                 pc.view = skyTransforms[face];
-                pc.view[3] = Vector4(0, 0, 0, 1); // zero out translation
                 pc.aspect = 1.0f;
                 
                 for(auto& [obj, light] : scene->get_all<Light>()) {

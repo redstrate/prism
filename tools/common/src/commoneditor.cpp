@@ -131,8 +131,8 @@ void CommonEditor::update(float deltaTime) {
         platform::capture_mouse(willCaptureMouse);
         
         if(willCaptureMouse) {
-            yaw += engine->get_input()->get_value("lookX") * -50.0f * deltaTime;
-            pitch += engine->get_input()->get_value("lookY") * -50.0f * deltaTime;
+            yaw += engine->get_input()->get_value("lookX") * 50.0f * deltaTime;
+            pitch += engine->get_input()->get_value("lookY") * 50.0f * deltaTime;
             
             const float speed = 7.00f;
             
@@ -146,7 +146,7 @@ void CommonEditor::update(float deltaTime) {
             auto [obj, cam] = engine->get_scene()->get_all<Camera>()[0];
             
             engine->get_scene()->get<Transform>(obj).position += right * movX * speed * deltaTime;
-            engine->get_scene()->get<Transform>(obj).position += forward * movY * speed * deltaTime;
+            engine->get_scene()->get<Transform>(obj).position += forward * -movY * speed * deltaTime;
             
             engine->get_scene()->get<Transform>(obj).rotation = angle_axis(yaw, Vector3(0, 1, 0)) * angle_axis(pitch, Vector3(1, 0, 0));
         }
@@ -933,7 +933,7 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
     
     engine->update_scene(scene);
     
-    scene.get<Camera>(camera).perspective = transform::perspective(radians(45.0f), 1.0f, 0.1f);
+    scene.get<Camera>(camera).perspective = transform::infinite_perspective(radians(45.0f), 1.0f, 0.1f);
     scene.get<Camera>(camera).view = inverse(scene.get<Transform>(camera).model);
     
     auto renderer = engine->get_renderer();

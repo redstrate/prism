@@ -236,7 +236,7 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
         Vector4 color;
     };
     
-    Matrix4x4 vp = camera.perspective * engine->get_renderer()->correction_matrix * camera.view;
+    Matrix4x4 vp = camera.perspective * camera.view;
 
 	commandBuffer->set_pipeline(primitive_pipeline);
 
@@ -519,7 +519,7 @@ void DebugPass::get_selected_object(int x, int y, std::function<void(SelectableO
             Vector4 color;
         } pc;
 
-        pc.mvp = camera.perspective * engine->get_renderer()->correction_matrix * camera.view * model;
+        pc.mvp = camera.perspective * camera.view * model;
         
         if(object.render_type == SelectableObject::RenderType::Sphere)
             pc.mvp = transform::scale(pc.mvp, Vector3(object.sphere_size));
@@ -541,17 +541,17 @@ void DebugPass::get_selected_object(int x, int y, std::function<void(SelectableO
     
     engine->get_gfx()->copy_texture(selectTexture, selectBuffer);
 
-    uint8_t* map = reinterpret_cast<uint8_t*>(engine->get_gfx()->get_buffer_contents(selectBuffer));
+    uint8_t* mapped_texture = reinterpret_cast<uint8_t*>(engine->get_gfx()->get_buffer_contents(selectBuffer));
     
-    int buf_pos = 4 * ((extent.height - y) * extent.width + x); // flipped for metal
+    const int buffer_position = 4 * (y * extent.width + x);
 
-    uint8_t a = map[buf_pos + 3];
+    uint8_t a = mapped_texture[buffer_position + 3];
 
-    int id = map[buf_pos] +
-        map[buf_pos + 1] * 256 +
-        map[buf_pos + 2] * 256*256;
+    const int id = mapped_texture[buffer_position] +
+        mapped_texture[buffer_position + 1] * 256 +
+        mapped_texture[buffer_position + 2] * 256*256;
     
-    engine->get_gfx()->release_buffer_contents(selectBuffer, map);
+    engine->get_gfx()->release_buffer_contents(selectBuffer, mapped_texture);
 
     if(a != 0) {
         callback(selectable_objects[id]);

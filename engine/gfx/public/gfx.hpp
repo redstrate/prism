@@ -88,6 +88,11 @@ enum class GFXCullingMode {
     None
 };
 
+enum class GFXWindingMode {
+    Clockwise,
+    CounterClockwise
+};
+
 struct GFXVertexInput {
     int location = 0;
     int stride = 0;
@@ -158,6 +163,8 @@ struct GFXGraphicsPipelineCreateInfo {
         GFXPolygonType polygon_type = GFXPolygonType::Fill;
 
         GFXCullingMode culling_mode = GFXCullingMode::None;
+
+        GFXWindingMode winding_mode = GFXWindingMode::Clockwise;
     } rasterization;
 
     struct Blending {

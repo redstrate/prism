@@ -13,7 +13,8 @@ public:
     MTLPrimitiveType primitiveType;
 
     MTLCullMode cullMode;
-    
+    GFXWindingMode winding_mode;
+
     struct VertexStride {
         int location, stride;
     };

@@ -4,19 +4,36 @@
 
 #include "math.hpp"
 
-Matrix4x4 transform::perspective(const float fov, const float aspect, const float zNear) {
-    const float range = tanf(fov / 2.0f) * zNear;
+/*
+ These produce left-handed matrices.
+ Metal/DX12 are both NDC +y down.
+ */
+Matrix4x4 transform::perspective(const float field_of_view, const float aspect, const float z_near, const float z_far) {
+    const float tan_half_fov = tanf(field_of_view / 2.0f);
+
+    Matrix4x4 result(0.0f);
+    result[0][0] = 1.0f / (aspect * tan_half_fov);
+    result[1][1] = 1.0f / tan_half_fov;
+    result[2][2] = z_far / (z_far - z_near);
+    result[2][3] = 1.0f;
+    result[3][2] = -(z_far * z_near) / (z_far - z_near);
+    
+    return result;
+}
+
+Matrix4x4 transform::infinite_perspective(const float field_of_view, const float aspect, const float z_near) {
+    const float range = tanf(field_of_view / 2.0f) * z_near;
     const float left = -range * aspect;
     const float right = range * aspect;
     const float bottom = -range;
     const float top = range;
 
     Matrix4x4 result(0.0f);
-    result[0][0] = (2.0f * zNear) / (right - left);
-    result[1][1] = (2.0f * zNear) / (top - bottom);
-    result[2][2] = -1.0f;
-    result[2][3] = -1.0f;
-    result[3][2] = -2.0 * zNear;
+    result[0][0] = (2.0f * z_near) / (right - left);
+    result[1][1] = (2.0f * z_near) / (top - bottom);
+    result[2][2] = 1.0f;
+    result[2][3] = 1.0f;
+    result[3][2] = -2.0 * z_near;
             
     return result;
 }
@@ -25,7 +42,7 @@ Matrix4x4 transform::orthographic(float left, float right, float bottom, float t
     Matrix4x4 result(1.0f);
     result[0][0] = 2.0f / (right - left);
     result[1][1] = 2.0f / (top - bottom);
-    result[2][2] = - 1.0f / (zFar - zNear);
+    result[2][2] = 1.0f / (zFar - zNear);
     result[3][0] = -(right + left) / (right - left);
     result[3][1] = -(top + bottom) / (top - bottom);
     result[3][2] = - zNear / (zFar - zNear);
@@ -36,7 +53,7 @@ Matrix4x4 transform::orthographic(float left, float right, float bottom, float t
 Matrix4x4 transform::look_at(const Vector3 eye, const Vector3 center, const Vector3 up) {
     const Vector3 f = normalize(center - eye);
     const Vector3 s = normalize(cross(f, up));
-    const Vector3 u = cross(s, f);
+    const Vector3 u = cross(f, s);
     
     Matrix4x4 result(1.0f);
     result[0][0] = s.x;
@@ -45,12 +62,12 @@ Matrix4x4 transform::look_at(const Vector3 eye, const Vector3 center, const Vect
     result[0][1] = u.x;
     result[1][1] = u.y;
     result[2][1] = u.z;
-    result[0][2] = -f.x;
-    result[1][2] = -f.y;
-    result[2][2] = -f.z;
+    result[0][2] = f.x;
+    result[1][2] = f.y;
+    result[2][2] = f.z;
     result[3][0] = -dot(s, eye);
     result[3][1] = -dot(u, eye);
-    result[3][2] = dot(f, eye);
+    result[3][2] = -dot(f, eye);
     
     return result;
 }
@@ -104,7 +121,7 @@ Quaternion transform::quat_look_at(const Vector3 eye, const Vector3 center, cons
     const Vector3 direction = normalize(center - eye);
     
     Matrix3x3 result(1.0f);
-    result[2] = -direction;
+    result[2] = direction;
     result[0] = cross(up, result[2]);
     result[1] = cross(result[2], result[0]);
     

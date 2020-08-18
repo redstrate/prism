@@ -94,9 +94,6 @@ Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     if(enable_imgui)
         addPass<ImGuiPass>();
     
-    if(gfx->required_context() == GFXContext::Metal)
-        correction_matrix[1][1] *= -1.0f;
-    
     createBRDF();
 }
 
@@ -242,7 +239,7 @@ void Renderer::render(Scene* scene, int index) {
             for(auto& [obj, camera] : cameras) {
                 const int actual_width = render_extent.width / cameras.size();
                 
-                camera.perspective = transform::perspective(radians(camera.fov), static_cast<float>(actual_width) / static_cast<float>(render_extent.height), camera.near);
+                camera.perspective = transform::infinite_perspective(radians(camera.fov), static_cast<float>(actual_width) / static_cast<float>(render_extent.height), camera.near);
                 camera.view = inverse(scene->get<Transform>(obj).model);
                 
                 Viewport viewport = {};
@@ -354,7 +351,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
     sceneInfo.options = Vector4(1, 0, 0, 0);
     sceneInfo.camPos = scene.get<Transform>(camera_object).get_world_position();
     sceneInfo.camPos.w = 2.0f * camera.near * std::tanf(camera.fov * 0.5f) * (static_cast<float>(extent.width) / static_cast<float>(extent.height));
-    sceneInfo.vp =  camera.perspective * correction_matrix * camera.view;
+    sceneInfo.vp =  camera.perspective * camera.view;
     
     for(const auto [obj, light] : scene.get_all<Light>()) {
         SceneLight sl;
@@ -472,7 +469,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         
         RenderScreenOptions options = {};
         options.render_world = true;
-        options.mvp = camera.perspective * camera.view * correction_matrix * scene.get<Transform>(obj).model;
+        options.mvp = camera.perspective * camera.view * scene.get<Transform>(obj).model;
         
         render_screen(command_buffer, screen.screen, continuity, options);
     }
@@ -483,7 +480,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         float aspect;
     } pc;
     
-    pc.view = matrix_from_quat(scene.get<Transform>(camera_object).rotation) * correction_matrix;
+    pc.view = matrix_from_quat(scene.get<Transform>(camera_object).rotation);
     pc.aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
     
     for(const auto& [obj, light] : scene.get_all<Light>()) {
@@ -702,8 +699,6 @@ void Renderer::create_mesh_pipeline(Material& material) {
     
     pipelineInfo.shaders.fragment_src = material_compiler.compile_material_fragment(material, false); // scene capture does not use IBL
     
-    pipelineInfo.rasterization.culling_mode = GFXCullingMode::Frontface;
-
     material.capture_pipeline = material_compiler.create_static_pipeline(pipelineInfo, false, true);
 }
 

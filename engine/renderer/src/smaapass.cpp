@@ -31,7 +31,6 @@ void SMAAPass::render(GFXCommandBuffer* command_buffer) {
     } pc;
     
     pc.viewport = Vector4(1.0f / static_cast<float>(extent.width), 1.0f / static_cast<float>(extent.height), extent.width, extent.height);
-    pc.correction_matrix = engine->get_renderer()->correction_matrix;
 
     // edge
     {

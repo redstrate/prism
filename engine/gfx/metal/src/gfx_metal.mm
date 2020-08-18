@@ -119,6 +119,15 @@ MTLSamplerMinMagFilter toFilter(GFXFilter filter) {
     }
 }
 
+MTLWinding toWinding(GFXWindingMode mode) {
+    switch(mode) {
+        case GFXWindingMode::Clockwise:
+            return MTLWindingClockwise;
+        case GFXWindingMode::CounterClockwise:
+            return MTLWindingCounterClockwise;
+    }
+}
+
 bool GFXMetal::is_supported() {
     return true;
 }
@@ -584,10 +593,11 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
             pipeline->pushConstantIndex = binding.binding;
     }
 
+    pipeline->winding_mode = info.rasterization.winding_mode;
+    
     MTLDepthStencilDescriptor* depthStencil = [MTLDepthStencilDescriptor new];
 
     if(info.depth.depth_mode != GFXDepthMode::None) {
-        //depthStencil.depthCompareFunction = info.depth.depth_mode == GFXDepthMode::LessOrEqual ? MTLCompareFunctionGreaterEqual : MTLCompareFunctionGreater;
         depthStencil.depthCompareFunction = info.depth.depth_mode == GFXDepthMode::LessOrEqual ? MTLCompareFunctionLessEqual : MTLCompareFunctionLess;
         depthStencil.depthWriteEnabled = true;
     }
@@ -760,6 +770,7 @@ void GFXMetal::submit(GFXCommandBuffer* command_buffer, const int window) {
                     [renderEncoder setDepthStencilState:currentPipeline->depthStencil];
 
                     [renderEncoder setCullMode:((GFXMetalPipeline*)command.data.set_pipeline.pipeline)->cullMode];
+                    [renderEncoder setFrontFacingWinding:toWinding(((GFXMetalPipeline*)command.data.set_pipeline.pipeline)->winding_mode)];
 
                     if(currentPipeline->renderWire)
                         [renderEncoder setTriangleFillMode:MTLTriangleFillModeLines];

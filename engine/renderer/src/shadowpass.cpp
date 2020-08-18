@@ -193,9 +193,11 @@ void ShadowPass::render_sun(GFXCommandBuffer* command_buffer, Scene& scene, Obje
         const Matrix4x4 projection = transform::orthographic(-25.0f, 25.0f, -25.0f, 25.0f, 0.1f, 100.0f);
         const Matrix4x4 view = transform::look_at(lightPos, Vector3(0), Vector3(0, 1, 0));
         
-        const Matrix4x4 realMVP = projection * engine->get_renderer()->correction_matrix * view;
+        const Matrix4x4 realMVP = projection * view;
         
-        scene.lightSpace = projection * view;
+        scene.lightSpace = projection;
+        scene.lightSpace[1][1] *= -1;
+        scene.lightSpace = scene.lightSpace * view;
         
         const auto frustum = normalize_frustum(extract_frustum(projection * view));
                 
@@ -224,11 +226,13 @@ void ShadowPass::render_spot(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         
         command_buffer->set_viewport(viewport);
         
-        const Matrix4x4 perspective = transform::perspective(radians(90.0f), 1.0f, 0.1f);
+        const Matrix4x4 perspective = transform::perspective(radians(90.0f), 1.0f, 0.1f, 100.0f);
         
-        const Matrix4x4 realMVP = perspective * engine->get_renderer()->correction_matrix * inverse(scene.get<Transform>(light_object).model);
+        const Matrix4x4 realMVP = perspective * inverse(scene.get<Transform>(light_object).model);
         
-        scene.spotLightSpaces[last_spot_light] = perspective * inverse(scene.get<Transform>(light_object).model);
+        scene.spotLightSpaces[last_spot_light] = perspective;
+        scene.spotLightSpaces[last_spot_light][1][1] *= -1;
+        scene.spotLightSpaces[last_spot_light] = scene.spotLightSpaces[last_spot_light] * inverse(scene.get<Transform>(light_object).model);
         
         const auto frustum = normalize_frustum(extract_frustum(perspective * inverse(scene.get<Transform>(light_object).model)));
         
@@ -267,12 +271,12 @@ void ShadowPass::render_point(GFXCommandBuffer* command_buffer, Scene& scene, Ob
             
             const Vector3 lightPos = scene.get<Transform>(light_object).get_world_position();
             
-            const Matrix4x4 projection = transform::perspective(radians(90.0f), 1.0f, 0.1f);
-            const Matrix4x4 model = transform::translate(Matrix4x4(), Vector3(-lightPos.x, -lightPos.y, -lightPos.z));
+            const Matrix4x4 projection = transform::perspective(radians(90.0f), 1.0f, 0.1f, 100.0f);
+            const Matrix4x4 model = inverse(scene.get<Transform>(light_object).model);
             
             const auto frustum = normalize_frustum(extract_frustum(projection * shadowTransforms[face] * model));
             
-            render_meshes(command_buffer, scene, projection * engine->get_renderer()->correction_matrix * shadowTransforms[face], model, lightPos, Light::Type::Point, frustum);
+            render_meshes(command_buffer, scene, projection * shadowTransforms[face], model, lightPos, Light::Type::Point, frustum);
             
             command_buffer->copy_texture(offscreen_color_texture, render_options.shadow_resolution, render_options.shadow_resolution, scene.pointLightArray, face, last_point_light, 0);
         }
@@ -315,8 +319,7 @@ void ShadowPass::create_pipelines() {
     pipelineInfo.render_pass = render_pass;
     
     pipelineInfo.depth.depth_mode = GFXDepthMode::LessOrEqual;
-    pipelineInfo.rasterization.culling_mode = GFXCullingMode::None;
-    
+
     // sun
     {
         pipelineInfo.label = "Sun Shadow";
