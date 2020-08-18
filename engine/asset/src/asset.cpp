@@ -282,6 +282,8 @@ std::unique_ptr<Material> load_material(const file::Path path) {
             n = std::make_unique<TextureNode>();
         } else if(name == "Float Constant") {
             n = std::make_unique<FloatConstant>();
+        }  else if(name == "Vector3 Constant") {
+            n = std::make_unique<Vector3Constant>();
         }
         
         n->id = node["id"];
