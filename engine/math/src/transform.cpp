@@ -31,9 +31,9 @@ Matrix4x4 transform::infinite_perspective(const float field_of_view, const float
     Matrix4x4 result(0.0f);
     result[0][0] = (2.0f * z_near) / (right - left);
     result[1][1] = (2.0f * z_near) / (top - bottom);
-    result[2][2] = 1.0f;
+    result[2][2] = 1.0f - std::numeric_limits<float>::epsilon(); // prevent NaN
     result[2][3] = 1.0f;
-    result[3][2] = -2.0 * z_near;
+    result[3][2] = -(2.0 - std::numeric_limits<float>::epsilon()) * z_near;
             
     return result;
 }

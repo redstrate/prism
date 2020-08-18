@@ -193,8 +193,7 @@ void CommonEditor::update(float deltaTime) {
                 Vector4 ray_start = view_proj_inverse * Vector4(n.x, n.y, 0.0f, 1.0f);
                 ray_start *= 1.0f / ray_start.w;
                 
-                // note: we take the lowest visible floating point below 1.0 because we use infinite perspective martrix. if we simply inserted 1.0, then it would return NaN
-                Vector4 ray_end = view_proj_inverse * Vector4(n.x, n.y, 1.0f - std::numeric_limits<float>::epsilon(), 1.0f);
+                Vector4 ray_end = view_proj_inverse * Vector4(n.x, n.y, 1.0f, 1.0f);
                 ray_end *= 1.0f / ray_end.w;
                 
                 Ray camera_ray;

@@ -683,7 +683,6 @@ void Renderer::create_mesh_pipeline(Material& material) {
     pipelineInfo.render_pass = offscreenRenderPass;
     pipelineInfo.depth.depth_mode = GFXDepthMode::Less;
     pipelineInfo.rasterization.culling_mode = GFXCullingMode::Backface;
-    //pipelineInfo.blending.enable_blending = true;
     pipelineInfo.blending.src_rgb = GFXBlendFactor::SrcAlpha;
     pipelineInfo.blending.dst_rgb = GFXBlendFactor::OneMinusSrcAlpha;
     
