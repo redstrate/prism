@@ -598,7 +598,17 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
     MTLDepthStencilDescriptor* depthStencil = [MTLDepthStencilDescriptor new];
 
     if(info.depth.depth_mode != GFXDepthMode::None) {
-        depthStencil.depthCompareFunction = info.depth.depth_mode == GFXDepthMode::LessOrEqual ? MTLCompareFunctionLessEqual : MTLCompareFunctionLess;
+        switch(info.depth.depth_mode) {
+            case GFXDepthMode::Less:
+                depthStencil.depthCompareFunction = MTLCompareFunctionLess;
+                break;
+            case GFXDepthMode::LessOrEqual:
+                depthStencil.depthCompareFunction = MTLCompareFunctionLessEqual;
+                break;
+            case GFXDepthMode::Greater:
+                depthStencil.depthCompareFunction = MTLCompareFunctionGreater;
+                break;
+        }
         depthStencil.depthWriteEnabled = true;
     }
 

@@ -106,7 +106,8 @@ struct GFXVertexAttribute {
 enum class GFXDepthMode {
     None,
     Less,
-    LessOrEqual
+    LessOrEqual,
+    Greater
 };
 
 struct GFXPushConstant {
