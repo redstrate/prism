@@ -358,9 +358,9 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
     
     // draw handles for selected object;
     if(selected_object != NullObject && engine->get_scene()->has<Transform>(selected_object)) {
-        auto position = engine->get_scene()->get<Transform>(selected_object).get_world_position();
+        const auto position = engine->get_scene()->get<Transform>(selected_object).get_world_position();
         
-        const float base_scale = 0.05;
+        const float base_scale = 0.05f;
         const float scale_factor = length(position - scene.get<Transform>(camObj).get_world_position());
         
         Matrix4x4 base_model = transform::translate(Matrix4x4(), position);
@@ -458,24 +458,25 @@ void DebugPass::get_selected_object(int x, int y, std::function<void(SelectableO
         so.type = SelectableObject::Type::Handle;
         so.axis = axis;
         so.axis_model = model;
+        so.object = selected_object;
         
         selectable_objects.push_back(so);
     };
     
     if(selected_object != NullObject) {
-        auto position = engine->get_scene()->get<Transform>(selected_object).get_world_position();
+        const auto position = engine->get_scene()->get<Transform>(selected_object).get_world_position();
         
-        const float base_scale = 0.05;
+        const float base_scale = 0.05f;
         const float scale_factor = length(position - engine->get_scene()->get<Transform>(camObj).position);
         
-        Matrix4x4 base_model = transform::translate(Matrix4x4(), position);
-        base_model = transform::scale(base_model, base_scale * scale_factor);
+        const Matrix4x4 translate_model = transform::translate(Matrix4x4(), position);
+        const Matrix4x4 scale_model = transform::scale(Matrix4x4(), base_scale * scale_factor);
         
-        add_arrow(SelectableObject::Axis::Y, base_model);
+        add_arrow(SelectableObject::Axis::Y, translate_model * scale_model);
         
-        add_arrow(SelectableObject::Axis::X, base_model * matrix_from_quat(angle_axis(radians(-90.0f), Vector3(0, 0, 1))));
+        add_arrow(SelectableObject::Axis::X, translate_model * matrix_from_quat(angle_axis(radians(-90.0f), Vector3(0, 0, 1))) * scale_model);
         
-        add_arrow(SelectableObject::Axis::Z, base_model * matrix_from_quat(angle_axis(radians(90.0f), Vector3(1, 0, 0))));
+        add_arrow(SelectableObject::Axis::Z, translate_model * matrix_from_quat(angle_axis(radians(90.0f), Vector3(1, 0, 0))) * scale_model);
     }
     
     GFXCommandBuffer* commandBuffer = engine->get_gfx()->acquire_command_buffer();
@@ -487,6 +488,12 @@ void DebugPass::get_selected_object(int x, int y, std::function<void(SelectableO
     info.render_area.extent = extent;
 
     commandBuffer->set_render_pass(info);
+    
+    Viewport viewport = {};
+    viewport.width = extent.width;
+    viewport.height = extent.height;
+    
+    commandBuffer->set_viewport(viewport);
 
     commandBuffer->set_pipeline(selectPipeline);
 
@@ -549,7 +556,7 @@ void DebugPass::get_selected_object(int x, int y, std::function<void(SelectableO
 
     const int id = mapped_texture[buffer_position] +
         mapped_texture[buffer_position + 1] * 256 +
-        mapped_texture[buffer_position + 2] * 256*256;
+        mapped_texture[buffer_position + 2] * 256 * 256;
     
     engine->get_gfx()->release_buffer_contents(selectBuffer, mapped_texture);
 
