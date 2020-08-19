@@ -45,22 +45,12 @@ struct SceneInformation {
 const int mipLevels = 5;
 
 const std::array<Matrix4x4, 6> sceneTransforms = {
-    transform::look_at(Vector3(0), Vector3(1.0, 0.0, 0.0), Vector3(0.0, -1.0, 0.0)),
-    transform::look_at(Vector3(0), Vector3(-1.0, 0.0, 0.0), Vector3(0.0, -1.0, 0.0)),
-    transform::look_at(Vector3(0), Vector3( 0.0, -1.0, 0.0), Vector3(0.0, 0.0,-1.0)),
-    transform::look_at(Vector3(0), Vector3( 0.0, 1.0, 0.0), Vector3(0.0, 0.0,1.0)),
-    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, 1.0), Vector3(0.0, -1.0, 0.0)),
-    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, -1.0), Vector3(0.0, -1.0, 0.0))
-};
-
-// for some reason, our sky shader does not like the up/down transforms, so we reverse them here...
-const std::array<Matrix4x4, 6> skyTransforms = {
-    transform::look_at(Vector3(0), Vector3(1.0, 0.0, 0.0), Vector3(0.0, -1.0, 0.0)),
-    transform::look_at(Vector3(0), Vector3(-1.0, 0.0, 0.0), Vector3(0.0, -1.0, 0.0)),
-    transform::look_at(Vector3(0), Vector3( 0.0, 1.0, 0.0), Vector3(0.0, 0.0, 1.0)),
-    transform::look_at(Vector3(0), Vector3( 0.0, -1.0, 0.0), Vector3(0.0, 0.0, -1.0)),
-    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, 1.0), Vector3(0.0, -1.0, 0.0)),
-    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, -1.0), Vector3(0.0, -1.0, 0.0))
+    transform::look_at(Vector3(0), Vector3(-1.0, 0.0, 0.0), Vector3(0.0, -1.0, 0.0)), // right
+    transform::look_at(Vector3(0), Vector3(1.0, 0.0, 0.0), Vector3(0.0, -1.0, 0.0)), // left
+    transform::look_at(Vector3(0), Vector3( 0.0, -1.0, 0.0), Vector3(0.0, 0.0, -1.0)), // top
+    transform::look_at(Vector3(0), Vector3( 0.0, 1.0, 0.0), Vector3(0.0, 0.0, 1.0)), // bottom
+    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, 1.0), Vector3(0.0, -1.0, 0.0)), // back
+    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, -1.0), Vector3(0.0, -1.0, 0.0)) // front
 };
 
 inline AssetPtr<Mesh> cubeMesh;
@@ -293,7 +283,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                     float aspect;
                 } pc;
                 
-                pc.view = skyTransforms[face];
+                pc.view = sceneTransforms[face];
                 pc.aspect = 1.0f;
                 
                 for(auto& [obj, light] : scene->get_all<Light>()) {

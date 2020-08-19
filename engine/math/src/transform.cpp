@@ -52,7 +52,7 @@ Matrix4x4 transform::orthographic(float left, float right, float bottom, float t
 
 Matrix4x4 transform::look_at(const Vector3 eye, const Vector3 center, const Vector3 up) {
     const Vector3 f = normalize(center - eye);
-    const Vector3 s = normalize(cross(f, up));
+    const Vector3 s = normalize(cross(up, f));
     const Vector3 u = cross(f, s);
     
     Matrix4x4 result(1.0f);
@@ -101,11 +101,12 @@ Matrix4x4 transform::rotate(const Matrix4x4 matrix, const float angle, const Vec
     Rotate[2][2] = c + temp[2] * axis[2];
 
     Matrix4x4 result(1.0f);
-    result[0] = Rotate[0][0] + Rotate[0][1] + Rotate[0][2];
-    result[1] = Rotate[1][0] + Rotate[1][1] + Rotate[1][2];
-    result[2] = Rotate[2][0] + Rotate[2][1] + Rotate[2][2];
+    result[0] = matrix[0] * Rotate[0][0] + matrix[1] * Rotate[0][1] + matrix[2] * Rotate[0][2];
+    result[1] = matrix[0] * Rotate[1][0] + matrix[1] * Rotate[1][1] + matrix[2] * Rotate[1][2];
+    result[2] = matrix[0] * Rotate[2][0] + matrix[1] * Rotate[2][1] + matrix[2] * Rotate[2][2];
+    result[3] = matrix[3];
     
-    return matrix * result;
+    return result;
 }
 
 Matrix4x4 transform::scale(const Matrix4x4 matrix, const Vector3 scale) {

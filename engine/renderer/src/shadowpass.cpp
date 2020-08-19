@@ -15,12 +15,12 @@ struct PushConstant {
 };
 
 const std::array<Matrix4x4, 6> shadowTransforms = {
-    transform::look_at(Vector3(0), Vector3(1.0, 0.0, 0.0), Vector3(0.0, -1.0, 0.0)),
-    transform::look_at(Vector3(0), Vector3(-1.0, 0.0, 0.0), Vector3(0.0, -1.0, 0.0)),
-    transform::look_at(Vector3(0), Vector3( 0.0, 1.0, 0.0), Vector3(0.0, 0.0,1.0)),
-    transform::look_at(Vector3(0), Vector3( 0.0, -1.0, 0.0), Vector3(0.0, 0.0,-1.0)),
-    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, 1.0), Vector3(0.0, -1.0, 0.0)),
-    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, -1.0), Vector3(0.0, -1.0, 0.0))
+    transform::look_at(Vector3(0), Vector3(1.0, 0.0, 0.0), Vector3(0.0, 1.0, 0.0)), // right
+    transform::look_at(Vector3(0), Vector3(-1.0, 0.0, 0.0), Vector3(0.0, 1.0, 0.0)), // left
+    transform::look_at(Vector3(0), Vector3( 0.0, 1.0, 0.0), Vector3(0.0, 0.0, -1.0)), // top
+    transform::look_at(Vector3(0), Vector3( 0.0, -1.0, 0.0), Vector3(0.0, 0.0, 1.0)), // bottom
+    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, 1.0), Vector3(0.0, 1.0, 0.0)), // back
+    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, -1.0), Vector3(0.0, 1.0, 0.0)) // front
 };
 
 ShadowPass::ShadowPass(GFX* gfx) {
@@ -231,7 +231,7 @@ void ShadowPass::render_spot(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         const Matrix4x4 realMVP = perspective * inverse(scene.get<Transform>(light_object).model);
         
         scene.spotLightSpaces[last_spot_light] = perspective;
-        scene.spotLightSpaces[last_spot_light][1][1] *= -1;
+        scene.spotLightSpaces[1][1] *= -1;
         scene.spotLightSpaces[last_spot_light] = scene.spotLightSpaces[last_spot_light] * inverse(scene.get<Transform>(light_object).model);
         
         const auto frustum = normalize_frustum(extract_frustum(perspective * inverse(scene.get<Transform>(light_object).model)));

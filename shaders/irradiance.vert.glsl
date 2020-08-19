@@ -8,5 +8,5 @@ layout(push_constant, binding = 1) uniform readonly PushConstant{
 
 void main() {
     gl_Position =  mvp * vec4(inPosition, 1.0);
-    outPos = inPosition, 1.0;
+    outPos = inPosition;
 }

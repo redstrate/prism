@@ -13,7 +13,7 @@ layout(push_constant, binding = 1) uniform readonly PushConstant{
 };
 
 void main() {
-    const vec3 N = normalize(inPos);
+    vec3 N = normalize(inPos);
     
     // make the simplyfying assumption that V equals R equals the normal
     const vec3 R = N;

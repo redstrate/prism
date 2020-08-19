@@ -168,6 +168,15 @@ constexpr inline Vector<N, T> operator*(const Vector<N, T> lhs, const Vector<N, 
 }
 
 template<std::size_t N, class T>
+constexpr inline Vector<N, T> operator+(const Vector<N, T> lhs, const T scalar) {
+    Vector<N, T> vec;
+    for(std::size_t i = 0; i < N; i++)
+        vec[i] = lhs[i] + scalar;
+    
+    return vec;
+}
+
+template<std::size_t N, class T>
 constexpr inline Vector<N, T> operator*(const Vector<N, T> lhs, const T scalar) {
     Vector<N, T> vec;
     for(std::size_t i = 0; i < N; i++)
