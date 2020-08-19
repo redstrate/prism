@@ -57,8 +57,8 @@ struct Vector {
 template<class T>
 struct Vector<2, T> {
     constexpr Vector(const T x_, const T y_) {
-        data[0] = x_;
-        data[1] = y_;
+        x = x_;
+        y = y_;
     }
     
     DEFINE_OPERATORS(2)
@@ -72,14 +72,12 @@ struct Vector<2, T> {
     };
 };
 
-using Vector2 = Vector<2, float>;
-
 template<class T>
 struct Vector<3, T> {
     constexpr Vector(const T x_, const T y_, const T z_) {
-        data[0] = x_;
-        data[1] = y_;
-        data[2] = z_;
+        x = x_;
+        y = y_;
+        z = z_;
     }
 
     DEFINE_OPERATORS(3)
@@ -93,18 +91,16 @@ struct Vector<3, T> {
     };
 };
 
-using Vector3 = Vector<3, float>;
-
 template<class T>
 struct alignas(16) Vector<4, T> {
     constexpr Vector(const T x_, const T y_, const T z_, const T w_) {
-        data[0] = x_;
-        data[1] = y_;
-        data[2] = z_;
-        data[3] = w_;
+        x = x_;
+        y = y_;
+        z = z_;
+        w = w_;
     }
     
-    constexpr Vector(const Vector3& v, const float w = 0.0f) : x(v.x), y(v.y), z(v.z), w(w) {}
+    constexpr Vector(const Vector<3, T>& v, const float w = 0.0f) : x(v.x), y(v.y), z(v.z), w(w) {}
     
     DEFINE_OPERATORS(4)
     
@@ -122,6 +118,8 @@ struct alignas(16) Vector<4, T> {
     };
 };
 
+using Vector2 = Vector<2, float>;
+using Vector3 = Vector<3, float>;
 using Vector4 = Vector<4, float>;
 
 template<std::size_t N, class T>
