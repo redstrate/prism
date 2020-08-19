@@ -231,7 +231,7 @@ void ShadowPass::render_spot(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         const Matrix4x4 realMVP = perspective * inverse(scene.get<Transform>(light_object).model);
         
         scene.spotLightSpaces[last_spot_light] = perspective;
-        scene.spotLightSpaces[1][1] *= -1;
+        scene.spotLightSpaces[last_spot_light][1][1] *= -1;
         scene.spotLightSpaces[last_spot_light] = scene.spotLightSpaces[last_spot_light] * inverse(scene.get<Transform>(light_object).model);
         
         const auto frustum = normalize_frustum(extract_frustum(perspective * inverse(scene.get<Transform>(light_object).model)));
