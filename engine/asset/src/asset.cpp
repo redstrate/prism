@@ -195,18 +195,8 @@ std::unique_ptr<Texture> load_texture(const file::Path path) {
         return nullptr;
     }
     
-    bool should_generate_mipmaps = true;
-    
-    auto texture_info_path = path;
-    texture_info_path.replace_extension(".json");
-    
-    auto json_file = file::open(texture_info_path);
-    if(json_file != std::nullopt) {
-        nlohmann::json j;
-        json_file->read_as_stream() >> j;
-
-        should_generate_mipmaps = j["generate_mipmaps"];
-    }
+    // TODO: expose somehow??
+    const bool should_generate_mipmaps = true;
 
     file->read_all();
 
