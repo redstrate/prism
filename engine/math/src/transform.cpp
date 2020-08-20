@@ -123,7 +123,7 @@ Quaternion transform::quat_look_at(const Vector3 eye, const Vector3 center, cons
     
     Matrix3x3 result(1.0f);
     result[2] = direction;
-    result[0] = cross(up, result[2]);
+    result[0] = normalize(cross(up, result[2]));
     result[1] = cross(result[2], result[0]);
     
     return quat_from_matrix(result);
