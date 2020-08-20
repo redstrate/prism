@@ -43,6 +43,5 @@ void main() {
         0.758
     );
 
-    // apply exposure
-    out_color = vec4(1.0 - exp(-1.0 * color), 1.0);
+    out_color = vec4(color, 1.0);
 }

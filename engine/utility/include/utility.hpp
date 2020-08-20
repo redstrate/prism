@@ -7,6 +7,8 @@
 #include <random>
 #include <unordered_map>
 
+#include "vector.hpp"
+
 namespace utility {
     template<class Enum>
     std::string enum_to_string(const Enum e) {
@@ -94,5 +96,18 @@ namespace utility {
     /// Converts a floating-point to a fixed 16-bit unsigned integer.
     inline uint16_t to_fixed(const float f) {
         return static_cast<uint16_t>(32.0f * f + 0.5f);
+    }
+
+    inline Vector3 from_srgb_to_linear(const Vector3 sRGB) {
+        Vector3 linear = sRGB;
+        for(auto& component : linear.data) {
+            if(component > 0.04045f) {
+                component = std::powf((component + 0.055) / (1.055), 2.4f);
+            } else if (component <= 0.04045) {
+                component /= 12.92f;
+            }
+        }
+
+        return linear;
     }
 }

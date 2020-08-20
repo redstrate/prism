@@ -159,7 +159,7 @@ public:
     }
     
     std::string get_glsl() override {
-        std::string glsl = "vec3 final_diffuse_color = Color;\n \
+        std::string glsl = "vec3 final_diffuse_color = from_srgb_to_linear(Color);\n \
         float final_roughness = Roughness;\n \
         float final_metallic = Metallic;\n";
         

@@ -11,6 +11,7 @@ layout(std430, push_constant, binding = 4) uniform PushConstant {
 };
 
 #include "smaa.glsl"
+#include "common.nocompile.glsl"
 
 layout (location = 0) in vec2 inUV;
 layout(location = 1) in vec4 inOffset;
@@ -63,5 +64,5 @@ void main() {
     
     vec3 hdrColor = sceneColor; // fading removed
     hdrColor = vec3(1.0) - exp(-hdrColor * options.z); // exposure
-    outColor = vec4(hdrColor + (sobelColor * sobel), 1.0);
+    outColor = vec4(from_linear_to_srgb(hdrColor) + (sobelColor * sobel), 1.0);
 }

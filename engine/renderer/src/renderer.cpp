@@ -360,7 +360,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         Vector3 front = Vector3(0.0f, 0.0f, 1.0f) * scene.get<Transform>(obj).rotation;
         
         sl.directionPower = Vector4(-front, light.power);
-        sl.colorSize = Vector4(light.color, radians(light.spot_size));
+        sl.colorSize = Vector4(utility::from_srgb_to_linear(light.color), radians(light.spot_size));
         sl.shadowsEnable = Vector4(light.enable_shadows, radians(light.size), 0, 0);
         
         sceneInfo.lights[sceneInfo.numLights++] = sl;

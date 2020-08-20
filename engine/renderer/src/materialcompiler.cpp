@@ -294,12 +294,13 @@ ShaderSource MaterialCompiler::compile_material_fragment(Material& material, boo
     
     if(use_ibl) {
         src += "vec3 ibl(const int probe, const ComputedSurfaceInfo surface_info, const float intensity) {\n \
+            const vec3 F = fresnel_schlick_roughness(surface_info.NdotV, surface_info.F0, surface_info.roughness);\n \
             const vec3 R = get_reflect(probe, surface_info.N);\n \
             const vec2 brdf = texture(brdfSampler, vec2(surface_info.NdotV, surface_info.roughness)).rg; \n \
             const vec3 sampledIrradiance = texture(irrandianceSampler, vec4(surface_info.N, probe)).xyz;\n \
             const vec3 prefilteredColor = textureLod(prefilterSampler, vec4(R, probe), surface_info.roughness * 4).xyz;\n \
             const vec3 diffuse = sampledIrradiance * surface_info.diffuse_color;\n \
-            const vec3 specular = prefilteredColor * (surface_info.F0 * brdf.x + 1.0 * brdf.y);\n \
+            const vec3 specular = prefilteredColor * (F * brdf.x + brdf.y);\n \
             return (diffuse + specular) * intensity;\n \
         }\n";
     }

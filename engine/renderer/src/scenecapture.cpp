@@ -165,7 +165,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 Vector3 front = Vector3(0.0f, 0.0f, 1.0f) * scene->get<Transform>(obj).rotation;
                 
                 sl.directionPower = Vector4(-front, light.power);
-                sl.colorSize = Vector4(light.color, radians(light.spot_size));
+                sl.colorSize = Vector4(utility::from_srgb_to_linear(light.color), radians(light.spot_size));
                 sl.shadowsEnable = Vector4(light.enable_shadows, radians(light.size), 0, 0);
                 
                 sceneInfo.lights[sceneInfo.numLights++] = sl;
@@ -191,12 +191,6 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                         engine->get_renderer()->create_mesh_pipeline(*material.handle);
 
                     if(!material_indices.count(material.handle)) {
-                        // unused for now
-                        /*sceneInfo.materials[numMaterialsInBuffer].color = material->base_color;
-                        sceneInfo.materials[numMaterialsInBuffer].info[0] = material->metallic;
-                        sceneInfo.materials[numMaterialsInBuffer].info[1] = material->roughness;
-                        sceneInfo.materials[numMaterialsInBuffer].info[2] = radians(material->hue_shift);*/
-                        
                         material_indices[material.handle] = numMaterialsInBuffer++;
                     }
                 }
