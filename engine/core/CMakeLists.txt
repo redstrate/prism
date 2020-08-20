@@ -21,7 +21,6 @@ set(SRC
     include/platform.hpp
     include/file.hpp
     include/imgui_utility.hpp
-    include/frustum.hpp
 
     src/file.cpp
     src/engine.cpp

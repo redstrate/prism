@@ -1,10 +1,8 @@
-#pragma once
+#include "frustum.hpp"
 
-struct CameraFrustum {
-    std::array<Plane, 6> planes;
-};
+#include "scene.hpp"
 
-inline CameraFrustum extract_frustum(const Matrix4x4 combined) {
+CameraFrustum extract_frustum(const Matrix4x4 combined) {
     CameraFrustum frustum;
     
     // left plane
@@ -46,14 +44,14 @@ inline CameraFrustum extract_frustum(const Matrix4x4 combined) {
     return frustum;
 }
 
-inline CameraFrustum camera_extract_frustum(Scene& scene, Object cam) {
+CameraFrustum camera_extract_frustum(Scene& scene, Object cam) {
     const auto camera_component = scene.get<Camera>(cam);
     const Matrix4x4 combined = camera_component.perspective * camera_component.view;
     
     return extract_frustum(combined);
 }
 
-inline CameraFrustum normalize_frustum(const CameraFrustum& frustum) {
+CameraFrustum normalize_frustum(const CameraFrustum& frustum) {
     CameraFrustum normalized_frustum;
     for(int i = 0; i < 6; i++)
         normalized_frustum.planes[i] = normalize(frustum.planes[i]);
@@ -61,11 +59,11 @@ inline CameraFrustum normalize_frustum(const CameraFrustum& frustum) {
     return normalized_frustum;
 }
 
-inline bool test_point_plane(const Plane& plane, const Vector3& point) {
+bool test_point_plane(const Plane& plane, const Vector3& point) {
     return distance_to_point(plane, point) > 0.0;
 }
 
-inline bool test_point_frustum(const CameraFrustum& frustum, const Vector3& point) {
+bool test_point_frustum(const CameraFrustum& frustum, const Vector3& point) {
     bool inside_frustum = false;
     
     for(int i = 0; i < 6; i++)
@@ -74,7 +72,7 @@ inline bool test_point_frustum(const CameraFrustum& frustum, const Vector3& poin
     return !inside_frustum;
 }
 
-inline bool test_aabb_frustum(const CameraFrustum& frustum, const AABB& aabb) {
+bool test_aabb_frustum(const CameraFrustum& frustum, const AABB& aabb) {
     for(int i = 0; i < 6; i++) {
         int out = 0;
         
@@ -88,7 +86,7 @@ inline bool test_aabb_frustum(const CameraFrustum& frustum, const AABB& aabb) {
     return true;
 }
 
-inline AABB get_aabb_for_part(const Transform& transform, const Mesh::Part& part) {
+AABB get_aabb_for_part(const Transform& transform, const Mesh::Part& part) {
     AABB aabb = {};
     aabb.min = part.aabb.min - transform.get_world_position();
     aabb.max = transform.get_world_position() + part.aabb.max;

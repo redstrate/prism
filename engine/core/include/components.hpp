@@ -1,6 +1,9 @@
 #pragma once
 
 #include "assetptr.hpp"
+#include "object.hpp"
+#include "quaternion.hpp"
+#include "matrix.hpp"
 
 class btCollisionShape;
 class btRigidBody;

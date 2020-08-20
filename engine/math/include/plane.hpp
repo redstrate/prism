@@ -1,5 +1,9 @@
 #pragma once
 
+#include <cmath>
+
+#include "vector.hpp"
+
 struct Plane {
     float a = 0.0, b = 0.0, c = 0.0, d = 0.0;
 };
