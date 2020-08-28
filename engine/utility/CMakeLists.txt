@@ -5,6 +5,7 @@ set(SRC
     include/timer.hpp
     include/common.hpp
     include/aabb.hpp
+    include/file_utils.hpp
     
     src/string_utils.cpp)
 

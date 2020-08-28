@@ -547,7 +547,7 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 	const bool fragment_use_shader_source = info.shaders.fragment_path.empty();
 
 	if (vertex_use_shader_source) {
-		auto& vertex_shader_vector = std::get<std::vector<uint32_t>>(info.shaders.vertex_src);
+		auto& vertex_shader_vector = info.shaders.vertex_src.as_bytecode();
 
 		vertex_module = createShaderModule(vertex_shader_vector.data(), vertex_shader_vector.size() * sizeof(uint32_t));
 	}
@@ -559,7 +559,7 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 	}
 
 	if (fragment_use_shader_source) {
-		auto& fragment_shader_vector = std::get<std::vector<uint32_t>>(info.shaders.fragment_src);
+		auto& fragment_shader_vector = info.shaders.fragment_src.as_bytecode();
 
 		fragment_module = createShaderModule(fragment_shader_vector.data(), fragment_shader_vector.size() * sizeof(uint32_t));
 	}

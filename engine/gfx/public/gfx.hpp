@@ -279,7 +279,7 @@ public:
 	// check for runtime support
 	virtual bool is_supported() { return false; }
 	virtual GFXContext required_context() { return GFXContext::None; }
-    virtual ShaderLanguage accepted_shader_language() {}
+    virtual ShaderLanguage accepted_shader_language() { return ShaderLanguage::GLSL; }
     virtual const char* get_name() { return nullptr; }
     
     virtual bool supports_feature([[maybe_unused]] const GFXFeature feature) { return true; }
