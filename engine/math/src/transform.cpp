@@ -1,6 +1,7 @@
 #include "transform.hpp"
 
 #include <cmath>
+#include <limits>
 
 #include "math.hpp"
 

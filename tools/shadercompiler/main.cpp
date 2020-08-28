@@ -1,6 +1,8 @@
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
+#include "file.hpp"
 #include "shadercompiler.hpp"
 #include "log.hpp"
 #include "string_utils.hpp"
