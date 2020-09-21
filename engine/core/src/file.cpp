@@ -45,3 +45,7 @@ file::Path file::get_domain_path(const Domain domain) {
 file::Path parent_domain(const file::Path path) {
     return path;
 }
+
+file::Path file::get_relative_path(const Domain domain, const Path path) {
+    // unimplemented
+}

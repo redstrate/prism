@@ -1,5 +1,7 @@
-set(HEADERS
+set(SRC
     include/gfx_metal.hpp
+    
+    src/gfx_metal.mm
     src/gfx_metal_buffer.hpp
     src/gfx_metal_pipeline.hpp
     src/gfx_metal_texture.hpp
@@ -8,8 +10,7 @@ set(HEADERS
     src/gfx_metal_sampler.hpp)
 
 add_library(GFXMetal STATIC
-    src/gfx_metal.mm
-    ${HEADERS})
+    ${SRC})
 
 set_target_properties(GFXMetal PROPERTIES
     FRAMEWORK TRUE

@@ -16,5 +16,4 @@ target_include_directories(ModelCompiler PUBLIC
     include
     PRIVATE
     ${ASSIMP_INCLUDE_DIRS})
-add_dependencies(ModelCompiler BuildShaders)
 set_engine_properties(ModelCompiler)

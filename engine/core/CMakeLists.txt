@@ -1,10 +1,3 @@
-if(TARGET BulletDynamics)
-    set(BULLET_LIBRARIES BulletDynamics BulletCollision LinearMath)
-    set(BULLET_INCLUDE_DIRS ${CMAKE_BINARY_DIR}/_deps/bullet-src/src)
-else()
-    find_package(Bullet REQUIRED)
-endif()
-
 set(SRC
     include/engine.hpp
     include/app.hpp
@@ -41,7 +34,7 @@ add_library(Core STATIC ${SRC})
 target_include_directories(Core PUBLIC
     include)
 target_include_directories(Core SYSTEM PUBLIC
-    ${BULLET_INCLUDE_DIRS})
+    ${CMAKE_BINARY_DIR}/_deps/bullet-src/src)
 target_link_libraries(Core PUBLIC
     Utility
     GFX
@@ -53,5 +46,7 @@ target_link_libraries(Core PUBLIC
     ${EXTRA_LIBRARIES}
     Asset
     PRIVATE
-    ${BULLET_LIBRARIES})
+    BulletDynamics
+    BulletCollision
+    LinearMath)
 set_engine_properties(Core)

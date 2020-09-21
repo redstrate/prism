@@ -10,5 +10,4 @@ target_link_libraries(Audio PRIVATE
     opusfile
     portaudio_static
     Core)
-target_compile_features(Audio PUBLIC cxx_std_17)
-set_target_properties(Audio PROPERTIES CXX_EXTENSIONS OFF)
+set_engine_properties(Audio)

@@ -11,5 +11,4 @@ set(SRC
 
 add_library(Math STATIC ${SRC})
 target_include_directories(Math PUBLIC include)
-target_compile_features(Math PUBLIC cxx_std_17)
-set_target_properties(Math PROPERTIES CXX_EXTENSIONS OFF)
+set_engine_properties(Math)
