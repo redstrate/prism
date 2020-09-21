@@ -48,9 +48,10 @@ target_link_libraries(Core PUBLIC
     Renderer
     nlohmann_json
     magic_enum
-    ${BULLET_LIBRARIES}
     imgui
     Log
     ${EXTRA_LIBRARIES}
-    Asset)
+    Asset
+    PRIVATE
+    ${BULLET_LIBRARIES})
 set_engine_properties(Core)

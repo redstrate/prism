@@ -1,27 +1,13 @@
 #pragma once
 
-#include <vector>
-#include <nlohmann/json.hpp>
-#include <iosfwd>
-#include <map>
-#include <memory>
-#include <string>
-#include <string_view>
+#include <nlohmann/json_fwd.hpp>
 
-#include "scene.hpp"
-#include "renderer.hpp"
-#include "input.hpp"
-#include "cutscene.hpp"
-#include "physics.hpp"
-#include "file.hpp"
 #include "object.hpp"
-#include "imguilayer.hpp"
-#include "shadowpass.hpp"
-#include "scenecapture.hpp"
-#include "smaapass.hpp"
-#include "gaussianhelper.hpp"
+#include "cutscene.hpp"
 #include "common.hpp"
 #include "asset_types.hpp"
+#include "platform.hpp"
+#include "path.hpp"
 
 class GFX;
 
@@ -30,6 +16,11 @@ namespace ui {
 }
 
 class App;
+class Scene;
+class Input;
+class Renderer;
+class Physics;
+class ImGuiLayer;
 struct Timer;
 
 struct AnimationTarget {
@@ -51,6 +42,11 @@ public:
     @param argv Array of strings containing arguments. Can be null.
      */
     Engine(const int argc, char* argv[]);
+    
+    Engine(const Engine& other) = delete;
+    Engine(Engine&& other) = delete;
+    
+    ~Engine();
 
     /// Command line arguments, can be empty.
     std::vector<std::string_view> command_line_arguments;
@@ -338,13 +334,13 @@ private:
     Scene* _current_scene = nullptr;
     std::vector<std::unique_ptr<Scene>> _scenes;
     std::map<std::string, Scene*> _path_to_scene;
-
+    
     struct Window {
         int identifier = -1;
         prism::Extent extent;
         bool quitRequested = false;
-
-        std::unique_ptr<Renderer> renderer = nullptr;
+        
+        std::unique_ptr<Renderer> renderer;
     };
 
     std::vector<Window> _windows;
@@ -370,8 +366,8 @@ private:
     App* _app = nullptr;
     GFX* _gfx = nullptr;
 
-    std::unique_ptr<Input> _input = nullptr;
-    std::unique_ptr<Physics> _physics = nullptr;
+    std::unique_ptr<Input> _input;
+    std::unique_ptr<Physics> _physics;
 
     std::vector<Timer*> _timers, _timersToRemove;
 
@@ -379,7 +375,7 @@ private:
 
     std::vector<AnimationTarget> _animation_targets;
 
-    std::unique_ptr<ImGuiLayer> _imgui = nullptr;
+    std::unique_ptr<ImGuiLayer> _imgui;
 
     const InputButton debug_button = InputButton::Q;
 };

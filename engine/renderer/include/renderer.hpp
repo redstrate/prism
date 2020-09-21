@@ -4,13 +4,12 @@
 #include <vector>
 #include <cmath>
 
-#include "file.hpp"
 #include "pass.hpp"
 #include "matrix.hpp"
 #include "object.hpp"
-#include "dofpass.hpp"
 #include "common.hpp"
 #include "render_options.hpp"
+#include "path.hpp"
 
 namespace ui {
     class Screen;
@@ -45,6 +44,7 @@ class Material;
 class Renderer {
 public:
     Renderer(GFX* gfx, const bool enable_imgui = true);
+    ~Renderer();
 
     void resize(const prism::Extent extent);
     void resize_viewport(const prism::Extent extent);

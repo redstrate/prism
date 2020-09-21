@@ -9,6 +9,7 @@
 #include "asset.hpp"
 #include "log.hpp"
 #include "materialcompiler.hpp"
+#include "renderer.hpp"
 
 struct BillPushConstant {
     Matrix4x4 view, mvp;

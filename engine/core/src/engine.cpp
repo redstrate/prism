@@ -2,22 +2,25 @@
 
 #include <nlohmann/json.hpp>
 
-#include "timer.hpp"
-#include "gfx.hpp"
-#include "renderer.hpp"
-#include "screen.hpp"
-#include "file.hpp"
-#include "transform.hpp"
-#include "math.hpp"
-#include "cutscene.hpp"
-#include "log.hpp"
-#include "imguilayer.hpp"
-#include "app.hpp"
-#include "json_conversions.hpp"
-#include "debug.hpp"
-#include "assertions.hpp"
+#include "scene.hpp"
 #include "console.hpp"
+#include "log.hpp"
 #include "asset.hpp"
+#include "json_conversions.hpp"
+#include "app.hpp"
+#include "assertions.hpp"
+#include "screen.hpp"
+#include "renderer.hpp"
+#include "gfx.hpp"
+#include "imguilayer.hpp"
+#include "debug.hpp"
+#include "timer.hpp"
+#include "physics.hpp"
+#include "input.hpp"
+
+// TODO: remove these in the future
+#include "shadowpass.hpp"
+#include "scenecapture.hpp"
 
 Engine::Engine(const int argc, char* argv[]) {
     console::info(System::Core, "Prism Engine loading...");
@@ -36,6 +39,8 @@ Engine::Engine(const int argc, char* argv[]) {
     _imgui = std::make_unique<ImGuiLayer>();
     assetm = std::make_unique<AssetManager>();
 }
+
+Engine::~Engine() {}
 
 void Engine::set_app(App* app) {
     Expects(app != nullptr);
@@ -400,7 +405,7 @@ void Engine::add_window(void* native_handle, const int identifier, const prism::
     
     _gfx->initialize_view(native_handle, identifier, drawable_extent.width, drawable_extent.height);
 
-    Window window;
+    Window& window = _windows.emplace_back();
     window.identifier = identifier;
     window.extent = extent;
     window.renderer = std::make_unique<Renderer>(_gfx);
@@ -408,7 +413,6 @@ void Engine::add_window(void* native_handle, const int identifier, const prism::
     window.renderer->resize(drawable_extent);
 
     render_ready = true;
-    _windows.push_back(std::move(window));
 }
 
 void Engine::remove_window(const int identifier) {

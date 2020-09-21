@@ -8,6 +8,7 @@
 #include "materialcompiler.hpp"
 #include "assertions.hpp"
 #include "frustum.hpp"
+#include "renderer.hpp"
 
 struct PushConstant {
     Matrix4x4 mvp, model;

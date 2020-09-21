@@ -9,6 +9,7 @@
 
 #include "log.hpp"
 #include "file_utils.hpp"
+#include "path.hpp"
 
 namespace file {
     enum class Domain {
@@ -132,6 +133,5 @@ namespace file {
     
     inline Path internal_domain = "/internal", app_domain = "/app";
 }
-
 
 inline std::array<std::string, 3> domain_data;

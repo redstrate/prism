@@ -1,10 +1,15 @@
 #include "physics.hpp"
 
+#include <btBulletDynamicsCommon.h>
+
 #include "engine.hpp"
+#include "scene.hpp"
 
 Physics::Physics() {
     reset();
 }
+
+Physics::~Physics() {}
 
 void Physics::update(float deltaTime) {
     if(engine->get_scene() == nullptr)

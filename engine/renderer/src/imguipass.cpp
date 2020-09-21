@@ -8,6 +8,7 @@
 #include "gfx_commandbuffer.hpp"
 #include "log.hpp"
 #include "assertions.hpp"
+#include "renderer.hpp"
 
 void ImGuiPass::initialize() {
     ImGuiIO& io = ImGui::GetIO();

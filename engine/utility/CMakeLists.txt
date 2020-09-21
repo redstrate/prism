@@ -6,6 +6,8 @@ set(SRC
     include/common.hpp
     include/aabb.hpp
     include/file_utils.hpp
+    include/assertions.hpp
+    include/path.hpp
     
     src/string_utils.cpp)
 

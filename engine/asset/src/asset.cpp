@@ -10,6 +10,10 @@
 #include "json_conversions.hpp"
 #include "gfx_commandbuffer.hpp"
 #include "assertions.hpp"
+#include "renderer.hpp"
+#include "input.hpp"
+#include "physics.hpp"
+#include "imguilayer.hpp"
 
 std::unique_ptr<Mesh> load_mesh(const file::Path path) {
     Expects(!path.empty());

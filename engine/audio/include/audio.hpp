@@ -1,11 +1,6 @@
 #pragma once
 
-#include <fstream>
-#include <string>
-#include <vector>
-#include <string_view>
-
-#include "file.hpp"
+#include "path.hpp"
 
 /*
 * Audio API

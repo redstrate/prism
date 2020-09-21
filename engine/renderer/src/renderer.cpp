@@ -98,6 +98,8 @@ Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     createBRDF();
 }
 
+Renderer::~Renderer() {}
+
 void Renderer::resize(const prism::Extent extent) {
     this->extent = extent;
 

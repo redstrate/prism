@@ -9,6 +9,8 @@
 #include "gfx.hpp"
 #include "asset.hpp"
 #include "imgui_utility.hpp"
+#include "scene.hpp"
+#include "renderer.hpp"
 
 void draw_general() {
     ImGui::Text("Platform: %s", platform::get_name());

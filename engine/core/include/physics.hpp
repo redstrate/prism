@@ -1,14 +1,20 @@
 #pragma once
 
-#include <btBulletDynamicsCommon.h>
 #include <memory>
 
 #include "vector.hpp"
 #include "object.hpp"
 
+class btBroadphaseInterface;
+class btDefaultCollisionConfiguration;
+class btCollisionDispatcher;
+class btSequentialImpulseConstraintSolver;
+class btDiscreteDynamicsWorld;
+
 class Physics {
 public:
     Physics();
+    ~Physics();
 
     void update(float deltaTime);
 

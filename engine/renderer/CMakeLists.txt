@@ -31,10 +31,10 @@ target_link_libraries(Renderer
     stb
     Math
     Utility
-    Core
     imgui
     SMAA::SMAA
-    ShaderCompiler)
+    ShaderCompiler
+    Core)
 target_include_directories(Renderer PUBLIC include)
 set_engine_properties(Renderer)
 

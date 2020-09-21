@@ -19,6 +19,8 @@
 #include "assertions.hpp"
 #include "log.hpp"
 #include "asset.hpp"
+#include "scene.hpp"
+#include "renderer.hpp"
 
 class TransformCommand : public Command {
 public:

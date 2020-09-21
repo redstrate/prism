@@ -20,6 +20,8 @@
 #include "imgui_utility.hpp"
 #include "screen.hpp"
 #include "console.hpp"
+#include "input.hpp"
+#include "scenecapture.hpp"
 
 const std::map<ImGuiKey, InputButton> imToPl = {
     {ImGuiKey_Tab, InputButton::Tab},

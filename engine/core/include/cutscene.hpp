@@ -5,6 +5,7 @@
 #include "vector.hpp"
 #include "quaternion.hpp"
 #include "math.hpp"
+#include "object.hpp"
 
 struct PositionKeyFrame {
     float time;
@@ -48,6 +49,8 @@ struct Animation {
     
     std::vector<AnimationChannel> channels;
 };
+
+class Scene;
 
 struct Shot {
     int begin, length;
