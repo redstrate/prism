@@ -16,9 +16,16 @@
 #include "json_conversions.hpp"
 #include "debug.hpp"
 #include "assertions.hpp"
+#include "console.hpp"
 
 Engine::Engine(const int argc, char* argv[]) {
     console::info(System::Core, "Prism Engine loading...");
+    
+    console::register_command("test_cmd", console::ArgumentFormat(0), [](const console::Arguments arguments) {
+        console::info(System::Core, "Test cmd!");
+    });
+    
+    console::invoke_command("test_cmd", console::Arguments());
     
     for(int i = 0; i < argc; i++)
         command_line_arguments.push_back(argv[i]);

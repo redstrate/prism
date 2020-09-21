@@ -21,6 +21,7 @@ set(SRC
     include/platform.hpp
     include/file.hpp
     include/imgui_utility.hpp
+    include/console.hpp
 
     src/file.cpp
     src/engine.cpp
@@ -29,7 +30,8 @@ set(SRC
     src/imguilayer.cpp
     src/screen.cpp
     src/scene.cpp
-    src/debug.cpp)
+    src/debug.cpp
+    src/console.cpp)
 
 if(NOT ENABLE_IOS AND NOT ENABLE_TVOS)
     set(EXTRA_LIBRARIES Audio)

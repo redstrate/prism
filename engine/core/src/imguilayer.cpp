@@ -195,9 +195,7 @@ void ImGuiLayer::process_key_down(unsigned int keyCode) {
     Expects(keyCode >= 0);
     
     ImGuiIO& io = ImGui::GetIO();
-    
-    if(keyCode != 52)
-        io.AddInputCharactersUTF8(platform::translate_keycode(keyCode));
+    io.AddInputCharactersUTF8(platform::translate_keycode(keyCode));
     
     io.KeysDown[keyCode] = true;
 }

@@ -19,6 +19,7 @@
 #include "gfx_commandbuffer.hpp"
 #include "imgui_utility.hpp"
 #include "screen.hpp"
+#include "console.hpp"
 
 const std::map<ImGuiKey, InputButton> imToPl = {
     {ImGuiKey_Tab, InputButton::Tab},
@@ -1028,6 +1029,16 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
 }
 
 void CommonEditor::drawConsole() {
+    static std::string command_buffer;
+    ImGui::InputText("Command", &command_buffer);
+    
+    ImGui::SameLine();
+    
+    if(ImGui::Button("Run")) {
+        console::invoke_command(command_buffer, console::Arguments());
+        command_buffer.clear();
+    }
+    
     ImGui::BeginChild("console_output", ImVec2(-1, -1), true);
     
     for(const auto& message : console::stored_output)
