@@ -39,28 +39,27 @@ FetchContent_Declare(
   GIT_TAG master
 )
 
-macro(manual_download)
-    set(BUILD_BULLET3 OFF CACHE BOOL "" FORCE)
-    set(BUILD_BULLET3_DEMOS OFF CACHE BOOL "" FORCE)
-    set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "" FORCE)
-    set(BUILD_CPU_DEMOS OFF CACHE BOOL "" FORCE)
-    set(USE_GRAPHICAL_BENCHMARK OFF CACHE BOOL "" FORCE)
-    set(BUILD_EXTRAS OFF CACHE BOOL "" FORCE)
-    set(INSTALL_LIBS OFF CACHE BOOL "" FORCE)
-    set(BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
-    set(SPIRV_CROSS_SKIP_INSTALL ON CACHE BOOL "" FORCE)
-    set(BUILD_EXTERNAL OFF CACHE BOOL "" FORCE)
-    set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "" FORCE)
-    set(USE_MSVC_RUNTIME_LIBRARY_DLL ON CACHE BOOL "" FORCE)
+# manual download
+set(BUILD_BULLET3 OFF CACHE BOOL "" FORCE)
+set(BUILD_BULLET3_DEMOS OFF CACHE BOOL "" FORCE)
+set(BUILD_BULLET2_DEMOS OFF CACHE BOOL "" FORCE)
+set(BUILD_CPU_DEMOS OFF CACHE BOOL "" FORCE)
+set(USE_GRAPHICAL_BENCHMARK OFF CACHE BOOL "" FORCE)
+set(BUILD_EXTRAS OFF CACHE BOOL "" FORCE)
+set(INSTALL_LIBS OFF CACHE BOOL "" FORCE)
+set(BUILD_UNIT_TESTS OFF CACHE BOOL "" FORCE)
+set(SPIRV_CROSS_SKIP_INSTALL ON CACHE BOOL "" FORCE)
+set(BUILD_EXTERNAL OFF CACHE BOOL "" FORCE)
+set(ENABLE_GLSLANG_BINARIES OFF CACHE BOOL "" FORCE)
+set(USE_MSVC_RUNTIME_LIBRARY_DLL ON CACHE BOOL "" FORCE)
 
-    set(CMAKE_FOLDER "External")
+set(CMAKE_FOLDER "External")
 
-    FetchContent_MakeAvailable(bullet)
-    FetchContent_MakeAvailable(spirv-cross)
-    FetchContent_MakeAvailable(glslang)
+FetchContent_MakeAvailable(bullet)
+FetchContent_MakeAvailable(spirv-cross)
+FetchContent_MakeAvailable(glslang)
 
-    set(CMAKE_FOLDER "")
-endmacro()
+set(CMAKE_FOLDER "")
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" AND NOT IOS)
     message("macOS build detected!")
@@ -70,8 +69,6 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Darwin" AND NOT IOS)
     set(ENABLE_MACOS TRUE)
 
     set(CMAKE_XCODE_GENERATE_SCHEME OFF)
-
-    manual_download()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
@@ -80,8 +77,6 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "iOS")
     set(ENABLE_METAL TRUE)
     set(ENABLE_DARWIN TRUE)
     set(ENABLE_IOS TRUE)
-
-    manual_download()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "tvOS")
@@ -90,8 +85,6 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "tvOS")
     set(ENABLE_METAL TRUE)
     set(ENABLE_DARWIN TRUE)
     set(ENABLE_TVOS TRUE)
-
-    manual_download()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
@@ -99,47 +92,22 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
     set(ENABLE_WINDOWS ON)
     set(ENABLE_VULKAN ON)
-
-    manual_download()
 endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "WindowsStore")
     message("UWP build detected!")
 
     set(ENABLE_UWP TRUE)
-
-    manual_download()
 endif()
 
-if(NOT TARGET spirv-cross-cpp)
-    find_package(spirv_cross_core REQUIRED)
-    find_package(spirv_cross_glsl REQUIRED)
-    find_package(spirv_cross_cpp REQUIRED)
-    find_package(spirv_cross_msl REQUIRED)
-    find_package(glslang REQUIRED)
-
-    set(CROSS_LIBS
-        glslang::glslang
-        glslang::SPIRV
-        glslang::OSDependent
-        glslang::OGLCompiler
-        glslang::HLSL
-        spirv-cross-core
-        spirv-cross-glsl
-        spirv-cross-cpp
-        spirv-cross-msl
-    )
-else()
-    set(CROSS_LIBS
-        spirv-cross-core
-        spirv-cross-glsl
-        spirv-cross-cpp
-        spirv-cross-msl
-        glslang
-        SPIRV
-    )
-endif()
-
+set(CROSS_LIBS
+    spirv-cross-core
+    spirv-cross-glsl
+    spirv-cross-cpp
+    spirv-cross-msl
+    glslang
+    SPIRV
+)
 
 add_subdirectory(extern)
 add_subdirectory(platforms)
