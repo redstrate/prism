@@ -1,9 +1,11 @@
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 
 #include "shadercompiler.hpp"
 #include "log.hpp"
 #include "string_utils.hpp"
+#include "file_utils.hpp"
 
 bool has_extension(const std::filesystem::path path, const std::string_view extension) {
     return string_contains(path.filename().string(), extension);

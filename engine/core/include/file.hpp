@@ -8,6 +8,7 @@
 #include <filesystem>
 
 #include "log.hpp"
+#include "file_utils.hpp"
 
 namespace file {
     enum class Domain {
@@ -103,8 +104,6 @@ namespace file {
         std::vector<std::byte> data;
     };
 
-    using Path = std::filesystem::path;
-
     /** Sets the domain path to a location in the filesystem.
      @param domain The domain type.
      @param mode The access mode.
@@ -134,11 +133,5 @@ namespace file {
     inline Path internal_domain = "/internal", app_domain = "/app";
 }
 
-namespace console {
-    inline void internal_format(std::string& msg, const file::Path& arg) {
-        auto pos = msg.find_first_of("{}");
-        msg.replace(pos, 2, arg.string());
-    }
-}
 
 inline std::array<std::string, 3> domain_data;

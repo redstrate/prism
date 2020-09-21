@@ -20,7 +20,9 @@ class GFXVulkanPipeline;
 class GFXVulkan : public GFX {
 public:
     bool is_supported() { return true; }
-	GFXContext required_context() { return GFXContext::Vulkan; }const char* get_name() override;
+	ShaderLanguage accepted_shader_language() override { return ShaderLanguage::SPIRV; }
+	GFXContext required_context() { return GFXContext::Vulkan; }
+	const char* get_name() override;
 
     bool initialize(const GFXCreateInfo& info) override;
 

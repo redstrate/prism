@@ -7,6 +7,7 @@ set(SRC
     include/aabb.hpp
     include/path.hpp
     include/format.hpp
+    include/file_utils.hpp
     
     src/string_utils.cpp)
 
