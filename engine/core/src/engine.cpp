@@ -17,6 +17,7 @@
 #include "debug.hpp"
 #include "assertions.hpp"
 #include "console.hpp"
+#include "asset.hpp"
 
 Engine::Engine(const int argc, char* argv[]) {
     console::info(System::Core, "Prism Engine loading...");

@@ -9,6 +9,7 @@
 #include "shadowpass.hpp"
 #include "materialcompiler.hpp"
 #include "frustum.hpp"
+#include "asset.hpp"
 
 struct PushConstant {
     Matrix4x4 m, v;

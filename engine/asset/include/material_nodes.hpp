@@ -1,7 +1,7 @@
 #pragma once
 
-#include "renderer.hpp"
 #include "assetptr.hpp"
+#include "render_options.hpp"
 
 class MaterialNode;
 

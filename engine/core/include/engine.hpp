@@ -21,6 +21,7 @@
 #include "smaapass.hpp"
 #include "gaussianhelper.hpp"
 #include "common.hpp"
+#include "asset_types.hpp"
 
 class GFX;
 

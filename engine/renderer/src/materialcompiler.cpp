@@ -5,6 +5,7 @@
 #include "engine.hpp"
 #include "string_utils.hpp"
 #include "shadercompiler.hpp"
+#include "material_nodes.hpp"
 
 ShaderSource get_shader(std::string filename, bool skinned, bool cubemap) {
     auto shader_file = file::open(file::internal_domain / filename);

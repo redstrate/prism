@@ -1,22 +1,11 @@
 #pragma once
 
-#include <vector>
-#include <string>
-#include <array>
-#include <functional>
+#include <unordered_map>
+#include <nlohmann/json_fwd.hpp>
 
-#include <nlohmann/json.hpp>
-
-#include "vector.hpp"
-#include "matrix.hpp"
-#include "quaternion.hpp"
-#include "utility.hpp"
-#include "transform.hpp"
 #include "object.hpp"
-#include "asset.hpp"
 #include "components.hpp"
-#include "aabb.hpp"
-#include "plane.hpp"
+#include "utility.hpp"
 
 template<class Component>
 using Pool = std::unordered_map<Object, Component>;
@@ -208,6 +197,7 @@ const int max_point_shadows = 4;
 const int max_environment_probes = 4;
 
 class GFXFramebuffer;
+class GFXTexture;
 
 /// Represents a scene consisting of Objects with varying Components.
 class Scene : public ObjectComponents<Data, Transform, Renderable, Light, Camera, Collision, Rigidbody, UI, EnvironmentProbe> {
@@ -259,10 +249,7 @@ public:
  @param target The position to be centered in the camera's view.
  @note Although this is a look at function, it applies no special attribute to the camera and simply changes it's position and rotation.
  */
-inline void camera_look_at(Scene& scene, Object cam, Vector3 pos, Vector3 target) {
-    scene.get<Transform>(cam).position = pos;
-    scene.get<Transform>(cam).rotation = transform::quat_look_at(pos, target, Vector3(0, 1, 0));
-}
+void camera_look_at(Scene& scene, Object cam, Vector3 pos, Vector3 target);
 
 Object load_object(Scene& scene, const nlohmann::json obj);
 nlohmann::json save_object(Object obj);

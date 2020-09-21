@@ -10,6 +10,7 @@
 #include "string_utils.hpp"
 #include "log.hpp"
 #include "assertions.hpp"
+#include "uielement.hpp"
 
 void ui::Screen::calculate_sizes() {
     unsigned int numChildren = 0;

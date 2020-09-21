@@ -23,6 +23,7 @@
 #include "dofpass.hpp"
 #include "frustum.hpp"
 #include "shadercompiler.hpp"
+#include "asset.hpp"
 
 struct ElementInstance {
     Vector4 color;

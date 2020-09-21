@@ -4,6 +4,7 @@
 
 #include "vector.hpp"
 #include "quaternion.hpp"
+#include "math.hpp"
 
 struct PositionKeyFrame {
     float time;
@@ -23,6 +24,8 @@ struct ScaleKeyFrame {
     float time;
     Vector3 value;
 };
+
+struct Bone;
 
 struct AnimationChannel {
     std::string id;

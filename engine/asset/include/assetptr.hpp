@@ -1,10 +1,7 @@
 #pragma once
 
 #include <memory>
-#include <unordered_map>
-#include <array>
-
-#include "file.hpp"
+#include <string>
 
 struct ReferenceBlock {
     uint64_t references = 0;

@@ -10,6 +10,7 @@ set(SRC
     include/materialcompiler.hpp
     include/dofpass.hpp
     include/frustum.hpp
+    include/render_options.hpp
 
     src/renderer.cpp
     src/gaussianhelper.cpp

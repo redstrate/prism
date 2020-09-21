@@ -1,5 +1,7 @@
 #pragma once
 
+#include <vector>
+
 #include "assetptr.hpp"
 #include "object.hpp"
 #include "quaternion.hpp"

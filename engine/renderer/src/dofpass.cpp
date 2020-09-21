@@ -4,6 +4,7 @@
 #include "gfx.hpp"
 #include "gfx_commandbuffer.hpp"
 #include "engine.hpp"
+#include "asset.hpp"
 
 AssetPtr<Texture> aperture_texture;
 

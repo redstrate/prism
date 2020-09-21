@@ -18,6 +18,7 @@
 #include "debugpass.hpp"
 #include "assertions.hpp"
 #include "log.hpp"
+#include "asset.hpp"
 
 class TransformCommand : public Command {
 public:

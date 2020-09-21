@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <string_view>
 
 #include "pass.hpp"

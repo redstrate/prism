@@ -2,7 +2,7 @@
 
 #include <string>
 
-#include "asset.hpp"
+#include "assetptr.hpp"
 
 enum class MetricType {
     Absolute,

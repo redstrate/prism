@@ -7,6 +7,7 @@
 
 #include "uielement.hpp"
 #include "file.hpp"
+#include "common.hpp"
 
 class GFXBuffer;
 
