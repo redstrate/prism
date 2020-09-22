@@ -10,6 +10,16 @@ enum class ShadowFilter {
     PCSS
 };
 
+enum class DisplayColorSpace {
+    Linear = 0,
+    SRGB = 1,
+};
+
+enum class TonemapOperator {
+    Linear = 0,
+    ExposureBased = 1
+};
+
 #if defined(PLATFORM_TVOS) || defined(PLATFORM_IOS)
 constexpr bool default_enable_ibl = false;
 constexpr bool default_enable_normal_mapping = false;
@@ -25,6 +35,10 @@ constexpr int default_shadow_resolution = 2048;
 #endif
 
 struct RenderOptions {
+    DisplayColorSpace display_color_space = DisplayColorSpace::SRGB;
+    TonemapOperator tonemapping = TonemapOperator::Linear;
+    float exposure = 1.0f;
+    
     bool dynamic_resolution = false;
     double render_scale = 1.0f;
     

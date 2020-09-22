@@ -73,8 +73,7 @@ struct SceneInformation {
 };
 
 struct PostPushConstants {
-    Vector4 viewport;
-    Vector4 options;
+    Vector4 viewport, options, transform_ops;
 };
 
 struct UIPushConstant {
@@ -300,7 +299,9 @@ void Renderer::render(Scene* scene, int index) {
         PostPushConstants pc;
         pc.options.x = render_options.enable_aa;
         pc.options.y = fade;
-        pc.options.z = 1.0;
+        pc.options.z = render_options.exposure;
+        pc.transform_ops.x = (int)render_options.display_color_space;
+        pc.transform_ops.y = (int)render_options.tonemapping;
         
         const auto [width, height] = render_extent;
         pc.viewport = Vector4(1.0f / static_cast<float>(width), 1.0f / static_cast<float>(height), width, height);

@@ -8,8 +8,7 @@
 layout(std430, push_constant, binding = 4) uniform readonlPushConstant {
     vec4 viewport;
     float fade;
-    bool performGammaCorrection;
-    bool performAA;
+    vec4 transform_ops;
 };
 
 #include "smaa.glsl"

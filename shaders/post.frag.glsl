@@ -8,6 +8,7 @@
 layout(std430, push_constant, binding = 4) uniform PushConstant {
     vec4 viewport;
     vec4 options;
+    vec4 transform_ops;
 };
 
 #include "smaa.glsl"
@@ -63,6 +64,13 @@ void main() {
     vec3 sobelColor = vec3(0, 1, 1);
     
     vec3 hdrColor = sceneColor; // fading removed
-    hdrColor = vec3(1.0) - exp(-hdrColor * options.z); // exposure
-    outColor = vec4(from_linear_to_srgb(hdrColor) + (sobelColor * sobel), 1.0);
+    
+    vec3 transformed_color = hdrColor;
+    if(transform_ops.x == 1)
+        transformed_color = from_linear_to_srgb(hdrColor);
+    
+    if(transform_ops.y == 1)
+        transformed_color = vec3(1.0) - exp(-hdrColor * options.z);
+    
+    outColor = vec4(transformed_color + (sobelColor * sobel), 1.0);
 }

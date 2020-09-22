@@ -103,6 +103,10 @@ void draw_renderer() {
     ImGui::Text("Options");
     ImGui::Separator();
     
+    ImGui::ComboEnum("Display Color Space", &render_options.display_color_space);
+    ImGui::ComboEnum("Tonemapping", &render_options.tonemapping);
+    ImGui::DragFloat("Exposure", &render_options.exposure, 0.1f);
+    
     bool should_recompile = false;
     
     float render_scale = render_options.render_scale;
