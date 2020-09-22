@@ -11,6 +11,7 @@ target_include_directories(Asset PUBLIC include)
 target_link_libraries(Asset
     PUBLIC
     Math
+    Renderer
     PRIVATE
     stb
     Log

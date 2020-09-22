@@ -38,7 +38,6 @@ target_include_directories(Core SYSTEM PUBLIC
 target_link_libraries(Core PUBLIC
     Asset
     Math
-    Platform
     Utility
     nlohmann_json
     Log

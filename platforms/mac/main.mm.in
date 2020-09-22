@@ -24,7 +24,6 @@ static std::map<InputButton, int> inputToKeyCode = { {
     {InputButton::Backspace, 51},
     {InputButton::Enter, 36},
     {InputButton::Space, 49},
-    {InputButton::Ctrl, 17},
     {InputButton::Shift, 10},
     {InputButton::A, 0},
     {InputButton::W, 13},
