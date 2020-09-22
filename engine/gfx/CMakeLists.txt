@@ -1,4 +1,4 @@
-set(CMAKE_FOLDER "GFX Backends")
+set(CMAKE_FOLDER "${CMAKE_FOLDER}/GFX Backends")
 
 add_library(GFX INTERFACE)
 target_include_directories(GFX INTERFACE public)
