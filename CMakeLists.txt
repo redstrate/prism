@@ -74,5 +74,7 @@ add_subdirectory(platforms)
 
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin)
 
+source_group(Shaders shaders)
+
 add_subdirectory(engine)
 add_subdirectory(tools)

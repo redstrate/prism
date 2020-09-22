@@ -32,7 +32,10 @@ function(add_shader)
             compile_shader(${shader})
 
             list(APPEND SPV_FILES ${CMAKE_BINARY_DIR}/${MYFILE_WITHOUT_EXT}.glsl)
+            list(APPEND SRC_FILES ${CMAKE_CURRENT_SOURCE_DIR}/../../${shader})
         endforeach()
+
+        add_custom_target(Shaders SOURCES ${SRC_FILES})
 
         file(MAKE_DIRECTORY ${CMAKE_BINARY_DIR}/shaders)
 
