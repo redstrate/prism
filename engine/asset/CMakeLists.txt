@@ -6,7 +6,7 @@ set(SRC
     
     src/asset.cpp)
 
-add_library(Asset ${SRC})
+add_library(Asset STATIC ${SRC})
 target_include_directories(Asset PUBLIC include)
 target_link_libraries(Asset
     PUBLIC
