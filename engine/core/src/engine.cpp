@@ -25,8 +25,12 @@
 Engine::Engine(const int argc, char* argv[]) {
     console::info(System::Core, "Prism Engine loading...");
     
-    console::register_command("test_cmd", console::ArgumentFormat(0), [](const console::Arguments arguments) {
+    console::register_command("test_cmd", console::ArgumentFormat(0), [](const console::Arguments) {
         console::info(System::Core, "Test cmd!");
+    });
+    
+    console::register_command("quit", console::ArgumentFormat(0), [this](const console::Arguments) {
+        quit();
     });
     
     console::invoke_command("test_cmd", console::Arguments());

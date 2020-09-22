@@ -598,6 +598,9 @@ int main(int argc, char* argv[]) {
             
             const uint64_t current = clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
             const uint64_t elapsed = current - last_time;
+
+            if(engine->is_quitting())
+                is_qutting = true;
             
             for(auto& window : windows) {
                 if(window != nullptr)
