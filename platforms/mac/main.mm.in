@@ -392,6 +392,17 @@ void platform::set_window_title(const int index, const std::string_view title) {
 void platform::mute_output() {}
 void platform::unmute_output() {}
 
+PlatformTheme platform::get_theme() {
+    auto str = [[[NSApplication sharedApplication] effectiveAppearance] name];
+    
+    if(str == NSAppearanceNameAqua)
+        return PlatformTheme::Light;
+    else if(str == NSAppearanceNameDarkAqua)
+        return PlatformTheme::Dark;
+    
+    return PlatformTheme::Light;
+}
+
 int platform::open_window(const std::string_view title, const prism::Rectangle rect, const WindowFlags flags) {
     NativeWindow* native = new NativeWindow();
     native->index = windows.size();

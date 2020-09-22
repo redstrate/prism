@@ -46,41 +46,51 @@ ImGuiLayer::ImGuiLayer() {
     
     for (auto& [im, pl] : imToPl)
         io.KeyMap[im] = platform::get_keycode(pl);
+        
+    const auto theme = platform::get_theme();
+    switch(theme) {
+        case PlatformTheme::Light:
+            ImGui::StyleColorsLight();
+            break;
+        case PlatformTheme::Dark:
+        {
+            ImGui::StyleColorsDark();
+            
+            auto& style = ImGui::GetStyle();
+            style.FrameRounding = 3;
+            style.FrameBorderSize = 0.0f;
+            style.WindowBorderSize = 0.0f;
+            style.WindowPadding = ImVec2(10, 10);
+            style.FramePadding = ImVec2(4, 4);
+            style.ItemInnerSpacing = ImVec2(5, 0);
+            style.ItemSpacing = ImVec2(10, 5);
+            style.ScrollbarSize = 10;
+            style.GrabMinSize = 6;
+            style.WindowRounding = 3.0f;
+            style.ChildRounding = 3.0f;
+            style.PopupRounding = 3.0f;
+            style.ScrollbarRounding = 12.0f;
+            style.GrabRounding = 3.0f;
+            style.TabRounding = 3.0f;
+            style.WindowTitleAlign = ImVec2(0.0, 0.5);
+            
+            ImVec4* colors = ImGui::GetStyle().Colors;
+            colors[ImGuiCol_FrameBg]                = ImVec4(0.00f, 0.00f, 0.00f, 0.54f);
+            colors[ImGuiCol_FrameBgHovered]         = ImVec4(0.68f, 0.68f, 0.68f, 0.40f);
+            colors[ImGuiCol_FrameBgActive]          = ImVec4(0.42f, 0.47f, 0.52f, 0.67f);
+            colors[ImGuiCol_TitleBgActive]          = ImVec4(0.23f, 0.43f, 0.73f, 1.00f);
+            colors[ImGuiCol_CheckMark]              = ImVec4(0.74f, 0.80f, 0.87f, 1.00f);
+            colors[ImGuiCol_SliderGrab]             = ImVec4(0.46f, 0.54f, 0.64f, 1.00f);
+            colors[ImGuiCol_Button]                 = ImVec4(0.38f, 0.51f, 0.65f, 0.40f);
+            colors[ImGuiCol_ButtonHovered]          = ImVec4(0.57f, 0.61f, 0.67f, 1.00f);
+            colors[ImGuiCol_ButtonActive]           = ImVec4(0.32f, 0.34f, 0.36f, 1.00f);
+            colors[ImGuiCol_Tab]                    = ImVec4(0.22f, 0.27f, 0.33f, 0.86f);
+            colors[ImGuiCol_TabActive]              = ImVec4(0.33f, 0.51f, 0.75f, 1.00f);
+            colors[ImGuiCol_TabUnfocusedActive]     = ImVec4(0.30f, 0.33f, 0.38f, 1.00f);
+        }
+            break;
+    }
     
-    ImGui::StyleColorsDark();
-    
-    auto& style = ImGui::GetStyle();
-    style.FrameRounding = 3;
-    style.FrameBorderSize = 0.0f;
-    style.WindowBorderSize = 0.0f;
-    style.WindowPadding = ImVec2(10, 10);
-    style.FramePadding = ImVec2(4, 4);
-    style.ItemInnerSpacing = ImVec2(5, 0);
-    style.ItemSpacing = ImVec2(10, 5);
-    style.ScrollbarSize = 10;
-    style.GrabMinSize = 6;
-    style.WindowRounding = 3.0f;
-    style.ChildRounding = 3.0f;
-    style.PopupRounding = 3.0f;
-    style.ScrollbarRounding = 12.0f;
-    style.GrabRounding = 3.0f;
-    style.TabRounding = 3.0f;
-    style.WindowTitleAlign = ImVec2(0.0, 0.5);
-    
-    ImVec4* colors = ImGui::GetStyle().Colors;
-    colors[ImGuiCol_FrameBg]                = ImVec4(0.00f, 0.00f, 0.00f, 0.54f);
-    colors[ImGuiCol_FrameBgHovered]         = ImVec4(0.68f, 0.68f, 0.68f, 0.40f);
-    colors[ImGuiCol_FrameBgActive]          = ImVec4(0.42f, 0.47f, 0.52f, 0.67f);
-    colors[ImGuiCol_TitleBgActive]          = ImVec4(0.23f, 0.43f, 0.73f, 1.00f);
-    colors[ImGuiCol_CheckMark]              = ImVec4(0.74f, 0.80f, 0.87f, 1.00f);
-    colors[ImGuiCol_SliderGrab]             = ImVec4(0.46f, 0.54f, 0.64f, 1.00f);
-    colors[ImGuiCol_Button]                 = ImVec4(0.38f, 0.51f, 0.65f, 0.40f);
-    colors[ImGuiCol_ButtonHovered]          = ImVec4(0.57f, 0.61f, 0.67f, 1.00f);
-    colors[ImGuiCol_ButtonActive]           = ImVec4(0.32f, 0.34f, 0.36f, 1.00f);
-    colors[ImGuiCol_Tab]                    = ImVec4(0.22f, 0.27f, 0.33f, 0.86f);
-    colors[ImGuiCol_TabActive]              = ImVec4(0.33f, 0.51f, 0.75f, 1.00f);
-    colors[ImGuiCol_TabUnfocusedActive]     = ImVec4(0.30f, 0.33f, 0.38f, 1.00f);
-
     ImGuiViewport* main_viewport = ImGui::GetMainViewport();
     main_viewport->PlatformHandle = new int(0);
 

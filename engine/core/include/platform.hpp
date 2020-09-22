@@ -58,9 +58,18 @@ enum class PlatformFeature {
     Windowing
 };
 
+/// On platforms that has a GUI with a seperate light/dark mode.
+enum class PlatformTheme {
+    Light,
+    Dark
+};
+
 namespace platform {
     /// Returns a human readable platform name, e.g. Linux.
     const char* get_name();
+    
+    /// Returns the current platform theme.
+    PlatformTheme get_theme();
 
     /// Queries whether or not the platform supports a certain feature.
     bool supports_feature(const PlatformFeature feature);
