@@ -43,7 +43,7 @@ void SMAAPass::render(GFXCommandBuffer* command_buffer) {
         
         command_buffer->set_viewport(viewport);
         
-        command_buffer->set_pipeline(edge_pipeline);
+        command_buffer->set_graphics_pipeline(edge_pipeline);
         command_buffer->set_push_constant(&pc, sizeof(PushConstant));
 
         command_buffer->bind_texture(renderer->offscreenColorTexture, 0); // color
@@ -57,7 +57,7 @@ void SMAAPass::render(GFXCommandBuffer* command_buffer) {
         beginInfo.framebuffer = blend_framebuffer;
         command_buffer->set_render_pass(beginInfo);
 
-        command_buffer->set_pipeline(blend_pipeline);
+        command_buffer->set_graphics_pipeline(blend_pipeline);
         command_buffer->set_push_constant(&pc, sizeof(PushConstant));
 
         command_buffer->bind_texture(edge_texture, 0);

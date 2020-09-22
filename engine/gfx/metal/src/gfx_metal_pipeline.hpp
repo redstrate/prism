@@ -9,6 +9,8 @@ public:
     std::string label;
     
     id<MTLRenderPipelineState> handle = nil;
+    id<MTLComputePipelineState> compute_handle = nil;
+
     id<MTLDepthStencilState> depthStencil = nil;
     MTLPrimitiveType primitiveType;
 

@@ -97,7 +97,7 @@ void ImGuiPass::render_post(GFXCommandBuffer* command_buffer, const int index) {
     
     update_buffers(*draw_data);
 
-    command_buffer->set_pipeline(pipeline);
+    command_buffer->set_graphics_pipeline(pipeline);
 
     command_buffer->set_vertex_buffer(vertex_buffer, 0, 0);
     command_buffer->set_index_buffer(index_buffer, IndexType::UINT16);

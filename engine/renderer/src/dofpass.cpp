@@ -35,7 +35,7 @@ DoFPass::DoFPass(GFX* gfx, Renderer* renderer) : renderer(renderer) {
 }
 
 void DoFPass::render(GFXCommandBuffer* command_buffer, Scene&) {
-    command_buffer->set_pipeline(pipeline);
+    command_buffer->set_graphics_pipeline(pipeline);
     
     command_buffer->bind_texture(renderer->offscreenColorTexture, 0);
     command_buffer->bind_texture(renderer->offscreenDepthTexture, 1);

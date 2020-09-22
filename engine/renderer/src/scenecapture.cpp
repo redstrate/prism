@@ -253,7 +253,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                                 if(render_options.enable_frustum_culling && !test_aabb_frustum(frustum, get_aabb_for_part(scene->get<Transform>(obj), part)))
                                     continue;
                                 
-                                command_buffer->set_pipeline( mesh.materials[material_index]->capture_pipeline);
+                                command_buffer->set_graphics_pipeline(mesh.materials[material_index]->capture_pipeline);
              
                                 command_buffer->set_push_constant(&pc, sizeof(PushConstant));
                                 
@@ -286,7 +286,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                         pc.sun_position_fov = Vector4(scene->get<Transform>(obj).get_world_position(), radians(90.0f));
                 }
                 
-                command_buffer->set_pipeline(skyPipeline);
+                command_buffer->set_graphics_pipeline(skyPipeline);
                 
                 command_buffer->set_push_constant(&pc, sizeof(SkyPushConstant));
                 
@@ -322,7 +322,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 command_buffer->set_vertex_buffer(cubeMesh->position_buffer, 0, 0);
                 command_buffer->set_index_buffer(cubeMesh->index_buffer, IndexType::UINT32);
                 
-                command_buffer->set_pipeline(irradiancePipeline);
+                command_buffer->set_graphics_pipeline(irradiancePipeline);
                 command_buffer->bind_texture(environmentCube, 2);
                 command_buffer->set_push_constant(&mvp, sizeof(Matrix4x4));
                 
@@ -362,7 +362,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 pc.mvp = projection * sceneTransforms[face];
                 pc.roughness = ((float)mip) / (float)(mipLevels - 1);
 
-                command_buffer->set_pipeline(prefilterPipeline);
+                command_buffer->set_graphics_pipeline(prefilterPipeline);
                 command_buffer->bind_texture(environmentCube, 2);
                 command_buffer->set_push_constant(&pc, sizeof(PushConstant));
                 

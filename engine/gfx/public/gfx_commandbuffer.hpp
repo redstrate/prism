@@ -41,7 +41,8 @@ enum class IndexType : int {
 enum class GFXCommandType {
     Invalid,
     SetRenderPass,
-    SetPipeline,
+    SetGraphicsPipeline,
+    SetComputePipeline,
     SetVertexBuffer,
     SetIndexBuffer,
     SetPushConstant,
@@ -58,7 +59,8 @@ enum class GFXCommandType {
     SetDepthBias,
     PushGroup,
     PopGroup,
-    InsertLabel
+    InsertLabel,
+    Dispatch
 };
 
 struct GFXDrawCommand {
@@ -67,11 +69,13 @@ struct GFXDrawCommand {
     struct CommandData {
         GFXRenderPassBeginInfo set_render_pass;
         
-        struct SetPipelineData {
-            SetPipelineData() {}
-            
+        struct SetGraphicsPipelineData {
             GFXPipeline* pipeline = nullptr;
-        } set_pipeline;
+        } set_graphics_pipeline;
+        
+        struct SetComputePipelineData {
+            GFXPipeline* pipeline = nullptr;
+        } set_compute_pipeline;
         
         struct SetVertexData {
             GFXBuffer* buffer = nullptr;
@@ -153,6 +157,10 @@ struct GFXDrawCommand {
         struct InsertLabelData {
             std::string_view name;
         } insert_label;
+        
+        struct DispatchData {
+            uint32_t group_count_x, group_count_y, group_count_z;
+        } dispatch;
     } data;
 };
 
@@ -166,10 +174,18 @@ public:
         commands.push_back(command);
     }
     
-    void set_pipeline(GFXPipeline* pipeline) {
+    void set_graphics_pipeline(GFXPipeline* pipeline) {
         GFXDrawCommand command;
-        command.type = GFXCommandType::SetPipeline;
-        command.data.set_pipeline.pipeline = pipeline;
+        command.type = GFXCommandType::SetGraphicsPipeline;
+        command.data.set_graphics_pipeline.pipeline = pipeline;
+        
+        commands.push_back(command);
+    }
+    
+    void set_compute_pipeline(GFXPipeline* pipeline) {
+        GFXDrawCommand command;
+        command.type = GFXCommandType::SetComputePipeline;
+        command.data.set_compute_pipeline.pipeline = pipeline;
         
         commands.push_back(command);
     }
@@ -330,6 +346,16 @@ public:
         GFXDrawCommand command;
         command.type = GFXCommandType::InsertLabel;
         command.data.insert_label.name = name;
+        
+        commands.push_back(command);
+    }
+    
+    void dispatch(const uint32_t group_count_x, const uint32_t group_count_y, const uint32_t group_count_z) {
+        GFXDrawCommand command;
+        command.type = GFXCommandType::Dispatch;
+        command.data.dispatch.group_count_x = group_count_x;
+        command.data.dispatch.group_count_y = group_count_y;
+        command.data.dispatch.group_count_z = group_count_z;
         
         commands.push_back(command);
     }

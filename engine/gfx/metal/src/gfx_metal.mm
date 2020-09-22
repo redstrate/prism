@@ -673,6 +673,15 @@ GFXPipeline* GFXMetal::create_compute_pipeline(const GFXComputePipelineCreateInf
     MTLComputePipelineDescriptor* pipelineDescriptor = [MTLComputePipelineDescriptor new];
     pipelineDescriptor.computeFunction = computeFunc;
     
+    if(debug_enabled) {
+        pipelineDescriptor.label = [NSString stringWithFormat:@"%s", info.label.data()];
+        pipeline->label = info.label;
+    }
+    
+    pipeline->compute_handle = [device newComputePipelineStateWithDescriptor:pipelineDescriptor error:&error];
+    if(!pipeline->handle)
+        NSLog(@"%@", error.debugDescription);
+    
     [computeLibrary release];
 
     return pipeline;
@@ -707,6 +716,7 @@ void GFXMetal::submit(GFXCommandBuffer* command_buffer, const int window) {
         id<MTLCommandBuffer> commandBuffer = [command_queue commandBuffer];
 
         id <MTLRenderCommandEncoder> renderEncoder = nil;
+        id <MTLComputeCommandEncoder> computeEncoder = nil;
         id <MTLBlitCommandEncoder> blitEncoder = nil;
         
         GFXMetalRenderPass* currentRenderPass = nullptr;
@@ -720,6 +730,7 @@ void GFXMetal::submit(GFXCommandBuffer* command_buffer, const int window) {
         enum class CurrentEncoder {
             None,
             Render,
+            Compute,
             Blit
         } current_encoder = CurrentEncoder::None;
 
@@ -728,10 +739,14 @@ void GFXMetal::submit(GFXCommandBuffer* command_buffer, const int window) {
                 if(renderEncoder != nil)
                     [renderEncoder endEncoding];
                 
+                if(computeEncoder != nil)
+                    [computeEncoder endEncoding];
+                
                 if(blitEncoder != nil)
                     [blitEncoder endEncoding];
                 
                 renderEncoder = nil;
+                computeEncoder = nil;
                 blitEncoder = nil;
             }
             
@@ -777,6 +792,11 @@ void GFXMetal::submit(GFXCommandBuffer* command_buffer, const int window) {
                     [descriptor release];
                 }
                     break;
+                case CurrentEncoder::Compute:
+                {
+                    computeEncoder = [commandBuffer computeCommandEncoder];
+                }
+                    break;
                 case CurrentEncoder::Blit:
                 {
                     blitEncoder = [commandBuffer blitCommandEncoder];
@@ -806,23 +826,33 @@ void GFXMetal::submit(GFXCommandBuffer* command_buffer, const int window) {
                     needEncoder(CurrentEncoder::Render, true);
                 }
                     break;
-                case GFXCommandType::SetPipeline:
+                case GFXCommandType::SetGraphicsPipeline:
                 {
                     needEncoder(CurrentEncoder::Render);
                     
-                    [renderEncoder setRenderPipelineState:((GFXMetalPipeline*)command.data.set_pipeline.pipeline)->handle];
+                    [renderEncoder setRenderPipelineState:((GFXMetalPipeline*)command.data.set_graphics_pipeline.pipeline)->handle];
 
-                    currentPipeline = (GFXMetalPipeline*)command.data.set_pipeline.pipeline;
+                    currentPipeline = (GFXMetalPipeline*)command.data.set_graphics_pipeline.pipeline;
 
                     [renderEncoder setDepthStencilState:currentPipeline->depthStencil];
 
-                    [renderEncoder setCullMode:((GFXMetalPipeline*)command.data.set_pipeline.pipeline)->cullMode];
-                    [renderEncoder setFrontFacingWinding:toWinding(((GFXMetalPipeline*)command.data.set_pipeline.pipeline)->winding_mode)];
+                    [renderEncoder setCullMode:((GFXMetalPipeline*)command.data.set_graphics_pipeline.pipeline)->cullMode];
+                    [renderEncoder setFrontFacingWinding:toWinding(((GFXMetalPipeline*)command.data.set_graphics_pipeline.pipeline)->winding_mode)];
 
                     if(currentPipeline->renderWire)
                         [renderEncoder setTriangleFillMode:MTLTriangleFillModeLines];
                     else
                         [renderEncoder setTriangleFillMode:MTLTriangleFillModeFill];
+                }
+                    break;
+                case GFXCommandType::SetComputePipeline:
+                {
+                    needEncoder(CurrentEncoder::Compute);
+                    
+                    currentPipeline = (GFXMetalPipeline*)command.data.set_compute_pipeline.pipeline;
+                    
+                    [computeEncoder setComputePipelineState:((GFXMetalPipeline*)command.data.set_compute_pipeline.pipeline)->compute_handle];
+
                 }
                     break;
                 case  GFXCommandType::SetVertexBuffer:
@@ -1032,6 +1062,19 @@ void GFXMetal::submit(GFXCommandBuffer* command_buffer, const int window) {
                         default:
                             break;
                     }
+                }
+                    break;
+                case GFXCommandType::Dispatch: {
+                    needEncoder(CurrentEncoder::Compute);
+                    
+                    NSUInteger threadGroupSize = currentPipeline->compute_handle.maxTotalThreadsPerThreadgroup;
+
+                    MTLSize threadgroupSize = MTLSizeMake(std::min(threadGroupSize,
+                                                              (NSUInteger)command.data.dispatch.group_count_x),
+                                                          std::min(threadGroupSize, (NSUInteger)command.data.dispatch.group_count_y),
+                                                          std::min(threadGroupSize, (NSUInteger)command.data.dispatch.group_count_z));
+                    
+                    [computeEncoder dispatchThreads:MTLSizeMake(command.data.dispatch.group_count_x, command.data.dispatch.group_count_y, command.data.dispatch.group_count_z) threadsPerThreadgroup:threadgroupSize];
                 }
                     break;
             }

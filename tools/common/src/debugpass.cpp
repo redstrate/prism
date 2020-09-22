@@ -239,7 +239,7 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
     
     Matrix4x4 vp = camera.perspective * camera.view;
 
-	commandBuffer->set_pipeline(primitive_pipeline);
+	commandBuffer->set_graphics_pipeline(primitive_pipeline);
 
     struct DebugPrimitive {
         Vector3 position, size;
@@ -338,7 +338,7 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
         commandBuffer->draw_indexed(cubeMesh->num_indices, 0, 0);
     }
     
-    commandBuffer->set_pipeline(billboard_pipeline);
+    commandBuffer->set_graphics_pipeline(billboard_pipeline);
     
     // draw primitives
     for(auto& bill : billboards) {
@@ -355,7 +355,7 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
         commandBuffer->draw_indexed(4, 0, 0);
     }
     
-    commandBuffer->set_pipeline(arrow_pipeline);
+    commandBuffer->set_graphics_pipeline(arrow_pipeline);
     
     // draw handles for selected object;
     if(selected_object != NullObject && engine->get_scene()->has<Transform>(selected_object)) {
@@ -386,7 +386,7 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
     commandBuffer->set_render_pass(info);
     
     if(selected_object != NullObject && engine->get_scene()->has<Renderable>(selected_object)) {
-        commandBuffer->set_pipeline(sobelPipeline);
+        commandBuffer->set_graphics_pipeline(sobelPipeline);
 
         auto renderable = engine->get_scene()->get<Renderable>(selected_object);
         
@@ -496,7 +496,7 @@ void DebugPass::get_selected_object(int x, int y, std::function<void(SelectableO
     
     commandBuffer->set_viewport(viewport);
 
-    commandBuffer->set_pipeline(selectPipeline);
+    commandBuffer->set_graphics_pipeline(selectPipeline);
 
     for(auto [i, object] : utility::enumerate(selectable_objects)) {
         AssetPtr<Mesh> mesh;

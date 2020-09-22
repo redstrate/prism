@@ -893,7 +893,7 @@ GFXTexture* CommonEditor::get_texture_preview(Texture& texture) {
     
     command_buffer->set_viewport(viewport);
     
-    command_buffer->set_pipeline(renderer->renderToUnormTexturePipeline);
+    command_buffer->set_graphics_pipeline(renderer->renderToUnormTexturePipeline);
     
     command_buffer->bind_texture(texture.handle, 1);
     command_buffer->bind_texture(renderer->dummyTexture, 2);
@@ -1010,7 +1010,7 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
     
     command_buffer->set_viewport(viewport);
     
-    command_buffer->set_pipeline(renderer->renderToUnormTexturePipeline);
+    command_buffer->set_graphics_pipeline(renderer->renderToUnormTexturePipeline);
     
     command_buffer->bind_texture(offscreen_color_texture, 1);
     command_buffer->bind_texture(renderer->dummyTexture, 2);

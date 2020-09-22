@@ -64,7 +64,7 @@ GFXTexture* GaussianHelper::render(GFXCommandBuffer* commandBuffer, GFXTexture* 
 
         commandBuffer->set_render_pass(info);
 
-        commandBuffer->set_pipeline(pipeline);
+        commandBuffer->set_graphics_pipeline(pipeline);
 
         commandBuffer->memory_barrier();
 

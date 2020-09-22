@@ -126,13 +126,13 @@ void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, c
         if(mesh.mesh->bones.empty()) {
             switch(type) {
                 case Light::Type::Sun:
-                    command_buffer->set_pipeline(static_sun_pipeline);
+                    command_buffer->set_graphics_pipeline(static_sun_pipeline);
                     break;
                 case Light::Type::Spot:
-                    command_buffer->set_pipeline(static_spot_pipeline);
+                    command_buffer->set_graphics_pipeline(static_spot_pipeline);
                     break;
                 case Light::Type::Point:
-                    command_buffer->set_pipeline(static_point_pipeline);
+                    command_buffer->set_graphics_pipeline(static_point_pipeline);
                     break;
             }
             
@@ -148,13 +148,13 @@ void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, c
         } else {
             switch(type) {
                 case Light::Type::Sun:
-                    command_buffer->set_pipeline(skinned_sun_pipeline);
+                    command_buffer->set_graphics_pipeline(skinned_sun_pipeline);
                     break;
                 case Light::Type::Spot:
-                    command_buffer->set_pipeline(skinned_spot_pipeline);
+                    command_buffer->set_graphics_pipeline(skinned_spot_pipeline);
                     break;
                 case Light::Type::Point:
-                    command_buffer->set_pipeline(skinned_point_pipeline);
+                    command_buffer->set_graphics_pipeline(skinned_point_pipeline);
                     break;
             }
             

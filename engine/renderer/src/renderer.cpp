@@ -206,6 +206,10 @@ void Renderer::stopSceneBlur() {
 void Renderer::render(Scene* scene, int index) {
     GFXCommandBuffer* commandbuffer = engine->get_gfx()->acquire_command_buffer();
 
+    commandbuffer->set_compute_pipeline(histogram_pipeline);
+    
+    commandbuffer->dispatch(1, 1, 1);
+    
     const auto extent = get_extent();
     const auto render_extent = get_render_extent();
     
@@ -286,7 +290,7 @@ void Renderer::render(Scene* scene, int index) {
         
         commandbuffer->push_group("Post Processing");
     
-        commandbuffer->set_pipeline(viewport_mode ? renderToViewportPipeline : postPipeline);
+        commandbuffer->set_graphics_pipeline(viewport_mode ? renderToViewportPipeline : postPipeline);
         commandbuffer->bind_texture(offscreenColorTexture, 1);
         commandbuffer->bind_texture(offscreenBackTexture, 2);
         commandbuffer->bind_texture(smaaPass->blend_texture, 3);
@@ -447,7 +451,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
             if(render_options.enable_frustum_culling && !test_aabb_frustum(frustum, get_aabb_for_part(scene.get<Transform>(obj), part)))
                 continue;
             
-            command_buffer->set_pipeline(mesh.mesh->bones.empty() ? mesh.materials[material_index]->static_pipeline : mesh.materials[material_index]->skinned_pipeline);
+            command_buffer->set_graphics_pipeline(mesh.mesh->bones.empty() ? mesh.materials[material_index]->static_pipeline : mesh.materials[material_index]->skinned_pipeline);
             
             if(!mesh.mesh->bones.empty())
                 command_buffer->bind_shader_buffer(part.bone_batrix_buffer, 0, 14, sizeof(Matrix4x4) * 128);
@@ -493,7 +497,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
             pc.sun_position_fov = Vector4(scene.get<Transform>(obj).get_world_position(), radians(camera.fov));
     }
     
-    command_buffer->set_pipeline(skyPipeline);
+    command_buffer->set_graphics_pipeline(skyPipeline);
     
     command_buffer->set_push_constant(&pc, sizeof(SkyPushConstant));
     
@@ -602,10 +606,10 @@ void Renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen
         pc.screenSize = windowSize;
 
         if(options.render_world) {
-            commandbuffer->set_pipeline(worldGeneralPipeline);
+            commandbuffer->set_graphics_pipeline(worldGeneralPipeline);
             pc.mvp = options.mvp;
         } else {
-            commandbuffer->set_pipeline(generalPipeline);
+            commandbuffer->set_graphics_pipeline(generalPipeline);
         }
 
         commandbuffer->set_push_constant(&pc, sizeof(UIPushConstant));
@@ -618,10 +622,10 @@ void Renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen
     pc.screenSize = windowSize;
 
     if(options.render_world) {
-        commandbuffer->set_pipeline(worldTextPipeline);
+        commandbuffer->set_graphics_pipeline(worldTextPipeline);
         pc.mvp = options.mvp;
     } else {
-        commandbuffer->set_pipeline(textPipeline);
+        commandbuffer->set_graphics_pipeline(textPipeline);
     }
 
     commandbuffer->set_push_constant(&pc, sizeof(UIPushConstant));
@@ -983,7 +987,7 @@ void Renderer::createBRDF() {
     
     command_buffer->set_render_pass(beginInfo);
     
-    command_buffer->set_pipeline(brdfPipeline);
+    command_buffer->set_graphics_pipeline(brdfPipeline);
     
     Viewport viewport = {};
     viewport.width = brdf_resolution;
