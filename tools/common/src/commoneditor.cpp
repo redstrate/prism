@@ -345,7 +345,10 @@ void CommonEditor::walkObject(Object object, Object) {
     if(data.editor_object)
         return;
     
-    ImGui::PushStyleColor(ImGuiCol_Text, selected_object == object ? ImVec4(0.0, 0.0, 1.0, 1.0) : ImVec4(1.0, 1.0, 1.0, 1.0));
+    const auto text_color = ImGui::GetStyle().Colors[ImGuiCol_Text];
+    const auto active_color = ImGui::GetStyle().Colors[ImGuiCol_ButtonActive];
+    
+    ImGui::PushStyleColor(ImGuiCol_Text, selected_object == object ? active_color : text_color);
     
     bool is_open = ImGui::TreeNodeEx((void*)object, base_flags, "%s", data.name.c_str());
     

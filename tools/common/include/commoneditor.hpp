@@ -227,6 +227,7 @@ public:
         const float inner_spacing = ImGui::GetStyle().ItemInnerSpacing.x;
         
         const auto frame_color = ImGui::GetStyle().Colors[ImGuiCol_FrameBg];
+        const auto text_color = ImGui::GetStyle().Colors[ImGuiCol_Text];
 
         const ImRect edit_rect = ImRect(window_pos, ImVec2(window_pos.x + thumbnail_size, window_pos.y + thumbnail_size));
     
@@ -235,7 +236,7 @@ public:
         
         ImRect path_rect = ImRect(ImVec2(window_pos.x + thumbnail_size + 10.0f, window_pos.y), ImVec2(window_pos.x + item_width - inner_spacing, window_pos.y + 20.0f));
 
-        draw_list->AddText(ImVec2(window_pos.x + item_width, window_pos.y + (thumbnail_size / 2.0f) - (line_height / 2.0f)), ImColor(255, 255, 255, 255), name);
+        draw_list->AddText(ImVec2(window_pos.x + item_width, window_pos.y + (thumbnail_size / 2.0f) - (line_height / 2.0f)), ImColor(text_color), name);
                 
         draw_list->AddRectFilled(path_rect.Min, path_rect.Max, ImColor(frame_color), 3.0f);
         
@@ -251,7 +252,7 @@ public:
         
         ImGui::PushClipRect(path_rect.Min, path_rect.Max, false);
 
-        draw_list->AddText(ImVec2(window_pos.x + thumbnail_size + 10.0f, window_pos.y), ImColor(255, 255, 255, 255), path.c_str());
+        draw_list->AddText(ImVec2(window_pos.x + thumbnail_size + 10.0f, window_pos.y), ImColor(text_color), path.c_str());
 
         ImGui::Dummy(ImVec2(thumbnail_size, thumbnail_size + 10.0f));
         
@@ -270,9 +271,8 @@ public:
         
         ImGui::ItemAdd(edit_rect, ImGui::GetID("edit"));
         
-        if(ImGui::IsItemClicked()) {
+        if(ImGui::IsItemClicked())
             asset_selected(asset->path, get_asset_type<T>());
-        }
         
         ImGui::ItemAdd(clear_rect, ImGui::GetID("clear"));
 
