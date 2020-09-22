@@ -205,10 +205,6 @@ void Renderer::stopSceneBlur() {
 
 void Renderer::render(Scene* scene, int index) {
     GFXCommandBuffer* commandbuffer = engine->get_gfx()->acquire_command_buffer();
-
-    commandbuffer->set_compute_pipeline(histogram_pipeline);
-    
-    commandbuffer->dispatch(1, 1, 1);
     
     const auto extent = get_extent();
     const auto render_extent = get_render_extent();
@@ -289,6 +285,14 @@ void Renderer::render(Scene* scene, int index) {
         commandbuffer->set_viewport(viewport);
         
         commandbuffer->push_group("Post Processing");
+        
+        commandbuffer->set_compute_pipeline(histogram_pipeline);
+        
+        commandbuffer->bind_texture(offscreenColorTexture, 0);
+        commandbuffer->bind_shader_buffer(histogram_buffer, 0, 1, sizeof(uint) * 256);
+        
+        commandbuffer->dispatch(static_cast<uint32_t>(std::ceil(render_extent.width / 16.0f)),
+                                static_cast<uint32_t>(std::ceil(render_extent.height / 16.0f)), 1);
     
         commandbuffer->set_graphics_pipeline(viewport_mode ? renderToViewportPipeline : postPipeline);
         commandbuffer->bind_texture(offscreenColorTexture, 1);
@@ -1003,6 +1007,10 @@ void Renderer::createBRDF() {
 void Renderer::create_histogram_resources() {
     GFXComputePipelineCreateInfo create_info = {};
     create_info.shaders.compute_path = "histogram.comp";
+    create_info.workgroup_size_x = 16;
+    create_info.workgroup_size_y = 16;
     
     histogram_pipeline = gfx->create_compute_pipeline(create_info);
+    
+    histogram_buffer = gfx->create_buffer(nullptr, sizeof(uint) * 256, false, GFXBufferUsage::Storage);
 }

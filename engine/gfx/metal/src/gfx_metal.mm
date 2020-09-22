@@ -673,6 +673,8 @@ GFXPipeline* GFXMetal::create_compute_pipeline(const GFXComputePipelineCreateInf
     MTLComputePipelineDescriptor* pipelineDescriptor = [MTLComputePipelineDescriptor new];
     pipelineDescriptor.computeFunction = computeFunc;
     
+    pipeline->threadGroupSize = MTLSizeMake(info.workgroup_size_x, info.workgroup_size_y, info.workgroup_size_z);
+    
     if(debug_enabled) {
         pipelineDescriptor.label = [NSString stringWithFormat:@"%s", info.label.data()];
         pipeline->label = info.label;
@@ -881,29 +883,33 @@ void GFXMetal::submit(GFXCommandBuffer* command_buffer, const int window) {
                     break;
                 case GFXCommandType::BindShaderBuffer:
                 {
-                    needEncoder(CurrentEncoder::Render);
-
-                    [renderEncoder setVertexBuffer:((GFXMetalBuffer*)command.data.bind_shader_buffer.buffer)->get(currentFrameIndex) offset:(NSUInteger)command.data.bind_shader_buffer.offset atIndex:(NSUInteger)command.data.bind_shader_buffer.index ];
-
-                    [renderEncoder setFragmentBuffer:((GFXMetalBuffer*)command.data.bind_shader_buffer.buffer)->get(currentFrameIndex) offset:(NSUInteger)command.data.bind_shader_buffer.offset atIndex:(NSUInteger)command.data.bind_shader_buffer.index ];
+                    if(current_encoder == CurrentEncoder::Render) {
+                        [renderEncoder setVertexBuffer:((GFXMetalBuffer*)command.data.bind_shader_buffer.buffer)->get(currentFrameIndex) offset:(NSUInteger)command.data.bind_shader_buffer.offset atIndex:(NSUInteger)command.data.bind_shader_buffer.index ];
+                        
+                        [renderEncoder setFragmentBuffer:((GFXMetalBuffer*)command.data.bind_shader_buffer.buffer)->get(currentFrameIndex) offset:(NSUInteger)command.data.bind_shader_buffer.offset atIndex:(NSUInteger)command.data.bind_shader_buffer.index ];
+                    } else if(current_encoder == CurrentEncoder::Compute) {
+                        [computeEncoder setBuffer:((GFXMetalBuffer*)command.data.bind_shader_buffer.buffer)->get(currentFrameIndex) offset:(NSUInteger)command.data.bind_shader_buffer.offset atIndex:(NSUInteger)command.data.bind_shader_buffer.index ];
+                    }
                 }
                     break;
                 case GFXCommandType::BindTexture:
                 {
-                    needEncoder(CurrentEncoder::Render);
+                    if(current_encoder == CurrentEncoder::Render) {
+                        if(command.data.bind_texture.texture != nullptr) {
+                            [renderEncoder setVertexSamplerState:((GFXMetalTexture*)command.data.bind_texture.texture)->sampler atIndex:(NSUInteger)command.data.bind_texture.index];
+                            
+                            [renderEncoder setVertexTexture:((GFXMetalTexture*)command.data.bind_texture.texture)->handle atIndex:(NSUInteger)command.data.bind_texture.index];
+                            
+                            [renderEncoder setFragmentSamplerState:((GFXMetalTexture*)command.data.bind_texture.texture)->sampler atIndex:(NSUInteger)command.data.bind_texture.index];
 
-                    if(command.data.bind_texture.texture != nullptr) {
-                        [renderEncoder setVertexSamplerState:((GFXMetalTexture*)command.data.bind_texture.texture)->sampler atIndex:(NSUInteger)command.data.bind_texture.index];
-                        
-                        [renderEncoder setVertexTexture:((GFXMetalTexture*)command.data.bind_texture.texture)->handle atIndex:(NSUInteger)command.data.bind_texture.index];
-                        
-                        [renderEncoder setFragmentSamplerState:((GFXMetalTexture*)command.data.bind_texture.texture)->sampler atIndex:(NSUInteger)command.data.bind_texture.index];
-
-                        [renderEncoder setFragmentTexture:((GFXMetalTexture*)command.data.bind_texture.texture)->handle atIndex:(NSUInteger)command.data.bind_texture.index];
-                    } else {
-                        [renderEncoder setVertexTexture:nil atIndex:(NSUInteger)command.data.bind_texture.index];
-                        
-                        [renderEncoder setFragmentTexture:nil atIndex:(NSUInteger)command.data.bind_texture.index];
+                            [renderEncoder setFragmentTexture:((GFXMetalTexture*)command.data.bind_texture.texture)->handle atIndex:(NSUInteger)command.data.bind_texture.index];
+                        } else {
+                            [renderEncoder setVertexTexture:nil atIndex:(NSUInteger)command.data.bind_texture.index];
+                            
+                            [renderEncoder setFragmentTexture:nil atIndex:(NSUInteger)command.data.bind_texture.index];
+                        }
+                    } else if(current_encoder == CurrentEncoder::Compute) {
+                        [computeEncoder setTexture:((GFXMetalTexture*)command.data.bind_texture.texture)->handle atIndex:(NSUInteger)command.data.bind_texture.index];
                     }
                 }
                     break;
@@ -1066,15 +1072,8 @@ void GFXMetal::submit(GFXCommandBuffer* command_buffer, const int window) {
                     break;
                 case GFXCommandType::Dispatch: {
                     needEncoder(CurrentEncoder::Compute);
-                    
-                    NSUInteger threadGroupSize = currentPipeline->compute_handle.maxTotalThreadsPerThreadgroup;
 
-                    MTLSize threadgroupSize = MTLSizeMake(std::min(threadGroupSize,
-                                                              (NSUInteger)command.data.dispatch.group_count_x),
-                                                          std::min(threadGroupSize, (NSUInteger)command.data.dispatch.group_count_y),
-                                                          std::min(threadGroupSize, (NSUInteger)command.data.dispatch.group_count_z));
-                    
-                    [computeEncoder dispatchThreads:MTLSizeMake(command.data.dispatch.group_count_x, command.data.dispatch.group_count_y, command.data.dispatch.group_count_z) threadsPerThreadgroup:threadgroupSize];
+                    [computeEncoder dispatchThreads:MTLSizeMake(command.data.dispatch.group_count_x, command.data.dispatch.group_count_y, command.data.dispatch.group_count_z) threadsPerThreadgroup:currentPipeline->threadGroupSize];
                 }
                     break;
             }

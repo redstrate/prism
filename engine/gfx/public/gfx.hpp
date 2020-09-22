@@ -201,6 +201,9 @@ struct GFXComputePipelineCreateInfo {
         std::string_view compute_path;
         ShaderSource compute_src;
     } shaders;
+    
+    // TODO: extract this from the shader instead of hardcoding it twice (once in GLSL, and now here)
+    int workgroup_size_x = 1, workgroup_size_y = 1, workgroup_size_z = 1;
 };
 
 struct GFXFramebufferCreateInfo {

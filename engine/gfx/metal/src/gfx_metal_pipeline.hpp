@@ -10,6 +10,8 @@ public:
     
     id<MTLRenderPipelineState> handle = nil;
     id<MTLComputePipelineState> compute_handle = nil;
+    
+    MTLSize threadGroupSize;
 
     id<MTLDepthStencilState> depthStencil = nil;
     MTLPrimitiveType primitiveType;

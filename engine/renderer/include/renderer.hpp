@@ -180,6 +180,7 @@ private:
     
     // histogram compute
     GFXPipeline* histogram_pipeline = nullptr;
+    GFXBuffer* histogram_buffer = nullptr;
 
     std::unique_ptr<SMAAPass> smaaPass;
     std::unique_ptr<GaussianHelper> gHelper;

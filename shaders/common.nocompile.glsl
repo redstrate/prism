@@ -1,4 +1,5 @@
 const float PI = 3.14159265359;
+const float EPSILON = 0.005;
 
 const vec2 PoissonOffsets[64] = {
     vec2(0.0617981, 0.07294159),
