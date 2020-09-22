@@ -641,6 +641,43 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
     return pipeline;
 }
 
+GFXPipeline* GFXMetal::create_compute_pipeline(const GFXComputePipelineCreateInfo& info) {
+    GFXMetalPipeline* pipeline = new GFXMetalPipeline();
+    
+    NSError* error = nil;
+    
+    // vertex
+    id<MTLLibrary> computeLibrary;
+    {
+        std::string compute_src;
+        if(info.shaders.compute_path.empty()) {
+            compute_src = info.shaders.compute_src.as_string();
+        } else {
+            const auto compute_path = utility::format("{}.msl", info.shaders.compute_path);
+            
+            auto file = file::open(file::internal_domain / compute_path);
+            if(file != std::nullopt) {
+                compute_src = file->read_as_string();
+            } else {
+                console::error(System::GFX, "Failed to load compute shader from {}!", compute_path);
+            }
+        }
+        
+        computeLibrary = [device newLibraryWithSource:[NSString stringWithFormat:@"%s", compute_src.c_str()] options:nil error:&error];
+        if(!computeLibrary)
+            NSLog(@"%@", error.debugDescription);
+    }
+    
+    id<MTLFunction> computeFunc = [computeLibrary newFunctionWithName:@"main0"];
+
+    MTLComputePipelineDescriptor* pipelineDescriptor = [MTLComputePipelineDescriptor new];
+    pipelineDescriptor.computeFunction = computeFunc;
+    
+    [computeLibrary release];
+
+    return pipeline;
+}
+
 GFXCommandBuffer* GFXMetal::acquire_command_buffer() {
     GFXCommandBuffer* cmdbuf = nullptr;
     while(cmdbuf == nullptr) {

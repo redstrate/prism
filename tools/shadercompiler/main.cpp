@@ -41,8 +41,10 @@ int main(int argc, char* argv[]) {
         ShaderStage stage;
         if(has_extension(source_path, ".vert"))
             stage = ShaderStage::Vertex;
-        else
+        else if(has_extension(source_path, ".frag"))
             stage = ShaderStage::Fragment;
+        else if(has_extension(source_path, ".comp"))
+            stage = ShaderStage::Compute;
 
         ShaderLanguage language;
         CompileOptions options;

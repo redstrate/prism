@@ -139,6 +139,7 @@ private:
     void createUIPipeline();
     void createGaussianResources();
     void createBRDF();
+    void create_histogram_resources();
 
     GFX* gfx = nullptr;
     prism::Extent extent;
@@ -176,6 +177,9 @@ private:
 
     // general ui
     GFXPipeline* generalPipeline, *worldGeneralPipeline = nullptr;
+    
+    // histogram compute
+    GFXPipeline* histogram_pipeline = nullptr;
 
     std::unique_ptr<SMAAPass> smaaPass;
     std::unique_ptr<GaussianHelper> gHelper;

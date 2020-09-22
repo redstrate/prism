@@ -78,4 +78,5 @@ add_shader(TARGET Renderer
     shaders/rendering.nocompile.glsl
     shaders/common.nocompile.glsl
     shaders/dof.vert.glsl
-    shaders/dof.frag.glsl)
+    shaders/dof.frag.glsl
+    shaders/histogram.comp.glsl)

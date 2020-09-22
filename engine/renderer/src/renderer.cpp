@@ -87,6 +87,7 @@ Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     shader_compiler.set_include_path(file::get_domain_path(file::Domain::Internal).string());
         
     createDummyTexture();
+    create_histogram_resources();
 
     shadow_pass = std::make_unique<ShadowPass>(gfx);
     scene_capture = std::make_unique<SceneCapture>(gfx);
@@ -993,4 +994,11 @@ void Renderer::createBRDF() {
     command_buffer->draw(0, 4, 0, 1);
     
     gfx->submit(command_buffer);
+}
+
+void Renderer::create_histogram_resources() {
+    GFXComputePipelineCreateInfo create_info = {};
+    create_info.shaders.compute_path = "histogram.comp";
+    
+    histogram_pipeline = gfx->create_compute_pipeline(create_info);
 }

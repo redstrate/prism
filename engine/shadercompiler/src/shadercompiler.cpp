@@ -89,6 +89,9 @@ std::optional<ShaderSource> ShaderCompiler::compile(const ShaderLanguage from_la
         case ShaderStage::Fragment:
             lang = EShLangFragment;
             break;
+        case ShaderStage::Compute:
+            lang = EShLangCompute;
+            break;
     }
 
     auto spirv = compile_glsl_to_spv(shader_source.as_string(), lang, options);

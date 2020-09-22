@@ -9,7 +9,8 @@
 /// The shader stage that the shader is written in.
 enum class ShaderStage {
     Vertex,
-    Fragment
+    Fragment,
+    Compute
 };
 
 /// The shader language that the shader is written in.

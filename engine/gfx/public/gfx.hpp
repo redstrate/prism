@@ -199,6 +199,7 @@ struct GFXComputePipelineCreateInfo {
     
     struct Shaders {
         std::string_view compute_path;
+        ShaderSource compute_src;
     } shaders;
 };
 
