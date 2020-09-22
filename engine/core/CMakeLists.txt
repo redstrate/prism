@@ -36,16 +36,18 @@ target_include_directories(Core PUBLIC
 target_include_directories(Core SYSTEM PUBLIC
     ${CMAKE_BINARY_DIR}/_deps/bullet-src/src)
 target_link_libraries(Core PUBLIC
+    Asset
+    Math
+    Platform
     Utility
+    nlohmann_json
+    Log
+    PRIVATE
     GFX
     Renderer
-    nlohmann_json
     magic_enum
     imgui
-    Log
     ${EXTRA_LIBRARIES}
-    Asset
-    PRIVATE
     BulletDynamics
     BulletCollision
     LinearMath)
