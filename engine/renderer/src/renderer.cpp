@@ -251,7 +251,13 @@ void Renderer::render(Scene* scene, int index) {
             for(auto& [obj, camera] : cameras) {
                 const int actual_width = render_extent.width / cameras.size();
                 
-                camera.perspective = transform::perspective(radians(camera.fov), static_cast<float>(actual_width) / static_cast<float>(render_extent.height), 0.1f, 100.0f);
+                const bool requires_limited_perspective = render_options.enable_depth_of_field;
+                if(requires_limited_perspective) {
+                    camera.perspective = transform::perspective(radians(camera.fov), static_cast<float>(actual_width) / static_cast<float>(render_extent.height), camera.near, 100.0f);
+                } else {
+                    camera.perspective = transform::infinite_perspective(radians(camera.fov), static_cast<float>(actual_width) / static_cast<float>(render_extent.height), camera.near);
+                }
+            
                 camera.view = inverse(scene->get<Transform>(obj).model);
                 
                 Viewport viewport = {};
