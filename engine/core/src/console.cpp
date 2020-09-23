@@ -75,12 +75,6 @@ void console::invoke_command(const std::string_view name, const Arguments argume
     console::info(System::Core, "{} is not the name of a valid command or variable!", name.data());
 }
 
-bool is_number(const std::string_view& s)
-{
-    return !s.empty() && std::find_if(s.begin(),
-                                      s.end(), [](unsigned char c) { return !std::isdigit(c); }) == s.end();
-}
-
 void console::parse_and_invoke_command(const std::string_view command) {
     const auto tokens = tokenize(command, " ");
     if(tokens.empty())
@@ -91,7 +85,7 @@ void console::parse_and_invoke_command(const std::string_view command) {
             return ConsoleArgument(true);
         } else if(arg == "false") {
             return ConsoleArgument(false);
-        } else if(is_number(arg)) {
+        } else if(is_numeric(arg)) {
             return ConsoleArgument(std::stoi(arg.data()));
         }
         

@@ -33,6 +33,10 @@ bool string_starts_with(const std::string_view haystack, const std::string_view 
     && std::equal(needle.begin(), needle.end(), haystack.begin());
 }
 
+bool is_numeric(const std::string_view string) {
+    return std::find_if(string.begin(), string.end(), [](unsigned char c) { return !std::isdigit(c); }) == string.end();
+}
+
 std::vector<std::string> tokenize(const std::string_view string, const std::string_view& delimiters) {
     std::vector<std::string> tokens;
     

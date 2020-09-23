@@ -9,6 +9,7 @@ std::string replace_substring(const std::string_view string, const std::string_v
 
 bool string_contains(const std::string_view a, const std::string_view b);
 bool string_starts_with(const std::string_view haystack, const std::string_view needle);
+bool is_numeric(const std::string_view string);
 
 std::vector<std::string> tokenize(const std::string_view string, const std::string_view& delimiters = ",");
 
