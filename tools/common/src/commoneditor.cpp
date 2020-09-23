@@ -1040,7 +1040,7 @@ void CommonEditor::drawConsole() {
     ImGui::SameLine();
     
     if(ImGui::Button("Run")) {
-        console::invoke_command(command_buffer, console::Arguments());
+        console::parse_and_invoke_command(command_buffer);
         command_buffer.clear();
     }
     

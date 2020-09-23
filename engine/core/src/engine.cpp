@@ -29,12 +29,12 @@ Engine::Engine(const int argc, char* argv[]) {
         console::info(System::Core, "Test cmd!");
     });
     
+    console::register_variable("rs_dynamic_resolution", render_options.dynamic_resolution);
+    
     console::register_command("quit", console::ArgumentFormat(0), [this](const console::Arguments) {
         quit();
     });
-    
-    console::invoke_command("test_cmd", console::Arguments());
-    
+        
     for(int i = 0; i < argc; i++)
         command_line_arguments.push_back(argv[i]);
 
