@@ -15,6 +15,14 @@ public:
         
     void render(GFXCommandBuffer* command_buffer, Scene& scene);
     
+    GFXTexture* far_field = nullptr;
+    GFXTexture* normal_field = nullptr;
+    
+    GFXFramebuffer* far_framebuffer = nullptr;
+    GFXFramebuffer* normal_framebuffer = nullptr;
+    
+    GFXRenderPass* renderpass = nullptr;
+    
 private:
     Renderer* renderer = nullptr;
     

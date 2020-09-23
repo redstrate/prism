@@ -7,16 +7,22 @@ layout(location = 0) out vec4 outColor;
 layout(rgba32f, binding = 0) uniform image2D color_sampler;
 layout(binding = 2) uniform sampler2D aperture_sampler;
 
-vec4 fromLinear(vec4 linearRGB)
-{
-    return pow(linearRGB, vec4(1.0/2.2));
-}
+layout(push_constant, binding = 2) uniform readonly PushConstant{
+    vec4 params;
+};
 
 void main() {
-    /*if(depth < 0.98)
-        discard;*/
+    // far field mode
+    if(params.y == 0) {
+        if(depth < 0.98)
+            discard;
+    }
+    
     if(inUV.y > 1.0 || inUV.x > 1.0)
         discard;
     
-    outColor = vec4(fromLinear(imageLoad(color_sampler, inPixel)).rgb, 1.0) * texture(aperture_sampler, inUV);
+    outColor = vec4(imageLoad(color_sampler, inPixel).rgb, 1.0);
+    if(params.y == 0) {
+        outColor = outColor * texture(aperture_sampler, inUV);
+    }
 }

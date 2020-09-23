@@ -43,6 +43,9 @@ struct RenderOptions {
     float min_luminance = -8.0f;
     float max_luminance = 3.0f;
     
+    bool enable_depth_of_field = true;
+    float depth_of_field_strength = 3.0f;
+    
     bool dynamic_resolution = false;
     double render_scale = 1.0f;
     

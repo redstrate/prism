@@ -109,6 +109,9 @@ void draw_renderer() {
     ImGui::DragFloat("Min Luminance", &render_options.min_luminance);
     ImGui::DragFloat("Max Luminance", &render_options.max_luminance);
     
+    ImGui::Checkbox("Enable DoF", &render_options.enable_depth_of_field);
+    ImGui::DragFloat("DoF Strength", &render_options.depth_of_field_strength);
+
     bool should_recompile = false;
     
     float render_scale = render_options.render_scale;

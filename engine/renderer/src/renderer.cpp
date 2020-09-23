@@ -225,7 +225,7 @@ void Renderer::render(Scene* scene, int index) {
 
         if(scene != nullptr && hasToRender) {
             commandbuffer->push_group("Shadow Rendering");
-
+            
             shadow_pass->render(commandbuffer, *scene);
             
             commandbuffer->pop_group();
@@ -242,7 +242,7 @@ void Renderer::render(Scene* scene, int index) {
             for(auto& [obj, camera] : cameras) {
                 const int actual_width = render_extent.width / cameras.size();
                 
-                camera.perspective = transform::infinite_perspective(radians(camera.fov), static_cast<float>(actual_width) / static_cast<float>(render_extent.height), camera.near);
+                camera.perspective = transform::perspective(radians(camera.fov), static_cast<float>(actual_width) / static_cast<float>(render_extent.height), 0.1f, 100.0f);
                 camera.view = inverse(scene->get<Transform>(obj).model);
                 
                 Viewport viewport = {};
@@ -255,7 +255,7 @@ void Renderer::render(Scene* scene, int index) {
                 commandbuffer->push_group("render camera");
 
                 render_camera(commandbuffer, *scene, obj, camera, get_render_extent(), continuity);
-                
+
                 commandbuffer->pop_group();
             }
         }
@@ -268,6 +268,8 @@ void Renderer::render(Scene* scene, int index) {
         
         commandbuffer->pop_group();
 
+        dofPass->render(commandbuffer, *scene);
+        
         if(!viewport_mode) {
             beginInfo.framebuffer = nullptr;
             beginInfo.render_pass = nullptr;
@@ -311,22 +313,35 @@ void Renderer::render(Scene* scene, int index) {
         commandbuffer->dispatch(1, 1, 1);
 
         commandbuffer->set_graphics_pipeline(viewport_mode ? renderToViewportPipeline : postPipeline);
-        commandbuffer->bind_texture(offscreenColorTexture, 1);
+        
+        if(render_options.enable_depth_of_field)
+            commandbuffer->bind_texture(dofPass->normal_field, 1);
+        else
+            commandbuffer->bind_texture(offscreenColorTexture, 1);
+        
         commandbuffer->bind_texture(offscreenBackTexture, 2);
         commandbuffer->bind_texture(smaaPass->blend_texture, 3);
         
-        if(auto texture = get_requested_texture(PassTextureType::SelectionSobel)) {
+        if(auto texture = get_requested_texture(PassTextureType::SelectionSobel))
             commandbuffer->bind_texture(texture, 4);
-        } else {
+        else
             commandbuffer->bind_texture(dummyTexture, 4);
-        }
         
         commandbuffer->bind_texture(average_luminance_texture, 5);
+        
+        if(render_options.enable_depth_of_field)
+            commandbuffer->bind_texture(dofPass->far_field, 6);
+        else
+            commandbuffer->bind_texture(dummyTexture, 6);
 
         PostPushConstants pc;
         pc.options.x = render_options.enable_aa;
         pc.options.y = fade;
         pc.options.z = render_options.exposure;
+        
+        if(render_options.enable_depth_of_field)
+            pc.options.w = 2;
+        
         pc.transform_ops.x = (int)render_options.display_color_space;
         pc.transform_ops.y = (int)render_options.tonemapping;
         
@@ -346,6 +361,7 @@ void Renderer::render(Scene* scene, int index) {
         
         commandbuffer->draw(0, 4, 0, 1);
         
+
         commandbuffer->pop_group();
         
         if(current_screen != nullptr)

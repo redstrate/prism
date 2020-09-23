@@ -7,6 +7,10 @@ layout(location = 2) out float outDepth;
 
 layout(binding = 1) uniform sampler2D depth_sampler;
 
+layout(push_constant, binding = 2) uniform readonly PushConstant{
+    vec4 params;
+};
+
 void main() {
     outUV = vec2((gl_VertexIndex << 1) & 2, gl_VertexIndex & 2);
     
@@ -17,7 +21,12 @@ void main() {
     outDepth = depth;
     
     vec2 pos = vec2(outUV * 2.0 + -1.0);
-    pos *= 5.0 * depth;
+    
+    // far field mode
+    if(params.y == 0) {
+        pos *= params.x * depth;
+    }
+    
     pos += vec2(pixel.x, pixel.y);
     pos *= 2.0 / vec2(width, height);
     pos += vec2(-1, -1);

@@ -24,6 +24,7 @@ layout (binding = 2) uniform sampler2D backSampler;
 layout (binding = 3) uniform sampler2D blendSampler;
 layout (binding = 4) uniform sampler2D sobelSampler;
 layout (binding = 5) uniform sampler2D averageLuminanceSampler;
+layout (binding = 6) uniform sampler2D farFieldSampler;
 
 float calculate_sobel() {
     float x = 1.0 / viewport.z;
@@ -109,12 +110,18 @@ void main() {
         return;
     }
     
+    bool enable_dof = options.w == 2;
     vec3 sceneColor = vec3(0);
-    if(options.x == 1) // enable AA
-        sceneColor = SMAANeighborhoodBlendingPS(inUV, inOffset, colorSampler, blendSampler).rgb;
-    else
-        sceneColor = texture(colorSampler, inUV).rgb;
-    
+    if(enable_dof) {
+        sceneColor = texture(farFieldSampler, inUV).rgb;
+        sceneColor += texture(colorSampler, inUV).rgb;
+    } else {
+        if(options.x == 1) // enable AA
+            sceneColor = SMAANeighborhoodBlendingPS(inUV, inOffset, colorSampler, blendSampler).rgb;
+        else
+            sceneColor = texture(colorSampler, inUV).rgb;
+    }
+
     float sobel = 0.0;
     if(textureSize(sobelSampler, 0).x > 1)
         sobel = calculate_sobel();
