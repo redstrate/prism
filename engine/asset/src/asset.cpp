@@ -18,7 +18,7 @@
 std::unique_ptr<Mesh> load_mesh(const file::Path path) {
     Expects(!path.empty());
     
-    auto file = file::open(path);
+    auto file = file::open(path, true);
     if(!file.has_value()) {
         console::error(System::Renderer, "Failed to load mesh from {}!", path);
         return nullptr;
@@ -193,7 +193,7 @@ std::unique_ptr<Mesh> load_mesh(const file::Path path) {
 std::unique_ptr<Texture> load_texture(const file::Path path) {
     Expects(!path.empty());
     
-    auto file = file::open(path);
+    auto file = file::open(path, true);
     if(!file.has_value()) {
         console::error(System::Renderer, "Failed to load texture from {}!", path);
         return nullptr;

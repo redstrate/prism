@@ -338,16 +338,16 @@ void Renderer::render(Scene* scene, int index) {
         commandbuffer->bind_texture(smaaPass->blend_texture, 3);
         
         if(auto texture = get_requested_texture(PassTextureType::SelectionSobel))
-            commandbuffer->bind_texture(texture, 4);
+            commandbuffer->bind_texture(texture, 5);
         else
-            commandbuffer->bind_texture(dummyTexture, 4);
+            commandbuffer->bind_texture(dummyTexture, 5);
         
-        commandbuffer->bind_texture(average_luminance_texture, 5);
+        commandbuffer->bind_texture(average_luminance_texture, 6);
         
         if(render_options.enable_depth_of_field)
-            commandbuffer->bind_texture(dofPass->far_field, 6);
+            commandbuffer->bind_texture(dofPass->far_field, 7);
         else
-            commandbuffer->bind_texture(dummyTexture, 6);
+            commandbuffer->bind_texture(dummyTexture, 7);
 
         PostPushConstants pc;
         pc.options.x = render_options.enable_aa;
@@ -464,7 +464,6 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         
         struct PushConstant {
             Matrix4x4 m;
-            int s;
         } pc;
         
         pc.m = scene.get<Transform>(obj).model;
@@ -508,7 +507,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
             if(!mesh.mesh->bones.empty())
                 command_buffer->bind_shader_buffer(part.bone_batrix_buffer, 0, 14, sizeof(Matrix4x4) * 128);
             
-            pc.s = material_indices[mesh.materials[material_index].handle];
+            
             command_buffer->set_push_constant(&pc, sizeof(PushConstant));
             
             for(const auto& [index, texture] : mesh.materials[material_index]->bound_textures) {
@@ -721,13 +720,8 @@ void Renderer::create_mesh_pipeline(Material& material) {
     pipelineInfo.shaders.vertex_constants = {materials_constant, lights_constant, spot_lights_constant, probes_constant};
     pipelineInfo.shaders.fragment_constants = {materials_constant, lights_constant, spot_lights_constant, probes_constant};
     
-    struct PushConstant {
-        Matrix4x4 m;
-        int s;
-    };
-    
     pipelineInfo.shader_input.push_constants = {
-        {sizeof(PushConstant), 0}
+        {sizeof(Matrix4x4), 0}
     };
     
     pipelineInfo.shader_input.bindings = {
@@ -738,7 +732,9 @@ void Renderer::create_mesh_pipeline(Material& material) {
         {4, GFXBindingType::Texture},
         {5, GFXBindingType::Texture},
         {6, GFXBindingType::Texture},
-        {7, GFXBindingType::Texture}
+        {7, GFXBindingType::Texture},
+        {8, GFXBindingType::Texture},
+        {9, GFXBindingType::Texture}
     };
     
     pipelineInfo.render_pass = offscreenRenderPass;
@@ -749,6 +745,14 @@ void Renderer::create_mesh_pipeline(Material& material) {
     
     pipelineInfo.shaders.fragment_src = material_compiler.compile_material_fragment(material);
     pipelineInfo.shaders.fragment_path = "";
+
+    for (auto [index, texture] : material.bound_textures) {
+        GFXShaderBinding binding;
+        binding.binding = index;
+        binding.type = GFXBindingType::Texture;
+
+        pipelineInfo.shader_input.bindings.push_back(binding);
+    }
     
     auto [static_pipeline, skinned_pipeline] = material_compiler.create_pipeline_permutations(pipelineInfo);
     
@@ -759,6 +763,8 @@ void Renderer::create_mesh_pipeline(Material& material) {
     
     pipelineInfo.shaders.fragment_src = material_compiler.compile_material_fragment(material, false); // scene capture does not use IBL
     
+    pipelineInfo.shader_input.push_constants[0].size += sizeof(Matrix4x4);
+
     material.capture_pipeline = material_compiler.create_static_pipeline(pipelineInfo, false, true);
 }
 
@@ -851,7 +857,10 @@ void Renderer::createPostPipeline() {
         {4, GFXBindingType::PushConstant},
         {1, GFXBindingType::Texture},
         {2, GFXBindingType::Texture},
-        {3, GFXBindingType::Texture}
+        {3, GFXBindingType::Texture},
+        {5, GFXBindingType::Texture},
+        {6, GFXBindingType::Texture},
+        {7, GFXBindingType::Texture}
     };
 
     pipelineInfo.shader_input.push_constants = {

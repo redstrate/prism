@@ -18,9 +18,10 @@ file::Path file::root_path(const Path path) {
 std::optional<file::File> file::open(const file::Path path, const bool binary_mode) {
     Expects(!path.empty());
     
-    FILE* file = fopen(get_file_path(path).string().c_str(), binary_mode ? "rb" : "r");
+    auto str = get_file_path(path).string();
+    FILE* file = fopen(str.c_str(), binary_mode ? "rb" : "r");
     if(file == nullptr) {
-        console::error(System::File, "Failed to open file handle from {}!", path);
+        console::error(System::File, "Failed to open file handle from {}!", str);
         return {};
     }
     
@@ -29,9 +30,10 @@ std::optional<file::File> file::open(const file::Path path, const bool binary_mo
 
 file::Path file::get_file_path(const file::Path path) {
     auto fixed_path = path;
-    if(root_path(path) == app_domain) {
+    auto root = root_path(path);
+    if(root == app_domain) {
         fixed_path = domain_data[static_cast<int>(Domain::App)] / path.lexically_relative(root_path(path));
-    } else if(root_path(path) == internal_domain) {
+    } else if(root == internal_domain) {
         fixed_path = domain_data[static_cast<int>(Domain::Internal)] / path.lexically_relative(root_path(path));
     }
     

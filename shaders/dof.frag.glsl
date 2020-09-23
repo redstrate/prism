@@ -5,7 +5,7 @@ layout(location = 2) in float depth;
 layout(location = 0) out vec4 outColor;
 
 layout(rgba32f, binding = 0) uniform image2D color_sampler;
-layout(binding = 2) uniform sampler2D aperture_sampler;
+layout(binding = 3) uniform sampler2D aperture_sampler;
 
 layout(push_constant, binding = 2) uniform readonly PushConstant{
     vec4 params;

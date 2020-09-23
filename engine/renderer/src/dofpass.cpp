@@ -32,7 +32,14 @@ DoFPass::DoFPass(GFX* gfx, Renderer* renderer) : renderer(renderer) {
     create_info.shaders.fragment_path = "dof.frag";
     
     create_info.shader_input.bindings = {
+        {0, GFXBindingType::StorageImage},
+        {1, GFXBindingType::Texture},
+        {3, GFXBindingType::Texture},
         {2, GFXBindingType::PushConstant}
+    };
+
+    create_info.shader_input.push_constants = {
+        {sizeof(Vector4), 0}
     };
     
     create_info.render_pass = renderpass;
@@ -86,7 +93,7 @@ void DoFPass::render(GFXCommandBuffer* command_buffer, Scene&) {
     
     command_buffer->bind_texture(renderer->offscreenColorTexture, 0);
     command_buffer->bind_texture(renderer->offscreenDepthTexture, 1);
-    command_buffer->bind_texture(aperture_texture->handle, 2);
+    command_buffer->bind_texture(aperture_texture->handle, 3);
 
     const auto extent = renderer->get_render_extent();
     

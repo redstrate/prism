@@ -118,6 +118,7 @@ struct GFXPushConstant {
 
 enum class GFXBindingType {
     StorageBuffer,
+    StorageImage,
     PushConstant,
     Texture
 };

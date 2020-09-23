@@ -37,7 +37,7 @@ VkFormat toVkFormat(GFXPixelFormat format) {
 		return VK_FORMAT_R8G8_UNORM;
 
 	case GFXPixelFormat::R8G8_SFLOAT:
-		return VK_FORMAT_R8G8_SSCALED;
+		return VK_FORMAT_R16G16_SFLOAT;
 
     case GFXPixelFormat::R8G8B8A8_UNORM:
         return VK_FORMAT_R8G8B8A8_UNORM;
@@ -93,7 +93,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
     void *pUserData) {
 
-    console::debug(System::GFX, pCallbackData->pMessage);
+	console::debug(System::GFX, pCallbackData->pMessage);
 
     return VK_FALSE;
 }
@@ -715,6 +715,9 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 		case GFXBindingType::Texture:
 			descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			break;
+		case GFXBindingType::StorageImage:
+			descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+			break;
 		}
 
 		VkDescriptorSetLayoutBinding layoutBinding = {};
@@ -1115,6 +1118,7 @@ void GFXVulkan::createLogicalDevice(std::vector<const char*> extensions) {
 	enabledFeatures.fragmentStoresAndAtomics = true;
 	enabledFeatures.samplerAnisotropy = true;
 	enabledFeatures.fillModeNonSolid = true;
+	enabledFeatures.imageCubeArray = true;
 
 	createInfo.pEnabledFeatures = &enabledFeatures;
 

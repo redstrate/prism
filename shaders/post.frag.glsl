@@ -22,9 +22,9 @@ layout (location = 0) out vec4 outColor;
 layout (binding = 1) uniform sampler2D colorSampler;
 layout (binding = 2) uniform sampler2D backSampler;
 layout (binding = 3) uniform sampler2D blendSampler;
-layout (binding = 4) uniform sampler2D sobelSampler;
-layout (binding = 5) uniform sampler2D averageLuminanceSampler;
-layout (binding = 6) uniform sampler2D farFieldSampler;
+layout (binding = 5) uniform sampler2D sobelSampler;
+layout (binding = 6) uniform sampler2D averageLuminanceSampler;
+layout (binding = 7) uniform sampler2D farFieldSampler;
 
 float calculate_sobel() {
     float x = 1.0 / viewport.z;

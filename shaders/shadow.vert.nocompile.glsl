@@ -15,7 +15,7 @@ layout(push_constant, binding = 0) uniform PushConstant {
 };
 
 #ifdef BONE
-layout(std430, binding = 1) buffer readonly BoneInformation {
+layout(std430, binding = 14) buffer readonly BoneInformation {
     mat4 bones[128];
 };
 #endif

@@ -167,7 +167,7 @@ void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, c
                 if(render_options.enable_frustum_culling && !test_aabb_frustum(frustum, get_aabb_for_part(scene.get<Transform>(obj), part)))
                     continue;
                 
-                command_buffer->bind_shader_buffer(part.bone_batrix_buffer, 0, 1, sizeof(Matrix4x4) * 128);
+                command_buffer->bind_shader_buffer(part.bone_batrix_buffer, 0, 14, sizeof(Matrix4x4) * 128);
                 command_buffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset, base_instance);
             }
         }
@@ -391,7 +391,7 @@ void ShadowPass::create_offscreen_resources() {
     
     GFXFramebufferCreateInfo info;
     info.attachments = {offscreen_color_texture, offscreen_depth};
-    info.render_pass = render_pass;
+    info.render_pass = cube_render_pass;
     
     offscreen_framebuffer = gfx->create_framebuffer(info);
 

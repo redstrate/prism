@@ -13,7 +13,6 @@
 
 struct PushConstant {
     Matrix4x4 m, v;
-    int s;
 };
 
 struct SceneMaterial {
@@ -417,18 +416,18 @@ void SceneCapture::createIrradianceResources() {
     
     irradianceOffscreenTexture = gfx->create_texture(textureInfo);
     
-    GFXFramebufferCreateInfo info;
-    info.attachments = {irradianceOffscreenTexture};
-    info.render_pass = renderPass;
-    
-    irradianceFramebuffer = gfx->create_framebuffer(info);
-
     GFXRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.label = "Irradiance";
     renderPassInfo.attachments.push_back(GFXPixelFormat::R8G8B8A8_UNORM);
-    
+
     irradianceRenderPass = gfx->create_render_pass(renderPassInfo);
+
+    GFXFramebufferCreateInfo info;
+    info.attachments = {irradianceOffscreenTexture};
+    info.render_pass = irradianceRenderPass;
     
+    irradianceFramebuffer = gfx->create_framebuffer(info);
+
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Irradiance Convolution";
     pipelineInfo.shaders.vertex_path = "irradiance.vert";

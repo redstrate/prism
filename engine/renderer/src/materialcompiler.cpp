@@ -78,6 +78,8 @@ GFXPipeline* MaterialCompiler::create_skinned_pipeline(GFXGraphicsPipelineCreate
     
     createInfo.shaders.vertex_src = get_shader(vertex_path, true, false);
     createInfo.shaders.vertex_path = "";
+     
+    createInfo.shader_input.bindings.push_back({ 14, GFXBindingType::StorageBuffer });
     
     if(positions_only) {
         createInfo.vertex_input.inputs = {
@@ -183,7 +185,6 @@ layout (binding = 5) uniform samplerShadow pcf_sampler;\n \
 layout (binding = 6) uniform texture2DArray spot_shadow;\n \
 layout(push_constant, binding = 0) uniform PushConstant {\n \
     mat4 model;\n \
-    int materialOffset;\n \
 };\n";
 
 ShaderSource MaterialCompiler::compile_material_fragment(Material& material, bool use_ibl) {

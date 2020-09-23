@@ -17,7 +17,6 @@ layout (location = 6) in vec4 inBoneWeight;
 layout (location = 0) out vec3 outFragPos;
 layout (location = 1) out vec3 outNormal;
 layout (location = 2) out vec2 outUV;
-layout (location = 3) out flat int outMaterialId;
 layout (location = 4) out vec4 fragPosLightSpace;
 layout (location = 5) out mat3 outTBN;
 layout (location = 14) out vec4 fragPostSpotLightSpace[max_spot_lights];
@@ -50,12 +49,10 @@ layout(std430, binding = 1) buffer readonly SceneInformation {
 #ifdef CUBEMAP
 layout(push_constant, binding = 0) uniform readonly PushConstant{
     mat4 model, view;
-    int materialOffset;
 };
 #else
 layout(push_constant, binding = 0) uniform readonly PushConstant{
     mat4 model;
-    int materialOffset;
 };
 #endif
 
@@ -93,7 +90,6 @@ void main() {
     outFragPos = vec3(model * vec4(inPosition, 1.0));
     outNormal = bNor.xyz;
     outUV = inUV;
-    outMaterialId = materialOffset;
     fragPosLightSpace = (biasMat * scene.lightSpace) * bPos;
     
     for(int i = 0; i < max_spot_lights; i++) {
@@ -105,7 +101,6 @@ void main() {
     outFragPos = vec3(model * vec4(inPosition, 1.0));
     outNormal = mat3(model) * inNormal;
     outUV = inUV;
-    outMaterialId = materialOffset;
     fragPosLightSpace = (biasMat * scene.lightSpace * model) * vec4(inPosition, 1.0);
     
     for(int i = 0; i < max_spot_lights; i++) {
@@ -117,7 +112,6 @@ void main() {
     outFragPos = vec3(model * vec4(inPosition, 1.0));
     outNormal = mat3(model) * inNormal;
     outUV = inUV;
-    outMaterialId = materialOffset;
     fragPosLightSpace = (biasMat * scene.lightSpace * model) * vec4(inPosition, 1.0);
     
     for(int i = 0; i < max_spot_lights; i++) {
