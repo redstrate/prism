@@ -174,6 +174,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 }
 
 int timeout = 0;
+bool mouse_down = false;
 
 LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) {
     switch (uMsg) {
@@ -224,6 +225,13 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			int yPos = GET_Y_LPARAM(lParam); 
 
 			engine->process_mouse_down(0, {xPos, yPos});
+
+			mouse_down = true;
+		}
+			return 0;
+		case WM_LBUTTONUP:
+		{
+			mouse_down = false;
 		}
 			return 0;
 		case WM_KEYDOWN:
@@ -312,7 +320,7 @@ float platform::get_window_dpi(const int index) {
 }
 
 bool platform::get_mouse_button_down(const int index) {
-    return false;
+    return mouse_down;
 }
 
 float platform::get_monitor_dpi() {
