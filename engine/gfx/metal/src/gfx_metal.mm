@@ -21,6 +21,8 @@ MTLPixelFormat toPixelFormat(GFXPixelFormat format) {
     switch(format) {
         case GFXPixelFormat::R_32F:
             return MTLPixelFormatR32Float;
+        case GFXPixelFormat::R_16F:
+            return MTLPixelFormatR16Float;
         case GFXPixelFormat::RGBA_32F:
             return MTLPixelFormatRGBA32Float;
         case GFXPixelFormat::RGBA8_UNORM:
@@ -270,6 +272,10 @@ GFXTexture* GFXMetal::create_texture(const GFXTextureCreateInfo& info) {
     
     if((info.usage & GFXTextureUsage::Sampled) == GFXTextureUsage::Sampled) {
        textureDescriptor.usage |= MTLTextureUsageShaderRead;
+    }
+    
+    if((info.usage & GFXTextureUsage::ShaderWrite) == GFXTextureUsage::ShaderWrite) {
+        textureDescriptor.usage |= MTLTextureUsageShaderWrite;
     }
     
     textureDescriptor.pixelFormat = mtlFormat;
@@ -684,6 +690,11 @@ GFXPipeline* GFXMetal::create_compute_pipeline(const GFXComputePipelineCreateInf
     if(!pipeline->handle)
         NSLog(@"%@", error.debugDescription);
     
+    for(auto& binding : info.shader_input.bindings) {
+        if(binding.type == GFXBindingType::PushConstant)
+            pipeline->pushConstantIndex = binding.binding;
+    }
+    
     [computeLibrary release];
 
     return pipeline;
@@ -872,13 +883,15 @@ void GFXMetal::submit(GFXCommandBuffer* command_buffer, const int window) {
                     break;
                 case GFXCommandType::SetPushConstant:
                 {
-                    needEncoder(CurrentEncoder::Render);
-
                     if(currentPipeline == nullptr)
                         continue;
                     
-                    [renderEncoder setVertexBytes:command.data.set_push_constant.bytes.data() length:(NSUInteger)command.data.set_push_constant.size atIndex:(NSUInteger)currentPipeline->pushConstantIndex];
-                    [renderEncoder setFragmentBytes:command.data.set_push_constant.bytes.data() length:(NSUInteger)command.data.set_push_constant.size atIndex:(NSUInteger)currentPipeline->pushConstantIndex];
+                    if(current_encoder == CurrentEncoder::Render) {
+                        [renderEncoder setVertexBytes:command.data.set_push_constant.bytes.data() length:(NSUInteger)command.data.set_push_constant.size atIndex:(NSUInteger)currentPipeline->pushConstantIndex];
+                        [renderEncoder setFragmentBytes:command.data.set_push_constant.bytes.data() length:(NSUInteger)command.data.set_push_constant.size atIndex:(NSUInteger)currentPipeline->pushConstantIndex];
+                    } else if(current_encoder == CurrentEncoder::Compute) {
+                        [computeEncoder setBytes:command.data.set_push_constant.bytes.data() length:(NSUInteger)command.data.set_push_constant.size atIndex:(NSUInteger)currentPipeline->pushConstantIndex];
+                    }
                 }
                     break;
                 case GFXCommandType::BindShaderBuffer:
@@ -1073,7 +1086,7 @@ void GFXMetal::submit(GFXCommandBuffer* command_buffer, const int window) {
                 case GFXCommandType::Dispatch: {
                     needEncoder(CurrentEncoder::Compute);
 
-                    [computeEncoder dispatchThreads:MTLSizeMake(command.data.dispatch.group_count_x, command.data.dispatch.group_count_y, command.data.dispatch.group_count_z) threadsPerThreadgroup:currentPipeline->threadGroupSize];
+                    [computeEncoder dispatchThreadgroups:MTLSizeMake(command.data.dispatch.group_count_x, command.data.dispatch.group_count_y, command.data.dispatch.group_count_z) threadsPerThreadgroup:currentPipeline->threadGroupSize];
                 }
                     break;
             }

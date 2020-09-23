@@ -15,7 +15,9 @@ layout(std430, binding = 1) buffer HistogramBuffer {
     uint histogram[];
 };
 
-const vec4 params = vec4(-10.0, 1.0 / 12.0, 0.0, 0.0);
+layout(push_constant, binding = 2) uniform readonly PushConstant{
+    vec4 params;
+};
 
 uint color_to_bin(const vec3 hdr_color, const float min_log_lum, const float inverse_log_lum_range) {
     const float lum = dot(hdr_color, RGB_TO_LUM);
@@ -33,9 +35,9 @@ void main() {
     histogram_shared[gl_LocalInvocationIndex] = 0;
     groupMemoryBarrier();
     
-    uvec2 dim = imageSize(hdr_image).xy;
+    uvec2 dim = uvec2(params.zw);
     if(gl_GlobalInvocationID.x < dim.x && gl_GlobalInvocationID.y < dim.y) {
-        vec3 hdr_color = imageLoad(hdr_image, ivec2(gl_GlobalInvocationID.xy)).xyz;
+        vec3 hdr_color = imageLoad(hdr_image, ivec2(gl_GlobalInvocationID.xy)).rgb;
         uint bin_index = color_to_bin(hdr_color, params.x, params.y);
         
         atomicAdd(histogram_shared[bin_index], 1);

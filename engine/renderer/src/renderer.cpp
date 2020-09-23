@@ -289,11 +289,27 @@ void Renderer::render(Scene* scene, int index) {
         commandbuffer->set_compute_pipeline(histogram_pipeline);
         
         commandbuffer->bind_texture(offscreenColorTexture, 0);
-        commandbuffer->bind_shader_buffer(histogram_buffer, 0, 1, sizeof(uint) * 256);
+        commandbuffer->bind_shader_buffer(histogram_buffer, 0, 1, sizeof(uint32_t) * 256);
+        
+        const float lum_range = render_options.max_luminance - render_options.min_luminance;
+        
+        Vector4 params = Vector4(render_options.min_luminance, 1.0f / lum_range, render_extent.width, render_extent.height);
+        
+        commandbuffer->set_push_constant(&params, sizeof(Vector4));
         
         commandbuffer->dispatch(static_cast<uint32_t>(std::ceil(render_extent.width / 16.0f)),
                                 static_cast<uint32_t>(std::ceil(render_extent.height / 16.0f)), 1);
-    
+        
+        commandbuffer->set_compute_pipeline(histogram_average_pipeline);
+        
+        params = Vector4(render_options.min_luminance, lum_range, std::clamp(1.0f - std::exp(-(1.0f / 60.0f) * 1.1f), 0.0f, 1.0f), render_extent.width * render_extent.height);
+        
+        commandbuffer->set_push_constant(&params, sizeof(Vector4));
+        
+        commandbuffer->bind_texture(average_luminance_texture, 0);
+        
+        commandbuffer->dispatch(1, 1, 1);
+
         commandbuffer->set_graphics_pipeline(viewport_mode ? renderToViewportPipeline : postPipeline);
         commandbuffer->bind_texture(offscreenColorTexture, 1);
         commandbuffer->bind_texture(offscreenBackTexture, 2);
@@ -305,6 +321,8 @@ void Renderer::render(Scene* scene, int index) {
             commandbuffer->bind_texture(dummyTexture, 4);
         }
         
+        commandbuffer->bind_texture(average_luminance_texture, 5);
+
         PostPushConstants pc;
         pc.options.x = render_options.enable_aa;
         pc.options.y = fade;
@@ -1010,7 +1028,25 @@ void Renderer::create_histogram_resources() {
     create_info.workgroup_size_x = 16;
     create_info.workgroup_size_y = 16;
     
+    create_info.shader_input.bindings = {
+        {2, GFXBindingType::PushConstant}
+    };
+    
     histogram_pipeline = gfx->create_compute_pipeline(create_info);
     
-    histogram_buffer = gfx->create_buffer(nullptr, sizeof(uint) * 256, false, GFXBufferUsage::Storage);
+    create_info.shaders.compute_path = "histogram-average.comp";
+    create_info.workgroup_size_x = 256;
+    create_info.workgroup_size_y = 1;
+    
+    histogram_average_pipeline = gfx->create_compute_pipeline(create_info);
+
+    histogram_buffer = gfx->create_buffer(nullptr, sizeof(uint32_t) * 256, false, GFXBufferUsage::Storage);
+    
+    GFXTextureCreateInfo texture_info = {};
+    texture_info.width = 1;
+    texture_info.height = 1;
+    texture_info.format = GFXPixelFormat::R_16F;
+    texture_info.usage = GFXTextureUsage::Sampled | GFXTextureUsage::ShaderWrite;
+    
+    average_luminance_texture = gfx->create_texture(texture_info);
 }

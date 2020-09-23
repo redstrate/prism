@@ -17,14 +17,15 @@ class GFXSampler;
 
 enum class GFXPixelFormat : int {
     R_32F = 0,
-    RGBA_32F = 1,
-    RGBA8_UNORM = 2,
-    R8_UNORM = 3,
-    R8G8_UNORM = 4,
-    R8G8_SFLOAT = 5,
-    R8G8B8A8_UNORM = 6,
-    R16G16B16A16_SFLOAT = 7,
-    DEPTH_32F = 8
+    R_16F = 1,
+    RGBA_32F = 2,
+    RGBA8_UNORM = 3,
+    R8_UNORM = 4,
+    R8G8_UNORM = 5,
+    R8G8_SFLOAT = 6,
+    R8G8B8A8_UNORM = 7,
+    R16G16B16A16_SFLOAT = 8,
+    DEPTH_32F = 9
 };
 
 enum class GFXVertexFormat : int {
@@ -38,7 +39,8 @@ enum class GFXVertexFormat : int {
 
 enum class GFXTextureUsage : int {
     Sampled = 1,
-    Attachment = 2
+    Attachment = 2,
+    ShaderWrite = 3,
 };
 
 inline GFXTextureUsage operator|(const GFXTextureUsage a, const GFXTextureUsage b) {
@@ -201,6 +203,12 @@ struct GFXComputePipelineCreateInfo {
         std::string_view compute_path;
         ShaderSource compute_src;
     } shaders;
+    
+    struct ShaderBindings {
+        std::vector<GFXPushConstant> push_constants;
+        
+        std::vector<GFXShaderBinding> bindings;
+    } shader_input;
     
     // TODO: extract this from the shader instead of hardcoding it twice (once in GLSL, and now here)
     int workgroup_size_x = 1, workgroup_size_y = 1, workgroup_size_z = 1;

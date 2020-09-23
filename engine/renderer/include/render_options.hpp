@@ -17,7 +17,8 @@ enum class DisplayColorSpace {
 
 enum class TonemapOperator {
     Linear = 0,
-    ExposureBased = 1
+    ExposureBased = 1,
+    AutoExposure = 2
 };
 
 #if defined(PLATFORM_TVOS) || defined(PLATFORM_IOS)
@@ -38,6 +39,9 @@ struct RenderOptions {
     DisplayColorSpace display_color_space = DisplayColorSpace::SRGB;
     TonemapOperator tonemapping = TonemapOperator::Linear;
     float exposure = 1.0f;
+    
+    float min_luminance = -8.0f;
+    float max_luminance = 3.0f;
     
     bool dynamic_resolution = false;
     double render_scale = 1.0f;

@@ -106,6 +106,8 @@ void draw_renderer() {
     ImGui::ComboEnum("Display Color Space", &render_options.display_color_space);
     ImGui::ComboEnum("Tonemapping", &render_options.tonemapping);
     ImGui::DragFloat("Exposure", &render_options.exposure, 0.1f);
+    ImGui::DragFloat("Min Luminance", &render_options.min_luminance);
+    ImGui::DragFloat("Max Luminance", &render_options.max_luminance);
     
     bool should_recompile = false;
     

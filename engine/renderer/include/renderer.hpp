@@ -179,8 +179,9 @@ private:
     GFXPipeline* generalPipeline, *worldGeneralPipeline = nullptr;
     
     // histogram compute
-    GFXPipeline* histogram_pipeline = nullptr;
+    GFXPipeline* histogram_pipeline = nullptr, *histogram_average_pipeline = nullptr;
     GFXBuffer* histogram_buffer = nullptr;
+    GFXTexture* average_luminance_texture = nullptr;
 
     std::unique_ptr<SMAAPass> smaaPass;
     std::unique_ptr<GaussianHelper> gHelper;
