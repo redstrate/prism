@@ -12,7 +12,6 @@
 
 struct PushConstant {
     Matrix4x4 mvp, model;
-    Vector3 lightPos;
 };
 
 const std::array<Matrix4x4, 6> shadowTransforms = {
@@ -109,7 +108,7 @@ void ShadowPass::render(GFXCommandBuffer* command_buffer, Scene& scene) {
     }
 }
 
-void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, const Matrix4x4 light_matrix, const Matrix4x4 model, const Vector3 light_position, const Light::Type type, const CameraFrustum& frustum) {
+void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, const Matrix4x4 light_matrix, const Matrix4x4 model, const Vector3 light_position, const Light::Type type, const CameraFrustum& frustum, const int base_instance) {
     for(auto [obj, mesh] : scene.get_all<Renderable>()) {
         if(!mesh.mesh)
             continue;
@@ -117,11 +116,12 @@ void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, c
         command_buffer->set_vertex_buffer(mesh.mesh->position_buffer, 0, position_buffer_index);
         
         command_buffer->set_index_buffer(mesh.mesh->index_buffer, IndexType::UINT32);
+
+        command_buffer->bind_shader_buffer(point_location_buffer, 0, 2, sizeof(Vector3) * max_point_shadows);
         
         PushConstant pc;
         pc.mvp = light_matrix * model * scene.get<Transform>(obj).model;
         pc.model = scene.get<Transform>(obj).model;
-        pc.lightPos = light_position;
         
         if(mesh.mesh->bones.empty()) {
             switch(type) {
@@ -143,7 +143,7 @@ void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, c
                 if(render_options.enable_frustum_culling && !test_aabb_frustum(frustum, get_aabb_for_part(scene.get<Transform>(obj), part)))
                     continue;
                 
-                command_buffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset);
+                command_buffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset, base_instance);
             }
         } else {
             switch(type) {
@@ -168,7 +168,7 @@ void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, c
                     continue;
                 
                 command_buffer->bind_shader_buffer(part.bone_batrix_buffer, 0, 1, sizeof(Matrix4x4) * 128);
-                command_buffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset);
+                command_buffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset, base_instance);
             }
         }
     }
@@ -203,7 +203,7 @@ void ShadowPass::render_sun(GFXCommandBuffer* command_buffer, Scene& scene, Obje
         const auto frustum = normalize_frustum(extract_frustum(projection * view));
                 
         if(light.enable_shadows)
-            render_meshes(command_buffer, scene, realMVP, Matrix4x4(), lightPos, Light::Type::Sun, frustum);
+            render_meshes(command_buffer, scene, realMVP, Matrix4x4(), lightPos, Light::Type::Sun, frustum, 0);
         
         scene.sun_light_dirty = false;
     }
@@ -238,7 +238,7 @@ void ShadowPass::render_spot(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         const auto frustum = normalize_frustum(extract_frustum(perspective * inverse(scene.get<Transform>(light_object).model)));
         
         if(light.enable_shadows)
-            render_meshes(command_buffer, scene, realMVP, Matrix4x4(), scene.get<Transform>(light_object).get_world_position(), Light::Type::Spot, frustum);
+            render_meshes(command_buffer, scene, realMVP, Matrix4x4(), scene.get<Transform>(light_object).get_world_position(), Light::Type::Spot, frustum, 0);
         
         command_buffer->copy_texture(offscreen_depth, render_options.shadow_resolution, render_options.shadow_resolution, scene.spotLightArray, 0, last_spot_light, 0);
         
@@ -256,6 +256,8 @@ void ShadowPass::render_point(GFXCommandBuffer* command_buffer, Scene& scene, Ob
         return;
     
     if(scene.point_light_dirty[last_point_light] || light.use_dynamic_shadows) {
+        *(point_location_map + last_point_light) = scene.get<Transform>(light_object).get_world_position();
+
         for(int face = 0; face < 6; face++) {
             GFXRenderPassBeginInfo info = {};
             info.framebuffer = offscreen_framebuffer;
@@ -277,7 +279,7 @@ void ShadowPass::render_point(GFXCommandBuffer* command_buffer, Scene& scene, Ob
             
             const auto frustum = normalize_frustum(extract_frustum(projection * shadowTransforms[face] * model));
             
-            render_meshes(command_buffer, scene, projection * shadowTransforms[face], model, lightPos, Light::Type::Point, frustum);
+            render_meshes(command_buffer, scene, projection * shadowTransforms[face], model, lightPos, Light::Type::Point, frustum, last_point_light);
             
             command_buffer->copy_texture(offscreen_color_texture, render_options.shadow_resolution, render_options.shadow_resolution, scene.pointLightArray, face, last_point_light, 0);
         }
@@ -305,12 +307,20 @@ void ShadowPass::create_render_passes() {
 }
 
 void ShadowPass::create_pipelines() {
+    GFXShaderConstant point_light_max_constant = {};
+    point_light_max_constant.value = max_point_shadows;
+
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
+    pipelineInfo.shaders.vertex_constants = {point_light_max_constant};
     pipelineInfo.shaders.vertex_path = "shadow.vert";
+
+    pipelineInfo.shaders.fragment_constants = { point_light_max_constant };
     pipelineInfo.shaders.fragment_path = "shadow.frag";
     
     pipelineInfo.shader_input.bindings = {
-        {0, GFXBindingType::PushConstant}
+        {0, GFXBindingType::PushConstant},
+        {1, GFXBindingType::StorageBuffer},
+        {2, GFXBindingType::StorageBuffer}
     };
     
     pipelineInfo.shader_input.push_constants = {
@@ -382,4 +392,7 @@ void ShadowPass::create_offscreen_resources() {
     info.render_pass = render_pass;
     
     offscreen_framebuffer = gfx->create_framebuffer(info);
+
+    point_location_buffer = gfx->create_buffer(nullptr, sizeof(Vector3) * max_point_shadows, false, GFXBufferUsage::Storage);
+    point_location_map = reinterpret_cast<Vector3*>(gfx->get_buffer_contents(point_location_buffer));
 }

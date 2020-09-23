@@ -21,6 +21,9 @@ VkFormat toVkFormat(GFXPixelFormat format) {
     case GFXPixelFormat::R_32F:
         return VK_FORMAT_R32_SFLOAT;
 
+	case GFXPixelFormat::R_16F:
+		return VK_FORMAT_R16_SFLOAT;
+
 	case GFXPixelFormat::RGBA_32F:
 		return VK_FORMAT_R32G32B32A32_SFLOAT;
 
@@ -32,6 +35,9 @@ VkFormat toVkFormat(GFXPixelFormat format) {
 
 	case GFXPixelFormat::R8G8_UNORM:
 		return VK_FORMAT_R8G8_UNORM;
+
+	case GFXPixelFormat::R8G8_SFLOAT:
+		return VK_FORMAT_R8G8_SSCALED;
 
     case GFXPixelFormat::R8G8B8A8_UNORM:
         return VK_FORMAT_R8G8B8A8_UNORM;
@@ -552,7 +558,7 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 		vertex_module = createShaderModule(vertex_shader_vector.data(), vertex_shader_vector.size() * sizeof(uint32_t));
 	}
 	else {
-		auto vertex_shader = file::open(file::internal_domain / (std::string(info.shaders.vertex_path) + ".spv"));
+		auto vertex_shader = file::open(file::internal_domain / (std::string(info.shaders.vertex_path) + ".spv"), true);
 		vertex_shader->read_all();
 
 		vertex_module = createShaderModule(vertex_shader->cast_data<uint32_t>(), vertex_shader->size());
@@ -564,7 +570,7 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 		fragment_module = createShaderModule(fragment_shader_vector.data(), fragment_shader_vector.size() * sizeof(uint32_t));
 	}
 	else {
-		auto fragment_shader = file::open(file::internal_domain / (std::string(info.shaders.fragment_path) + ".spv"));
+		auto fragment_shader = file::open(file::internal_domain / (std::string(info.shaders.fragment_path) + ".spv"), true);
 		fragment_shader->read_all();
 
 		fragment_module = createShaderModule(fragment_shader->cast_data<uint32_t>(), fragment_shader->size());
@@ -1031,7 +1037,7 @@ void GFXVulkan::createInstance(std::vector<const char*> layers, std::vector<cons
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = "Prism Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-	appInfo.apiVersion = VK_API_VERSION_1_0;
+	appInfo.apiVersion = VK_API_VERSION_1_1;
 
 	VkInstanceCreateInfo createInfo = {};
     createInfo.pNext = &debugCreateInfo;

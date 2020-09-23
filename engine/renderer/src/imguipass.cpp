@@ -136,7 +136,7 @@ void ImGuiPass::render_post(GFXCommandBuffer* command_buffer, const int index) {
                 if(clip_rect.x < framebuffer_width && clip_rect.y < framebuffer_height && clip_rect.z >= 0.0f && clip_rect.w >= 0.0f) {
                     command_buffer->draw_indexed(pcmd->ElemCount,
                                                 (index_offset + pcmd->IdxOffset),
-                                                (vertex_offset + pcmd->VtxOffset));
+                                                (vertex_offset + pcmd->VtxOffset), 0);
                 }
             }
         }

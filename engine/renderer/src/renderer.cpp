@@ -519,7 +519,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
                 command_buffer->bind_texture(texture_to_bind, index);
             }
             
-            command_buffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset);
+            command_buffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset, 0);
         }
     }
     

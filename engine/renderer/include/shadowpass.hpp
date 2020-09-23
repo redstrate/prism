@@ -11,6 +11,7 @@ class GFXPipeline;
 class GFXRenderPass;
 class GFXTexture;
 class GFXSampler;
+class GFXBuffer;
 class Scene;
 struct CameraFrustum;
 
@@ -26,7 +27,7 @@ public:
     GFXSampler* pcf_sampler = nullptr;
     
 private:
-    void render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, const Matrix4x4 light_matrix, const Matrix4x4 model, const Vector3 light_position, const Light::Type type, const CameraFrustum& frustum);
+    void render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, const Matrix4x4 light_matrix, const Matrix4x4 model, const Vector3 light_position, const Light::Type type, const CameraFrustum& frustum, const int base_instance);
     
     void render_sun(GFXCommandBuffer* command_buffer, Scene& scene, Object light_object, Light& light);
     void render_spot(GFXCommandBuffer* command_buffer, Scene& scene, Object light_object, Light& light);
@@ -45,6 +46,9 @@ private:
     GFXTexture* offscreen_color_texture = nullptr;
     GFXTexture* offscreen_depth = nullptr;
     GFXFramebuffer* offscreen_framebuffer = nullptr;
+
+    GFXBuffer* point_location_buffer = nullptr;
+    Vector3* point_location_map = nullptr;
     
     // sun
     GFXPipeline* static_sun_pipeline = nullptr;

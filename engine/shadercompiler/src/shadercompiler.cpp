@@ -20,7 +20,7 @@ void ShaderCompiler::set_include_path(const std::string_view path) {
 }
 
 const std::vector<uint32_t> compile_glsl_to_spv(const std::string_view source_string, const EShLanguage shader_language, const CompileOptions& options) {
-    std::string newString = "#version 430 core\n";
+    std::string newString = "#version 460 core\n";
     
     newString += "#extension GL_GOOGLE_include_directive : enable\n";
     newString += "#extension GL_GOOGLE_cpp_style_line_directive : enable\n";
@@ -47,12 +47,12 @@ const std::vector<uint32_t> compile_glsl_to_spv(const std::string_view source_st
     Shader.setEnvTarget(glslang::EShTargetSpv, TargetVersion);
     
     TBuiltInResource Resources = DefaultTBuiltInResource;
-    EShMessages messages = (EShMessages) (EShMsgSpvRules);
+    EShMessages messages = (EShMessages) (EShMsgDefault);
     
     DirStackFileIncluder includer;
     includer.pushExternalLocalDirectory(include_path);
 
-    if (!Shader.parse(&Resources, 100, false, (EShMessages)0, includer)) {
+    if (!Shader.parse(&Resources, 100, false, messages, includer)) {
         console::error(System::Renderer, "{}", Shader.getInfoLog());
         
         return {};
@@ -66,7 +66,7 @@ const std::vector<uint32_t> compile_glsl_to_spv(const std::string_view source_st
         
         return {};
     }
-    
+
     std::vector<unsigned int> SpirV;
     spv::SpvBuildLogger logger;
     glslang::SpvOptions spvOptions;

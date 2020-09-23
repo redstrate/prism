@@ -121,6 +121,7 @@ struct GFXDrawCommand {
             int index_count = 0;
             int first_index = 0;
             int vertex_offset = 0;
+            int base_instance = 0;
         } draw_indexed;
 
         struct CopyTextureData {
@@ -261,12 +262,13 @@ public:
         commands.push_back(command);
     }
     
-    void draw_indexed(int indexCount, int firstIndex, int vertexOffset) {
+    void draw_indexed(int indexCount, int firstIndex, int vertexOffset, int base_instance) {
         GFXDrawCommand command;
         command.type = GFXCommandType::DrawIndexed;
         command.data.draw_indexed.vertex_offset = vertexOffset;
         command.data.draw_indexed.first_index = firstIndex;
         command.data.draw_indexed.index_count = indexCount;
+        command.data.draw_indexed.base_instance = base_instance;
         
         commands.push_back(command);
     }

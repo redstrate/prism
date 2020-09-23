@@ -265,7 +265,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                                     command_buffer->bind_texture(texture_to_bind, index);
                                 }
                                 
-                                command_buffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset);
+                                command_buffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset, 0);
                             }
                         }
                     }
@@ -326,7 +326,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 command_buffer->bind_texture(environmentCube, 2);
                 command_buffer->set_push_constant(&mvp, sizeof(Matrix4x4));
                 
-                command_buffer->draw_indexed(cubeMesh->num_indices, 0, 0);
+                command_buffer->draw_indexed(cubeMesh->num_indices, 0, 0, 0);
 
                 command_buffer->copy_texture(irradianceOffscreenTexture, irradiance_cubemap_resolution, irradiance_cubemap_resolution, scene->irradianceCubeArray, face, last_probe, 0);
             };
@@ -366,7 +366,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 command_buffer->bind_texture(environmentCube, 2);
                 command_buffer->set_push_constant(&pc, sizeof(PushConstant));
                 
-                command_buffer->draw_indexed(cubeMesh->num_indices, 0, 0);
+                command_buffer->draw_indexed(cubeMesh->num_indices, 0, 0, 0);
                 
                 command_buffer->copy_texture(prefilteredOffscreenTexture, info.render_area.extent.width, info.render_area.extent.height, scene->prefilteredCubeArray, face, last_probe, mip);
             };
