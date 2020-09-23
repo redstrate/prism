@@ -114,6 +114,8 @@ void draw_renderer() {
 
     bool should_recompile = false;
     
+    ImGui::Checkbox("Enable Dynamic Resolution", &render_options.dynamic_resolution);
+    
     float render_scale = render_options.render_scale;
     if(ImGui::DragFloat("Render Scale", &render_scale, 0.1f, 1.0f, 0.1f) && render_scale > 0.0f) {
         render_options.render_scale = render_scale;

@@ -188,4 +188,6 @@ private:
     std::unique_ptr<DoFPass> dofPass;
     
     std::vector<std::unique_ptr<Pass>> passes;
+    
+    double current_render_scale = 1.0;
 };

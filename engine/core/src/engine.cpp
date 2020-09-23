@@ -658,14 +658,27 @@ void Engine::begin_frame(const float delta_time) {
         _app->begin_frame();
 }
 
+int frame_delay = 0;
+const int frame_delay_between_resolution_change = 60;
+
 void Engine::update(const float delta_time) {
     const float ideal_delta_time = 0.01667f;
     
     if(render_options.dynamic_resolution) {
-        if(delta_time < ideal_delta_time) {
-            render_options.render_scale -= 0.1f;
-            
-            render_options.render_scale = std::fmax(render_options.render_scale, 0.1f);
+        frame_delay++;
+        
+        if(frame_delay >= frame_delay_between_resolution_change) {            
+            if(delta_time > ideal_delta_time) {
+                render_options.render_scale -= 0.1f;
+                
+                render_options.render_scale = std::fmax(render_options.render_scale, 0.1f);
+            } else {
+                render_options.render_scale += 0.1f;
+                
+                render_options.render_scale = std::fmin(render_options.render_scale, 1.0f);
+            }
+                
+            frame_delay = 0;
         }
     }
     

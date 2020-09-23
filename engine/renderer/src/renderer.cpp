@@ -102,6 +102,7 @@ Renderer::~Renderer() {}
 
 void Renderer::resize(const prism::Extent extent) {
     this->extent = extent;
+    this->current_render_scale = render_options.render_scale;
 
     if(!viewport_mode) {
         createOffscreenResources();
@@ -122,7 +123,8 @@ void Renderer::resize(const prism::Extent extent) {
 
 void Renderer::resize_viewport(const prism::Extent extent) {
     this->viewport_extent = extent;
-
+    this->current_render_scale = render_options.render_scale;
+    
     createOffscreenResources();
     createMeshPipeline();
     createPostPipeline();
@@ -205,6 +207,13 @@ void Renderer::stopSceneBlur() {
 
 void Renderer::render(Scene* scene, int index) {
     GFXCommandBuffer* commandbuffer = engine->get_gfx()->acquire_command_buffer();
+    
+    if(render_options.render_scale != current_render_scale) {
+        if(viewport_mode)
+            resize_viewport(viewport_extent);
+        else
+            resize(extent);
+    }
     
     const auto extent = get_extent();
     const auto render_extent = get_render_extent();
@@ -360,7 +369,6 @@ void Renderer::render(Scene* scene, int index) {
         }
         
         commandbuffer->draw(0, 4, 0, 1);
-        
 
         commandbuffer->pop_group();
         
