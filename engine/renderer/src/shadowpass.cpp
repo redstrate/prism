@@ -295,10 +295,12 @@ void ShadowPass::create_render_passes() {
     
     // render pass
     GFXRenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.label = "Shadow";
     renderPassInfo.attachments.push_back(GFXPixelFormat::DEPTH_32F);
     
     render_pass = gfx->create_render_pass(renderPassInfo);
     
+    renderPassInfo.label = "Shadow Cube";
     renderPassInfo.attachments.clear();
     renderPassInfo.attachments.push_back(GFXPixelFormat::R_32F);
     renderPassInfo.attachments.push_back(GFXPixelFormat::DEPTH_32F);

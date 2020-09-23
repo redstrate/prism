@@ -432,7 +432,6 @@ void GFXVulkan::copy_texture(GFXTexture* from, GFXBuffer* to) {
     console::error(System::GFX, "Copy Texture->Buffer unimplemented!");
 }
 
-
 GFXFramebuffer* GFXVulkan::create_framebuffer(const GFXFramebufferCreateInfo& info) {
 	GFXVulkanFramebuffer* framebuffer = new GFXVulkanFramebuffer();
 
@@ -456,6 +455,8 @@ GFXFramebuffer* GFXVulkan::create_framebuffer(const GFXFramebufferCreateInfo& in
 	framebufferInfo.layers = 1;
 
 	vkCreateFramebuffer(device, &framebufferInfo, nullptr, &framebuffer->handle);
+
+	name_object(device, VK_OBJECT_TYPE_FRAMEBUFFER, (uint64_t)framebuffer->handle, info.label);
 
     framebuffer->width = ((GFXVulkanTexture*)info.attachments[0])->width;
     framebuffer->height = ((GFXVulkanTexture*)info.attachments[0])->height;
@@ -535,6 +536,8 @@ GFXRenderPass* GFXVulkan::create_render_pass(const GFXRenderPassCreateInfo& info
 	renderPassInfo.pSubpasses = &subpass;
 
 	vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass->handle);
+
+	name_object(device, VK_OBJECT_TYPE_RENDER_PASS, (uint64_t)renderPass->handle, info.label);
 
 	renderPass->numAttachments = static_cast<unsigned int>(descriptions.size());
 	renderPass->hasDepthAttachment = hasDepthAttachment;
@@ -777,6 +780,10 @@ GFXSize GFXVulkan::get_alignment(GFXSize size) {
 	VkDeviceSize minUboAlignment = properties.limits.minStorageBufferOffsetAlignment;
 
     return (size + minUboAlignment / 2) & ~int(minUboAlignment - 1);
+}
+
+GFXCommandBuffer* GFXVulkan::acquire_command_buffer() {
+	return new GFXCommandBuffer();
 }
 
 void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {

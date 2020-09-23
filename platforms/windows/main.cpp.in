@@ -72,6 +72,8 @@ int platform::open_window(const std::string_view title, const prism::Rectangle r
 
 	engine->add_window(window, 0, rect.extent);
 
+	app->initialize_render();
+
 	return 0;
 }
 
@@ -154,8 +156,6 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 
     app_main(engine);
 
-	app->initialize_render();
-
     MSG msg = { };
     while (GetMessage(&msg, NULL, 0, 0))
     {
@@ -207,8 +207,9 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam) 
 			HCURSOR arrowCursor = LoadCursor(NULL, IDC_ARROW); 
 			SetCursor(arrowCursor);
 
-			engine->begin_frame(1.0f / 60.0f);
 			engine->update(1.0f / 60.0f);
+
+			engine->begin_frame(1.0f / 60.0f);
 			engine->render(0);
 
 			if(engine->is_quitting()) {

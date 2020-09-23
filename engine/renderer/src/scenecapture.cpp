@@ -61,6 +61,7 @@ SceneCapture::SceneCapture(GFX* gfx) {
     
     // render pass
     GFXRenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.label = "Scene Capture Cube";
     renderPassInfo.attachments.push_back(GFXPixelFormat::R8G8B8A8_UNORM);
     renderPassInfo.attachments.push_back(GFXPixelFormat::DEPTH_32F);
 
@@ -423,6 +424,7 @@ void SceneCapture::createIrradianceResources() {
     irradianceFramebuffer = gfx->create_framebuffer(info);
 
     GFXRenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.label = "Irradiance";
     renderPassInfo.attachments.push_back(GFXPixelFormat::R8G8B8A8_UNORM);
     
     irradianceRenderPass = gfx->create_render_pass(renderPassInfo);

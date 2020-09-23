@@ -98,6 +98,7 @@ void SMAAPass::create_textures() {
 
 void SMAAPass::create_render_pass() {
     GFXRenderPassCreateInfo createInfo = {};
+    createInfo.label = "SMAA";
     createInfo.attachments = {GFXPixelFormat::R16G16B16A16_SFLOAT};
     
     render_pass = engine->get_gfx()->create_render_pass(createInfo);

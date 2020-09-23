@@ -215,11 +215,15 @@ struct GFXComputePipelineCreateInfo {
 };
 
 struct GFXFramebufferCreateInfo {
+    std::string label;
+
 	GFXRenderPass* render_pass;
     std::vector<GFXTexture*> attachments;
 };
 
 struct GFXRenderPassCreateInfo {
+    std::string label;
+
     std::vector<GFXPixelFormat> attachments;
 };
 

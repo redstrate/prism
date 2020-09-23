@@ -54,6 +54,8 @@ public:
     // misc operations
 	GFXSize get_alignment(const GFXSize size) override;
 
+	GFXCommandBuffer* acquire_command_buffer() override;
+
     void submit(GFXCommandBuffer* command_buffer, const int identifier) override;
 
 private:

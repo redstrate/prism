@@ -778,12 +778,14 @@ void Renderer::createDummyTexture() {
 
 void Renderer::createOffscreenResources() {
 	GFXRenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.label = "Offscreen";
 	renderPassInfo.attachments.push_back(GFXPixelFormat::RGBA_32F);
 	renderPassInfo.attachments.push_back(GFXPixelFormat::DEPTH_32F);
 
 	offscreenRenderPass = gfx->create_render_pass(renderPassInfo);
     
     renderPassInfo = {};
+    renderPassInfo.label = "Offscreen Unorm";
     renderPassInfo.attachments = {GFXPixelFormat::RGBA8_UNORM};
     
     unormRenderPass = gfx->create_render_pass(renderPassInfo);
@@ -813,6 +815,7 @@ void Renderer::createOffscreenResources() {
 
     if(viewport_mode) {
         GFXRenderPassCreateInfo renderPassInfo = {};
+        renderPassInfo.label = "Viewport";
         renderPassInfo.attachments.push_back(GFXPixelFormat::RGBA8_UNORM);
 
         viewportRenderPass = gfx->create_render_pass(renderPassInfo);
@@ -1001,6 +1004,7 @@ void Renderer::createGaussianResources() {
 
 void Renderer::createBRDF() {
     GFXRenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.label = "BRDF Gen";
     renderPassInfo.attachments.push_back(GFXPixelFormat::R8G8_SFLOAT);
     
     brdfRenderPass = gfx->create_render_pass(renderPassInfo);

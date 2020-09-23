@@ -12,6 +12,7 @@ DoFPass::DoFPass(GFX* gfx, Renderer* renderer) : renderer(renderer) {
     aperture_texture = assetm->get<Texture>(file::app_domain / "textures/aperture.png");
     
     GFXRenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.label = "Depth of Field";
     renderPassInfo.attachments.push_back(GFXPixelFormat::RGBA_32F);
     
     renderpass = gfx->create_render_pass(renderPassInfo);

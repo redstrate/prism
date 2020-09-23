@@ -16,7 +16,7 @@ void ImGuiPass::initialize() {
     io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
     io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
 
-#if !defined(PLATFORM_TVOS) && !defined(PLATFORM_IOS)
+#if !defined(PLATFORM_TVOS) && !defined(PLATFORM_IOS) && !defined(PLATFORM_WINDOWS)
     load_font("OpenSans-Regular.ttf");
 #endif
     create_font_texture();

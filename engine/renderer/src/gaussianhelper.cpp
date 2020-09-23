@@ -6,6 +6,7 @@
 GaussianHelper::GaussianHelper(GFX* gfx, const prism::Extent extent) : extent(extent) {
     // render pass
     GFXRenderPassCreateInfo renderPassInfo = {};
+    renderPassInfo.label = "Gaussian";
     renderPassInfo.attachments.push_back(GFXPixelFormat::RGBA_32F);
 
     renderPass = gfx->create_render_pass(renderPassInfo);
