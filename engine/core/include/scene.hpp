@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <nlohmann/json_fwd.hpp>
+#include <functional>
 
 #include "object.hpp"
 #include "components.hpp"

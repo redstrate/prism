@@ -875,9 +875,9 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 			vkCmdBeginRenderPass(commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 		}
 		break;
-		case GFXCommandType::SetPipeline:
+		case GFXCommandType::SetGraphicsPipeline:
 		{
-			currentPipeline = (GFXVulkanPipeline*)command.data.set_pipeline.pipeline;
+			currentPipeline = (GFXVulkanPipeline*)command.data.set_graphics_pipeline.pipeline;
 			vkCmdBindPipeline(commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->handle);
 
 			resetDescriptorState();

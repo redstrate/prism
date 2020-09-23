@@ -2,7 +2,7 @@ macro(set_engine_properties target)
     target_compile_features(${target} PUBLIC cxx_std_17)
     set_target_properties(${target} PROPERTIES CXX_EXTENSIONS OFF)
 
-    if(NOT ENABLE_WINDOWS)
+    if(ENABLE_MACOS OR ENABLE_LINUX)
         target_compile_options(${target} PUBLIC
             -Wall
             -Wextra

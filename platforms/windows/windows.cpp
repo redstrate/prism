@@ -90,3 +90,7 @@ void platform::mute_output() {
 void platform::unmute_output() {
 
 }
+
+PlatformTheme platform::get_theme() {
+	return PlatformTheme::Light;
+}

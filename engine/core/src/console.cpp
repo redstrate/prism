@@ -2,6 +2,7 @@
 
 #include <unordered_map>
 #include <string>
+#include <optional>
 
 #include "log.hpp"
 #include "string_utils.hpp"
