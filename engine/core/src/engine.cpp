@@ -1,6 +1,7 @@
 #include "engine.hpp"
 
 #include <nlohmann/json.hpp>
+#include <imgui.h>
 
 #include "scene.hpp"
 #include "console.hpp"
@@ -454,7 +455,7 @@ void Engine::process_key_down(const unsigned int keyCode) {
     
     _imgui->process_key_down(keyCode);
 
-    if(keyCode == platform::get_keycode(debug_button))
+    if(keyCode == platform::get_keycode(debug_button) && !ImGui::GetIO().WantTextInput)
         debug_enabled = !debug_enabled;
 }
 
