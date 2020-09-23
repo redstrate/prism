@@ -86,7 +86,6 @@ VkBlendFactor toVkFactor(GFXBlendFactor factor) {
 	return VK_BLEND_FACTOR_ONE;
 }
 
-
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -835,8 +834,9 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 				renderPassInfo.framebuffer = framebuffer->handle;
 
                 VkViewport viewport = {};
+				viewport.y = static_cast<float>(framebuffer->height);
                 viewport.width = static_cast<float>(framebuffer->width);
-                viewport.height = static_cast<float>(framebuffer->height);
+                viewport.height = -static_cast<float>(framebuffer->height);
                 viewport.maxDepth = 1.0f;
 
                 vkCmdSetViewport(commandBuffers[imageIndex], 0, 1, &viewport);
@@ -851,8 +851,9 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 				renderPassInfo.framebuffer = swapchainFramebuffers[imageIndex];
 
                 VkViewport viewport = {};
+				viewport.y = static_cast<float>(surfaceHeight);
                 viewport.width = static_cast<float>(surfaceWidth);
-                viewport.height = static_cast<float>(surfaceHeight);
+                viewport.height = -static_cast<float>(surfaceHeight);
                 viewport.maxDepth = 1.0f;
 
                 vkCmdSetViewport(commandBuffers[imageIndex], 0, 1, &viewport);
