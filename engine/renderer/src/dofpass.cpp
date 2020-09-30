@@ -32,7 +32,7 @@ DoFPass::DoFPass(GFX* gfx, Renderer* renderer) : renderer(renderer) {
     create_info.shaders.fragment_path = "dof.frag";
     
     create_info.shader_input.bindings = {
-        {0, GFXBindingType::StorageImage},
+        {0, GFXBindingType::SampledImage},
         {1, GFXBindingType::Texture},
         {3, GFXBindingType::Texture},
         {2, GFXBindingType::PushConstant}

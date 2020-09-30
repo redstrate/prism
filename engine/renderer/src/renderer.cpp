@@ -479,17 +479,6 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         
         command_buffer->set_index_buffer(mesh.mesh->index_buffer, IndexType::UINT32);
         
-        command_buffer->bind_shader_buffer(sceneBuffer, 0, 1, sizeof(SceneInformation));
-        
-        command_buffer->bind_texture(scene.depthTexture, 2);
-        command_buffer->bind_texture(scene.pointLightArray, 3);
-        command_buffer->bind_sampler(shadow_pass->shadow_sampler, 4);
-        command_buffer->bind_sampler(shadow_pass->pcf_sampler, 5);
-        command_buffer->bind_texture(scene.spotLightArray, 6);
-        command_buffer->bind_texture(scene.irradianceCubeArray, 7);
-        command_buffer->bind_texture(scene.prefilteredCubeArray, 8);
-        command_buffer->bind_texture(brdfTexture, 9);
-        
         for(const auto& part : mesh.mesh->parts) {
             const int material_index = part.material_override == -1 ? 0 : part.material_override;
             
@@ -504,9 +493,19 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
             
             command_buffer->set_graphics_pipeline(mesh.mesh->bones.empty() ? mesh.materials[material_index]->static_pipeline : mesh.materials[material_index]->skinned_pipeline);
             
+            command_buffer->bind_shader_buffer(sceneBuffer, 0, 1, sizeof(SceneInformation));
+
+            command_buffer->bind_texture(scene.depthTexture, 2);
+            command_buffer->bind_texture(scene.pointLightArray, 3);
+            command_buffer->bind_sampler(shadow_pass->shadow_sampler, 4);
+            command_buffer->bind_sampler(shadow_pass->pcf_sampler, 5);
+            command_buffer->bind_texture(scene.spotLightArray, 6);
+            command_buffer->bind_texture(scene.irradianceCubeArray, 7);
+            command_buffer->bind_texture(scene.prefilteredCubeArray, 8);
+            command_buffer->bind_texture(brdfTexture, 9);
+
             if(!mesh.mesh->bones.empty())
                 command_buffer->bind_shader_buffer(part.bone_batrix_buffer, 0, 14, sizeof(Matrix4x4) * 128);
-            
             
             command_buffer->set_push_constant(&pc, sizeof(PushConstant));
             
@@ -647,12 +646,6 @@ void Renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen
         if(!element.visible)
             continue;
 
-        if(element.background.texture) {
-            commandbuffer->bind_texture(element.background.texture->handle, 2);
-        } else {
-            commandbuffer->bind_texture(dummyTexture, 2);
-        }
-
         UIPushConstant pc;
         pc.screenSize = windowSize;
 
@@ -661,6 +654,13 @@ void Renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen
             pc.mvp = options.mvp;
         } else {
             commandbuffer->set_graphics_pipeline(generalPipeline);
+        }
+
+        if (element.background.texture) {
+            commandbuffer->bind_texture(element.background.texture->handle, 2);
+        }
+        else {
+            commandbuffer->bind_texture(dummyTexture, 2);
         }
 
         commandbuffer->set_push_constant(&pc, sizeof(UIPushConstant));
@@ -727,11 +727,11 @@ void Renderer::create_mesh_pipeline(Material& material) {
     pipelineInfo.shader_input.bindings = {
         {1, GFXBindingType::StorageBuffer},
         {0, GFXBindingType::PushConstant},
-        {2, GFXBindingType::Texture},
-        {3, GFXBindingType::Texture},
-        {4, GFXBindingType::Texture},
-        {5, GFXBindingType::Texture},
-        {6, GFXBindingType::Texture},
+        {2, GFXBindingType::SampledImage},
+        {3, GFXBindingType::SampledImage},
+        {4, GFXBindingType::Sampler},
+        {5, GFXBindingType::Sampler},
+        {6, GFXBindingType::SampledImage},
         {7, GFXBindingType::Texture},
         {8, GFXBindingType::Texture},
         {9, GFXBindingType::Texture}

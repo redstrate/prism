@@ -232,13 +232,6 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                         command_buffer->set_vertex_buffer(mesh.mesh->bitangent_buffer, 0, bitangent_buffer_index);
                         
                         command_buffer->set_index_buffer(mesh.mesh->index_buffer, IndexType::UINT32);
-                        
-                        command_buffer->bind_shader_buffer(sceneBuffer, 0, 1, sizeof(SceneInformation));
-                        command_buffer->bind_texture(scene->depthTexture, 2);
-                        command_buffer->bind_texture(scene->pointLightArray, 3);
-                        command_buffer->bind_sampler(engine->get_renderer()->shadow_pass->shadow_sampler, 4);
-                        command_buffer->bind_sampler(engine->get_renderer()->shadow_pass->pcf_sampler, 5);
-                        command_buffer->bind_texture(scene->spotLightArray, 6);
 
                         if(mesh.mesh->bones.empty()) {
                             for (auto& part : mesh.mesh->parts) {
@@ -255,6 +248,13 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                                 
                                 command_buffer->set_graphics_pipeline(mesh.materials[material_index]->capture_pipeline);
              
+                                command_buffer->bind_shader_buffer(sceneBuffer, 0, 1, sizeof(SceneInformation));
+                                command_buffer->bind_texture(scene->depthTexture, 2);
+                                command_buffer->bind_texture(scene->pointLightArray, 3);
+                                command_buffer->bind_sampler(engine->get_renderer()->shadow_pass->shadow_sampler, 4);
+                                command_buffer->bind_sampler(engine->get_renderer()->shadow_pass->pcf_sampler, 5);
+                                command_buffer->bind_texture(scene->spotLightArray, 6);
+
                                 command_buffer->set_push_constant(&pc, sizeof(PushConstant));
                                 
                                 for(auto& [index, texture] : mesh.materials[material_index]->bound_textures) {

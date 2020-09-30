@@ -11,8 +11,10 @@
 #include "gfx_vulkan_texture.hpp"
 #include "gfx_vulkan_framebuffer.hpp"
 #include "gfx_vulkan_renderpass.hpp"
+#include "gfx_vulkan_sampler.hpp"
 #include "file.hpp"
 #include "log.hpp"
+#include "utility.hpp"
 
 void* windowNativeHandle;
 
@@ -289,6 +291,12 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 	else
 		imageAspect = VK_IMAGE_ASPECT_COLOR_BIT;
 
+	int array_length = info.array_length;
+	if (info.type == GFXTextureType::Cubemap)
+		array_length = 6;
+	else if (info.type == GFXTextureType::CubemapArray)
+		array_length *= 6;
+
 	// create image
 	VkImageCreateInfo imageInfo = {};
 	imageInfo.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
@@ -296,14 +304,17 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 	imageInfo.extent.width = info.width;
 	imageInfo.extent.height = info.height;
 	imageInfo.extent.depth = 1;
-	imageInfo.mipLevels = 1;
-	imageInfo.arrayLayers = 1;
+	imageInfo.mipLevels = info.mip_count;
+	imageInfo.arrayLayers = array_length;
 	imageInfo.format = imageFormat;
 	imageInfo.tiling = imageTiling;
 	imageInfo.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 	imageInfo.usage = imageUsage;
 	imageInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 	imageInfo.samples = VK_SAMPLE_COUNT_1_BIT;
+
+	if (info.type == GFXTextureType::Cubemap || info.type == GFXTextureType::CubemapArray)
+		imageInfo.flags |= VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT;
 
 	vkCreateImage(device, &imageInfo, nullptr, &texture->handle);
 
@@ -331,13 +342,27 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 	VkImageViewCreateInfo viewInfo = {};
 	viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 	viewInfo.image = texture->handle;
-	viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+	
+	switch (info.type) {
+	case GFXTextureType::Single2D:
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		break;
+	case GFXTextureType::Array2D:
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D_ARRAY;
+		break;
+	case GFXTextureType::Cubemap:
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE;
+		break;
+	case GFXTextureType::CubemapArray:
+		viewInfo.viewType = VK_IMAGE_VIEW_TYPE_CUBE_ARRAY;
+		break;
+	}
 	viewInfo.format = imageFormat;
 	viewInfo.subresourceRange.aspectMask = imageAspect;
 	viewInfo.subresourceRange.baseMipLevel = 0;
-	viewInfo.subresourceRange.levelCount = 1;
+	viewInfo.subresourceRange.levelCount = info.mip_count;
 	viewInfo.subresourceRange.baseArrayLayer = 0;
-	viewInfo.subresourceRange.layerCount = 1;
+	viewInfo.subresourceRange.layerCount = array_length;
 
 	vkCreateImageView(device, &viewInfo, nullptr, &texture->view);
 
@@ -429,6 +454,31 @@ void GFXVulkan::copy_texture(GFXTexture* from, GFXTexture* to) {
 
 void GFXVulkan::copy_texture(GFXTexture* from, GFXBuffer* to) {
     console::error(System::GFX, "Copy Texture->Buffer unimplemented!");
+}
+
+GFXSampler* GFXVulkan::create_sampler(const GFXSamplerCreateInfo& info) {
+	GFXVulkanSampler* sampler = new GFXVulkanSampler();
+
+	VkSamplerAddressMode samplerMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	if (info.samplingMode == SamplingMode::ClampToEdge)
+		samplerMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+
+	VkSamplerCreateInfo samplerInfo = {};
+	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+	samplerInfo.magFilter = VK_FILTER_LINEAR;
+	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.addressModeU = samplerMode;
+	samplerInfo.addressModeV = samplerMode;
+	samplerInfo.addressModeW = samplerMode;
+	samplerInfo.anisotropyEnable = VK_TRUE;
+	samplerInfo.maxAnisotropy = 16;
+	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
+
+	vkCreateSampler(device, &samplerInfo, nullptr, &sampler->sampler);
+
+	return sampler;
 }
 
 GFXFramebuffer* GFXVulkan::create_framebuffer(const GFXFramebufferCreateInfo& info) {
@@ -694,7 +744,7 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 		VkPushConstantRange range;
 		range.offset = pushConstant.offset;
         range.size = pushConstant.size;
-		range.stageFlags = VK_SHADER_STAGE_ALL;
+		range.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
 		pushConstants.push_back(range);
 	}
@@ -715,7 +765,19 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 			descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			break;
 		case GFXBindingType::StorageImage:
+		{
 			descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+			pipeline->bindings_marked_as_storage_images.push_back(binding.binding);
+		}
+			break;
+		case GFXBindingType::SampledImage:
+		{
+			descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+			pipeline->bindings_marked_as_sampled_images.push_back(binding.binding);
+		}
+		break;
+		case GFXBindingType::Sampler:
+			descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
 			break;
 		}
 
@@ -772,6 +834,12 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 	vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->handle);
 
     name_object(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->handle, std::string(info.shaders.vertex_path.data()) + std::string(info.shaders.fragment_path.data()));
+	name_object(device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipeline->layout, std::string(info.shaders.vertex_path.data()) + std::string(info.shaders.fragment_path.data()));
+
+	if (info.label.empty())
+		pipeline->label = std::string(info.shaders.vertex_path.data()) + std::string(info.shaders.fragment_path.data());
+	else
+		pipeline->label = info.label;
 
 	return pipeline;
 }
@@ -890,6 +958,8 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 			renderPassInfo.pClearValues = clearColors.data();
 
 			vkCmdBeginRenderPass(commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+
+			currentPipeline = nullptr;
 		}
 		break;
 		case GFXCommandType::SetGraphicsPipeline:
@@ -922,7 +992,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
         case GFXCommandType::SetPushConstant:
 		{
 			if(currentPipeline != nullptr)
-				vkCmdPushConstants(commandBuffers[imageIndex], currentPipeline->layout, VK_SHADER_STAGE_ALL, 0, command.data.set_push_constant.size, command.data.set_push_constant.bytes.data());
+				vkCmdPushConstants(commandBuffers[imageIndex], currentPipeline->layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, command.data.set_push_constant.size, command.data.set_push_constant.bytes.data());
 		}
 			break;
         case GFXCommandType::BindShaderBuffer:
@@ -938,6 +1008,11 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 		case GFXCommandType::BindTexture:
 		{
 			boundTextures[command.data.bind_texture.index] = command.data.bind_texture.texture;
+		}
+		break;
+		case GFXCommandType::BindSampler:
+		{
+			boundSamplers[command.data.bind_sampler.index] = command.data.bind_sampler.sampler;
 		}
 		break;
 		case GFXCommandType::Draw:
@@ -1368,6 +1443,9 @@ void GFXVulkan::resetDescriptorState() {
 
 	for (auto& texture : boundTextures)
 		texture = nullptr;
+
+	for (auto& sampler : boundSamplers)
+		sampler = nullptr;
 }
 
 void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSetLayout layout) {
@@ -1386,30 +1464,29 @@ void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSe
 
 	vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet);
 
+	name_object(device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)descriptorSet, pipeline->label);
+
 	// update set
 	int i = 0;
 	for (auto& buffer : boundShaderBuffers) {
-		if (buffer.buffer == nullptr) {
-			i++;
-			continue;
+		if (buffer.buffer != nullptr) {
+			GFXVulkanBuffer* vulkanBuffer = (GFXVulkanBuffer*)buffer.buffer;
+
+			VkDescriptorBufferInfo bufferInfo = {};
+			bufferInfo.buffer = vulkanBuffer->get(currentFrame).handle; // will this break?
+			bufferInfo.offset = buffer.offset;
+			bufferInfo.range = buffer.size;
+
+			VkWriteDescriptorSet descriptorWrite = {};
+			descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			descriptorWrite.dstSet = descriptorSet;
+			descriptorWrite.dstBinding = i;
+			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+			descriptorWrite.descriptorCount = 1;
+			descriptorWrite.pBufferInfo = &bufferInfo;
+
+			vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 		}
-
-		GFXVulkanBuffer* vulkanBuffer = (GFXVulkanBuffer*)buffer.buffer;
-
-		VkDescriptorBufferInfo bufferInfo = {};
-        bufferInfo.buffer = vulkanBuffer->get(currentFrame).handle; // will this break?
-		bufferInfo.offset = buffer.offset;
-		bufferInfo.range = buffer.size;
-
-		VkWriteDescriptorSet descriptorWrite = {};
-		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-		descriptorWrite.dstSet = descriptorSet;
-		descriptorWrite.dstBinding = i;
-		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-		descriptorWrite.descriptorCount = 1;
-		descriptorWrite.pBufferInfo = &bufferInfo;
-
-		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 
 		i++;
 	}
@@ -1437,9 +1514,41 @@ void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSe
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrite.dstSet = descriptorSet;
 		descriptorWrite.dstBinding = i;
-		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		descriptorWrite.descriptorCount = 1;
 		descriptorWrite.pImageInfo = &imageInfo;
+
+		if (utility::contains(pipeline->bindings_marked_as_storage_images, i)) {
+			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+		} else if (utility::contains(pipeline->bindings_marked_as_sampled_images, i)) {
+			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+		} else {
+			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+		}
+
+		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
+
+		i++;
+	}
+
+	i = 0;
+	for (auto& sampler : boundSamplers) {
+		if (sampler == nullptr) {
+			i++;
+			continue;
+		}
+
+		GFXVulkanSampler* vulkanSampler = (GFXVulkanSampler*)sampler;
+
+		VkDescriptorImageInfo imageInfo = {};
+		imageInfo.sampler = vulkanSampler->sampler;
+
+		VkWriteDescriptorSet descriptorWrite = {};
+		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+		descriptorWrite.dstSet = descriptorSet;
+		descriptorWrite.dstBinding = i;
+		descriptorWrite.descriptorCount = 1;
+		descriptorWrite.pImageInfo = &imageInfo;
+		descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
 
 		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 
@@ -1453,12 +1562,14 @@ uint64_t GFXVulkan::getDescriptorHash(GFXVulkanPipeline* pipeline) {
 	uint64_t hash = 0;
     hash += (int64_t)pipeline;
 
+	int i = 0;
 	for (auto& buffer : boundShaderBuffers) {
-		if(buffer.buffer != nullptr)
-			hash += (uint64_t)buffer.buffer;
+		if (buffer.buffer != nullptr) {
+			hash += (uint64_t)buffer.buffer * (i + 1);
+		}
 	}
 
-	int i = 0;
+	i = 0;
 	for (auto& texture : boundTextures) {
 		if (texture != nullptr) {
 			hash += (uint64_t)texture * (i + 1);

@@ -42,6 +42,9 @@ public:
     void copy_texture(GFXTexture* from, GFXTexture* to) override;
     void copy_texture(GFXTexture* from, GFXBuffer* to) override;
 
+	// sampler operations
+	GFXSampler* create_sampler(const GFXSamplerCreateInfo& info) override;
+
     // framebuffer operations
     GFXFramebuffer* create_framebuffer(const GFXFramebufferCreateInfo& info) override;
 
@@ -115,4 +118,5 @@ private:
 
 	std::array<BoundShaderBuffer, 25> boundShaderBuffers;
 	std::array<GFXTexture*, 25> boundTextures;
+	std::array<GFXSampler*, 25> boundSamplers;
 };

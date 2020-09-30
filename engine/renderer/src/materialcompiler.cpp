@@ -36,6 +36,12 @@ GFXPipeline* MaterialCompiler::create_static_pipeline(GFXGraphicsPipelineCreateI
     // take vertex src
     std::string vertex_path = createInfo.shaders.vertex_path.data();
     vertex_path += ".glsl";
+
+    if (positions_only)
+        createInfo.label += "shadow ver";
+
+    if (cubemap)
+        createInfo.label += "cubemap ver";
     
     createInfo.shaders.vertex_src = get_shader(vertex_path, false, cubemap);
     createInfo.shaders.vertex_path = "";

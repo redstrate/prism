@@ -120,7 +120,9 @@ enum class GFXBindingType {
     StorageBuffer,
     StorageImage,
     PushConstant,
-    Texture
+    Texture,
+    Sampler,
+    SampledImage
 };
 
 enum class GFXTextureType {

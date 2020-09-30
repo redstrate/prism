@@ -116,8 +116,6 @@ void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, c
         command_buffer->set_vertex_buffer(mesh.mesh->position_buffer, 0, position_buffer_index);
         
         command_buffer->set_index_buffer(mesh.mesh->index_buffer, IndexType::UINT32);
-
-        command_buffer->bind_shader_buffer(point_location_buffer, 0, 2, sizeof(Vector3) * max_point_shadows);
         
         PushConstant pc;
         pc.mvp = light_matrix * model * scene.get<Transform>(obj).model;
@@ -136,6 +134,8 @@ void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, c
                     break;
             }
             
+            command_buffer->bind_shader_buffer(point_location_buffer, 0, 2, sizeof(Vector3) * max_point_shadows);
+
             command_buffer->set_push_constant(&pc, sizeof(PushConstant));
             command_buffer->set_depth_bias(1.25f, 0.00f, 1.75f);
 
@@ -157,6 +157,8 @@ void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, c
                     command_buffer->set_graphics_pipeline(skinned_point_pipeline);
                     break;
             }
+
+            command_buffer->bind_shader_buffer(point_location_buffer, 0, 2, sizeof(Vector3) * max_point_shadows);
             
             command_buffer->set_push_constant(&pc, sizeof(PushConstant));
             

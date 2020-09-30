@@ -316,7 +316,7 @@ public:
     /// If physics should upate. This is a control indepentent of the pause state.
     bool update_physics = true;
 
-#if defined(PLATFORM_TVOS) || defined(PLATFORM_IOS)
+#if defined(PLATFORM_TVOS) || defined(PLATFORM_IOS) || defined(PLATFORM_WINDOWS)
     bool debug_enabled = true;
 #else
     bool debug_enabled = false;
