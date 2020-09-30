@@ -35,4 +35,8 @@ macro(set_engine_properties target)
    if(ENABLE_TVOS)
         target_compile_definitions(${target} PUBLIC PLATFORM_TVOS)
     endif()
+
+   if(ENABLE_OPENXR)
+        target_compile_definitions(${target} PUBLIC OPENXR_ENABLED)
+    endif()
 endmacro()

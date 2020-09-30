@@ -30,6 +30,10 @@ if(NOT ENABLE_IOS AND NOT ENABLE_TVOS)
     set(EXTRA_LIBRARIES Audio)
 endif()
 
+if(ENABLE_OPENXR)
+    set(EXTRA_LIBRARIES ${EXTRA_LIBRARIES} openxr)
+endif()
+
 add_library(Core STATIC ${SRC})
 target_include_directories(Core PUBLIC
     include)
@@ -49,5 +53,6 @@ target_link_libraries(Core PUBLIC
     ${EXTRA_LIBRARIES}
     BulletDynamics
     BulletCollision
-    LinearMath)
+    LinearMath
+    VR)
 set_engine_properties(Core)

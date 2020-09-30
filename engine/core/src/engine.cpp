@@ -18,6 +18,11 @@
 #include "timer.hpp"
 #include "physics.hpp"
 #include "input.hpp"
+#include "vr.hpp"
+
+#ifdef OPENXR_ENABLED
+#include "openxr.hpp"
+#endif
 
 // TODO: remove these in the future
 #include "shadowpass.hpp"
@@ -43,6 +48,11 @@ Engine::Engine(const int argc, char* argv[]) {
     _physics = std::make_unique<Physics>();
     _imgui = std::make_unique<ImGuiLayer>();
     assetm = std::make_unique<AssetManager>();
+
+#ifdef OPENXR_ENABLED
+    auto vr = new OpenXR();
+    vr->initialize();
+#endif
 }
 
 Engine::~Engine() {}

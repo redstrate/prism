@@ -49,6 +49,7 @@ if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
 
     set(ENABLE_WINDOWS ON)
     set(ENABLE_VULKAN ON)
+    set(ENABLE_OPENXR ON)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} STREQUAL "WindowsStore")
