@@ -77,3 +77,4 @@ source_group(Shaders shaders)
 
 add_subdirectory(engine)
 add_subdirectory(tools)
+add_subdirectory(example)
