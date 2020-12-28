@@ -226,7 +226,7 @@ void DebugPass::draw_arrow(GFXCommandBuffer* commandBuffer, Vector3 color, Matri
     commandBuffer->set_vertex_buffer(arrowMesh->position_buffer, 0, 0);
     commandBuffer->set_index_buffer(arrowMesh->index_buffer, IndexType::UINT32);
     
-    commandBuffer->draw_indexed(arrowMesh->num_indices, 0, 0);
+    commandBuffer->draw_indexed(arrowMesh->num_indices, 0, 0, 0);
 }
 
 void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
@@ -335,7 +335,7 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
         commandBuffer->set_vertex_buffer(cubeMesh->position_buffer, 0, 0);
         commandBuffer->set_index_buffer(cubeMesh->index_buffer, IndexType::UINT32);
 
-        commandBuffer->draw_indexed(cubeMesh->num_indices, 0, 0);
+        commandBuffer->draw_indexed(cubeMesh->num_indices, 0, 0, 0);
     }
     
     commandBuffer->set_graphics_pipeline(billboard_pipeline);
@@ -352,7 +352,7 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
         commandBuffer->bind_texture(bill.texture, 2);
 
         commandBuffer->set_push_constant(&pc, sizeof(BillPushConstant));
-        commandBuffer->draw_indexed(4, 0, 0);
+        commandBuffer->draw_indexed(4, 0, 0, 0);
     }
     
     commandBuffer->set_graphics_pipeline(arrow_pipeline);
@@ -408,7 +408,7 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
         
         if(renderable.mesh) {
             for (auto& part : renderable.mesh->parts)
-                commandBuffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset);
+                commandBuffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset, 0);
         }
     }
 }
@@ -542,7 +542,7 @@ void DebugPass::get_selected_object(int x, int y, std::function<void(SelectableO
         commandBuffer->set_push_constant(&pc, sizeof(PC));
 
         for (auto& part : mesh->parts)
-            commandBuffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset);
+            commandBuffer->draw_indexed(part.index_count, part.index_offset, part.vertex_offset, 0);
     }
 
     engine->get_gfx()->submit(commandBuffer);

@@ -51,13 +51,13 @@ CommonEditor::CommonEditor(std::string id) : id(id) {
 #ifdef PLATFORM_MACOS
     file::set_domain_path(file::Domain::App, "../../../data");
 #else
-    file::set_domain_path(Domain::App, "data");
+    file::set_domain_path(file::Domain::App, "data");
 #endif
     file::set_domain_path(file::Domain::Internal, "{resource_dir}/shaders");
     
     ImGuiIO& io = ImGui::GetIO();
     
-    iniFileName = file::get_writeable_directory() / "imgui.ini";
+    iniFileName = (file::get_writeable_directory() / "imgui.ini").string();
     
     io.IniFilename = iniFileName.c_str();
     
@@ -805,7 +805,7 @@ void CommonEditor::drawAssets() {
             ImGui::Separator();
             
             if(ImGui::Button("Regenerate thumbnail")) {
-                asset_thumbnails.erase(asset_thumbnails.find(file::app_domain / p));
+                asset_thumbnails.erase(asset_thumbnails.find((file::app_domain / p).string()));
             }
             
             ImGui::EndPopup();

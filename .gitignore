@@ -1,7 +1,11 @@
 extern/SPIRV-Cross/external/
 
+out/
+.vs/
+
 build/
 *build/
+CMakeSettings.json
 
 .DS_Store
 

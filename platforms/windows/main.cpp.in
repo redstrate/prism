@@ -42,6 +42,8 @@ wchar_t* convertToUnicode(const char* str) {
 	return buf;
 }
 
+void platform::force_quit() {}
+
 int platform::open_window(const std::string_view title, const prism::Rectangle rect, const WindowFlags flags) {
 	RECT wr = {rect.offset.x, rect.offset.y, rect.extent.width, rect.extent.height};
 	AdjustWindowRect(&wr, WS_OVERLAPPEDWINDOW, FALSE);

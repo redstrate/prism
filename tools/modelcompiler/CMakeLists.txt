@@ -1,5 +1,3 @@
-find_package(assimp REQUIRED)
-
 add_platform_executable(
     TARGET ModelCompiler
     APP_CLASS ModelEditor
@@ -11,9 +9,7 @@ target_link_libraries(ModelCompiler PUBLIC
     Core
     EditorCommon
     PRIVATE
-    ${ASSIMP_LIBRARIES})
+    assimp)
 target_include_directories(ModelCompiler PUBLIC
-    include
-    PRIVATE
-    ${ASSIMP_INCLUDE_DIRS})
+    include)
 set_engine_properties(ModelCompiler)
