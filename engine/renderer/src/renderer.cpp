@@ -283,7 +283,8 @@ void Renderer::render(Scene* scene, int index) {
         
         commandbuffer->pop_group();
 
-        dofPass->render(commandbuffer, *scene);
+        if(render_options.enable_depth_of_field)
+            dofPass->render(commandbuffer, *scene);
         
         if(!viewport_mode) {
             beginInfo.framebuffer = nullptr;
