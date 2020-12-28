@@ -6,6 +6,7 @@ out/
 build/
 *build/
 CMakeSettings.json
+enc_temp_folder/
 
 .DS_Store
 
