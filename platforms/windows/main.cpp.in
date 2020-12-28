@@ -29,7 +29,7 @@ int defaultWidth, defaultHeight;
 
 bool shouldConfineMouse = false;
 
-const wchar_t CLASS_NAME[]  = L"@APP_NAME@";
+const wchar_t CLASS_NAME[]  = L"PrismApp";
 
 wchar_t* convertToUnicode(const char* str) {
 	size_t ret = 0;
