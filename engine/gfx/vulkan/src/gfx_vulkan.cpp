@@ -266,26 +266,7 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 		imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	}
 
-	VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	if ((info.usage & GFXTextureUsage::Attachment) == GFXTextureUsage::Attachment) {
-		if (info.format == GFXPixelFormat::DEPTH_32F) {
-            if((info.usage & GFXTextureUsage::Sampled) == GFXTextureUsage::Sampled)
-                imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-            else
-                imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-		}
-		else {
-            if((info.usage & GFXTextureUsage::Sampled) == GFXTextureUsage::Sampled)
-                imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            else
-                imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		}
-	}
-	else {
-		imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	}
-
-	VkImageAspectFlags imageAspect;
+	VkImageAspectFlagBits imageAspect;
 	if (info.format == GFXPixelFormat::DEPTH_32F)
 		imageAspect = VK_IMAGE_ASPECT_DEPTH_BIT;
 	else
@@ -318,10 +299,11 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 
 	vkCreateImage(device, &imageInfo, nullptr, &texture->handle);
 
-	texture->layout = imageLayout;
 	texture->width = info.width;
     texture->height = info.height;
 	texture->format = imageFormat;
+	texture->aspect = imageAspect;
+	texture->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 	// allocate memory
 	VkMemoryRequirements memRequirements;
@@ -335,8 +317,6 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 	vkAllocateMemory(device, &allocInfo, nullptr, &texture->memory);
 
 	vkBindImageMemory(device, texture->handle, texture->memory, 0);
-
-	transitionImageLayout(texture->handle, imageFormat, imageAspect, VK_IMAGE_LAYOUT_UNDEFINED, imageLayout);
 
 	// create image view
 	VkImageViewCreateInfo viewInfo = {};
@@ -426,12 +406,12 @@ void GFXVulkan::copy_texture(GFXTexture* texture, void* data, GFXSize size) {
 	vkUnmapMemory(device, stagingBufferMemory);
 
 	// copy staging buffer to image
-	transitionImageLayout(vulkanTexture->handle, vulkanTexture->format, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
+	inlineTransitionImageLayout(commandBuffer, vulkanTexture->handle, vulkanTexture->format, vulkanTexture->aspect, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
 	VkBufferImageCopy region = {};
-	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.aspectMask = vulkanTexture->aspect;
 	region.imageSubresource.mipLevel = 0;
 	region.imageSubresource.baseArrayLayer = 0;
 	region.imageSubresource.layerCount = 1;
@@ -443,9 +423,9 @@ void GFXVulkan::copy_texture(GFXTexture* texture, void* data, GFXSize size) {
 
 	vkCmdCopyBufferToImage(commandBuffer, stagingBuffer, vulkanTexture->handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-	endSingleTimeCommands(commandBuffer);
+	inlineTransitionImageLayout(commandBuffer, vulkanTexture->handle, vulkanTexture->format, vulkanTexture->aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-	transitionImageLayout(vulkanTexture->handle, vulkanTexture->format, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	endSingleTimeCommands(commandBuffer);
 }
 
 void GFXVulkan::copy_texture(GFXTexture* from, GFXTexture* to) {
@@ -453,7 +433,25 @@ void GFXVulkan::copy_texture(GFXTexture* from, GFXTexture* to) {
 }
 
 void GFXVulkan::copy_texture(GFXTexture* from, GFXBuffer* to) {
-    console::error(System::GFX, "Copy Texture->Buffer unimplemented!");
+	GFXVulkanTexture* vulkanTexture = (GFXVulkanTexture*)from;
+	GFXVulkanBuffer* vulkanBuffer = (GFXVulkanBuffer*)to;
+
+	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+
+	VkBufferImageCopy region = {};
+	region.imageSubresource.aspectMask = vulkanTexture->aspect;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+	region.imageExtent = {
+		(uint32_t)vulkanTexture->width,
+		(uint32_t)vulkanTexture->height,
+		1
+	};
+
+	vkCmdCopyImageToBuffer(commandBuffer, vulkanTexture->handle, vulkanTexture->layout, vulkanBuffer->get(0).handle, 1, &region);
+
+	endSingleTimeCommands(commandBuffer);
 }
 
 GFXSampler* GFXVulkan::create_sampler(const GFXSamplerCreateInfo& info) {
@@ -492,6 +490,12 @@ GFXFramebuffer* GFXVulkan::create_framebuffer(const GFXFramebufferCreateInfo& in
 	for (auto& attachment : info.attachments) {
 		GFXVulkanTexture* texture = (GFXVulkanTexture*)attachment;
 		attachments.push_back(texture->view);
+
+		VkImageLayout expectedLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		if (texture->aspect & VK_IMAGE_ASPECT_DEPTH_BIT)
+			expectedLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+		transitionImageLayout(texture->handle, texture->format, texture->aspect, texture->layout, expectedLayout);
 	}
 
 	VkFramebufferCreateInfo framebufferInfo = {};
@@ -530,10 +534,6 @@ GFXRenderPass* GFXVulkan::create_render_pass(const GFXRenderPassCreateInfo& info
 		if (info.attachments[i] == GFXPixelFormat::DEPTH_32F)
 			isDepthAttachment = true;
 
-		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		if (isDepthAttachment)
-			imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
 		VkAttachmentDescription attachment = {};
 		attachment.format = toVkFormat(info.attachments[i]);
 		attachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -542,17 +542,19 @@ GFXRenderPass* GFXVulkan::create_render_pass(const GFXRenderPassCreateInfo& info
 		attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachment.finalLayout = imageLayout;
 
-		if (imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-			attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-        if (imageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+        if (isDepthAttachment)
             attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		else
+			attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 		VkAttachmentReference attachmentRef = {};
 		attachmentRef.attachment = i;
-		attachmentRef.layout = imageLayout;
+
+		if (isDepthAttachment)
+			attachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		else
+			attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		if (isDepthAttachment) {
 			hasDepthAttachment = true;
@@ -1021,6 +1023,10 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                 if (!currentPipeline->cachedDescriptorSets.count(getDescriptorHash(currentPipeline)))
                     cacheDescriptorState(currentPipeline, currentPipeline->descriptorLayout);
 
+				for (auto [texture, trans] : currentPipeline->expectedTransisitions) {
+					inlineTransitionImageLayout(commandBuffers[imageIndex], texture->handle, texture->format, texture->aspect, trans.oldLayout, trans.newLayout);
+				}
+
                 vkCmdBindDescriptorSets(commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->layout, 0, 1, &currentPipeline->cachedDescriptorSets[getDescriptorHash(currentPipeline)], 0, nullptr);
 
 				lastDescriptorHash = getDescriptorHash(currentPipeline);
@@ -1034,6 +1040,10 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 			if (lastDescriptorHash != getDescriptorHash(currentPipeline)) {
                 if (!currentPipeline->cachedDescriptorSets.count(getDescriptorHash(currentPipeline)))
                     cacheDescriptorState(currentPipeline, currentPipeline->descriptorLayout);
+
+				for (auto [texture, trans] : currentPipeline->expectedTransisitions) {
+					inlineTransitionImageLayout(commandBuffers[imageIndex], texture->handle, texture->format, texture->aspect, trans.oldLayout, trans.newLayout);
+				}
 
                 vkCmdBindDescriptorSets(commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->layout, 0, 1, &currentPipeline->cachedDescriptorSets[getDescriptorHash(currentPipeline)], 0, nullptr);
 
@@ -1114,8 +1124,8 @@ void GFXVulkan::createInstance(std::vector<const char*> layers, std::vector<cons
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
     debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     debugCreateInfo.messageSeverity =  VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT ;
-    debugCreateInfo.pfnUserCallback = DebugCallback;    // global function
+    debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT ;
+    debugCreateInfo.pfnUserCallback = DebugCallback;
 
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -1504,11 +1514,19 @@ void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSe
 		imageInfo.imageLayout = vulkanTexture->layout;
 
 		// color attachments are not the right layout
-		//if (imageInfo.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-		//	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		if (imageInfo.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 		imageInfo.imageView = vulkanTexture->view;
 		imageInfo.sampler = vulkanTexture->sampler;
+
+		//if (imageInfo.imageLayout != vulkanTexture->layout) {
+			GFXVulkanPipeline::ExpectedTransisition trans;
+			trans.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			trans.newLayout = imageInfo.imageLayout;
+
+			pipeline->expectedTransisitions[vulkanTexture] = trans;
+		//}
 
 		VkWriteDescriptorSet descriptorWrite = {};
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1595,7 +1613,13 @@ uint32_t GFXVulkan::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags pr
 void GFXVulkan::transitionImageLayout(VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageLayout oldLayout, VkImageLayout newLayout) {
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
-	VkImageMemoryBarrier barrier = {};
+	inlineTransitionImageLayout(commandBuffer, image, format, aspect, oldLayout, newLayout);
+
+	endSingleTimeCommands(commandBuffer);
+}
+
+void GFXVulkan::inlineTransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageLayout oldLayout, VkImageLayout newLayout) {
+	VkImageMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.oldLayout = oldLayout;
 	barrier.newLayout = newLayout;
@@ -1607,19 +1631,40 @@ void GFXVulkan::transitionImageLayout(VkImage image, VkFormat format, VkImageAsp
 	barrier.subresourceRange.levelCount = 1;
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = 1;
-	barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT; // TODO
-	barrier.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT; // TODO
+
+	VkPipelineStageFlags sourceStage;
+	VkPipelineStageFlags destinationStage;
+
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else {
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
 
 	vkCmdPipelineBarrier(
 		commandBuffer,
-		VK_PIPELINE_STAGE_HOST_BIT /* TODO */, VK_PIPELINE_STAGE_HOST_BIT /* TODO */,
+		sourceStage, destinationStage,
 		0,
 		0, nullptr,
 		0, nullptr,
 		1, &barrier
 	);
-
-	endSingleTimeCommands(commandBuffer);
 }
 
 VkShaderModule GFXVulkan::createShaderModule(const uint32_t* code, const int length) {

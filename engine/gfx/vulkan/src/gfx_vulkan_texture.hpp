@@ -14,5 +14,6 @@ public:
 	int width, height;
 
 	VkFormat format;
-	VkImageLayout layout;
+	VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
+	VkImageAspectFlagBits aspect;
 };

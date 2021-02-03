@@ -81,6 +81,12 @@ struct UIPushConstant {
     Matrix4x4 mvp;
 };
 
+struct SkyPushConstant {
+    Matrix4x4 view;
+    Vector4 sun_position_fov;
+    float aspect;
+};
+
 Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     Expects(gfx != nullptr);
     
@@ -534,12 +540,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         render_screen(command_buffer, screen.screen, continuity, options);
     }
     
-    struct SkyPushConstant {
-        Matrix4x4 view;
-        Vector4 sun_position_fov;
-        float aspect;
-    } pc;
-    
+    SkyPushConstant pc;
     pc.view = matrix_from_quat(scene.get<Transform>(camera_object).rotation);
     pc.aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
     
@@ -956,7 +957,7 @@ void Renderer::createSkyPipeline() {
     };
 
     pipelineInfo.shader_input.push_constants = {
-        {sizeof(Matrix4x4) + sizeof(Vector4) + sizeof(float), 0}
+        {sizeof(SkyPushConstant), 0}
     };
 
     pipelineInfo.depth.depth_mode = GFXDepthMode::LessOrEqual;

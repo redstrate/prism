@@ -4,6 +4,8 @@
 
 #include "gfx_pipeline.hpp"
 
+class GFXVulkanTexture;
+
 class GFXVulkanPipeline : public GFXPipeline {
 public:
 	std::string label;
@@ -18,4 +20,11 @@ public:
 
     // dynamic descriptor sets
     std::map<uint64_t, VkDescriptorSet> cachedDescriptorSets;
+
+	struct ExpectedTransisition {
+		VkImageLayout oldLayout;
+		VkImageLayout newLayout;
+	};
+
+	std::map<GFXVulkanTexture*, ExpectedTransisition> expectedTransisitions;
 };
