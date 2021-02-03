@@ -3,7 +3,7 @@ layout (location = 0) in vec2 inUV;
 layout (location = 0) out vec4 outColor;
 
 layout(push_constant, binding = 1) uniform readonly PushConstant{
-    mat4 view, mvp;
+    mat4 mvp;
     vec4 color;
 };
 

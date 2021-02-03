@@ -1,8 +1,12 @@
 layout (location = 0) out vec2 outUV;
 
 layout(push_constant, binding = 1) uniform readonly PushConstant{
-    mat4 view, mvp;
+    mat4 mvp;
     vec4 color;
+};
+
+layout(std430, binding = 3) buffer readonly SceneInformation {
+    mat4 view;
 };
 
 void main() {

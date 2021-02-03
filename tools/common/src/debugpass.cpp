@@ -12,11 +12,13 @@
 #include "renderer.hpp"
 
 struct BillPushConstant {
-    Matrix4x4 view, mvp;
+    Matrix4x4 mvp;
     Vector4 color;
 };
 
 void DebugPass::initialize() {
+    scene_info_buffer = engine->get_gfx()->create_buffer(nullptr, sizeof(Matrix4x4), true, GFXBufferUsage::Storage);
+
     {
         GFXGraphicsPipelineCreateInfo createInfo;
         createInfo.shaders.vertex_path = "debug.vert";
@@ -141,7 +143,9 @@ void DebugPass::initialize() {
         pipelineInfo.shaders.fragment_path = "billboard.frag";
         
         pipelineInfo.shader_input.bindings = {
-            {1, GFXBindingType::PushConstant}
+            {1, GFXBindingType::PushConstant},
+            {2, GFXBindingType::Texture},
+            {3, GFXBindingType::StorageBuffer}
         };
         
         pipelineInfo.shader_input.push_constants = {
@@ -339,17 +343,19 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
     }
     
     commandBuffer->set_graphics_pipeline(billboard_pipeline);
-    
+
+    engine->get_gfx()->copy_buffer(scene_info_buffer, &camera.view, 0, sizeof(Matrix4x4));
+
     // draw primitives
     for(auto& bill : billboards) {
         Matrix4x4 m = transform::translate(Matrix4x4(), bill.position);
         
         BillPushConstant pc;
-        pc.view = camera.view;
         pc.mvp = vp * m;
         pc.color = bill.color;
                 
         commandBuffer->bind_texture(bill.texture, 2);
+        commandBuffer->bind_shader_buffer(scene_info_buffer, 0, 3, sizeof(Matrix4x4));
 
         commandBuffer->set_push_constant(&pc, sizeof(BillPushConstant));
         commandBuffer->draw_indexed(4, 0, 0, 0);
