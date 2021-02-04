@@ -432,8 +432,8 @@ void Engine::resize(const int identifier, const prism::Extent extent) {
     Expects(identifier >= 0);
     
     auto window = get_window(identifier);
-    
-    Expects(window != nullptr);
+    if (window == nullptr)
+        return;
 
     window->extent = extent;
     

@@ -53,6 +53,7 @@ DoFPass::DoFPass(GFX* gfx, Renderer* renderer) : renderer(renderer) {
     pipeline = gfx->create_graphics_pipeline(create_info);
         
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "Normal Field";
     textureInfo.width = extent.width;
     textureInfo.height = extent.height;
     textureInfo.format = GFXPixelFormat::RGBA_32F;
@@ -60,6 +61,8 @@ DoFPass::DoFPass(GFX* gfx, Renderer* renderer) : renderer(renderer) {
     textureInfo.samplingMode = SamplingMode::ClampToEdge;
     
     normal_field = gfx->create_texture(textureInfo);
+
+    textureInfo.label = "Far Field";
     far_field = gfx->create_texture(textureInfo);
             
     GFXFramebufferCreateInfo framebufferInfo = {};

@@ -220,6 +220,7 @@ std::unique_ptr<Texture> load_texture(const file::Path path) {
     texture->height = height;
     
     GFXTextureCreateInfo createInfo = {};
+    createInfo.label = path.string();
     createInfo.width = width;
     createInfo.height = height;
     createInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;

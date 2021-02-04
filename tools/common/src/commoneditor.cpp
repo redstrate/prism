@@ -763,6 +763,7 @@ bool material_readable(const file::Path path) {
 }
 
 void cacheAssetFilesystem() {
+#ifndef PLATFORM_WINDOWS
     asset_files.clear();
     
     auto data_directory = "../../../data";
@@ -777,6 +778,7 @@ void cacheAssetFilesystem() {
     }
     
     filesystem_cached = true;
+#endif
 }
 
 void CommonEditor::drawAssets() {
@@ -863,6 +865,7 @@ GFXTexture* CommonEditor::get_texture_preview(Texture& texture) {
     auto gfx = engine->get_gfx();
     
     GFXTextureCreateInfo texture_create_info = {};
+    texture_create_info.label = "Preview of " + texture.path;
     texture_create_info.width = thumbnail_resolution;
     texture_create_info.height = thumbnail_resolution;
     texture_create_info.format = GFXPixelFormat::RGBA8_UNORM;
@@ -1103,6 +1106,7 @@ void CommonEditor::load_thumbnail_cache() {
             thumbnail_cache->read(image.data(), thumbnail_resolution * thumbnail_resolution * 4);
             
             GFXTextureCreateInfo info;
+            info.label = "Preview of " + filename;
             info.width = thumbnail_resolution;
             info.height = thumbnail_resolution;
             info.format = GFXPixelFormat::RGBA8_UNORM;

@@ -34,6 +34,7 @@ GaussianHelper::GaussianHelper(GFX* gfx, const prism::Extent extent) : extent(ex
 
     // resources
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "Gaussian";
     textureInfo.width = extent.width;
     textureInfo.height = extent.height;
     textureInfo.format = GFXPixelFormat::RGBA_32F;

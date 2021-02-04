@@ -299,6 +299,8 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 
 	vkCreateImage(device, &imageInfo, nullptr, &texture->handle);
 
+	name_object(device, VK_OBJECT_TYPE_IMAGE, (uint64_t)texture->handle, info.label);
+
 	texture->width = info.width;
     texture->height = info.height;
 	texture->format = imageFormat;
@@ -1650,11 +1652,11 @@ void GFXVulkan::inlineTransitionImageLayout(VkCommandBuffer commandBuffer, VkIma
 		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
 	}
 	else {
-		barrier.srcAccessMask = 0;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
 
 		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
 	}
 
 	vkCmdPipelineBarrier(

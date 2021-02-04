@@ -177,6 +177,7 @@ void DebugPass::createOffscreenResources() {
     // selection resources
     {
         GFXTextureCreateInfo textureInfo = {};
+        textureInfo.label = "Select Color";
         textureInfo.width = extent.width;
         textureInfo.height = extent.height;
         textureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
@@ -185,6 +186,7 @@ void DebugPass::createOffscreenResources() {
         
         selectTexture = engine->get_gfx()->create_texture(textureInfo);
         
+        textureInfo.label = "Select Depth";
         textureInfo.format = GFXPixelFormat::DEPTH_32F;
         
         selectDepthTexture = engine->get_gfx()->create_texture(textureInfo);
@@ -201,6 +203,7 @@ void DebugPass::createOffscreenResources() {
     // sobel
     {
         GFXTextureCreateInfo textureInfo = {};
+        textureInfo.label = "Sobel";
         textureInfo.width = extent.width;
         textureInfo.height = extent.height;
         textureInfo.format = GFXPixelFormat::R8_UNORM;

@@ -772,6 +772,7 @@ void Renderer::create_mesh_pipeline(Material& material) {
 
 void Renderer::createDummyTexture() {
     GFXTextureCreateInfo createInfo = {};
+    createInfo.label = "Dummy";
     createInfo.width = 1;
     createInfo.height = 1;
     createInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
@@ -801,6 +802,7 @@ void Renderer::createOffscreenResources() {
     const auto extent = get_render_extent();
     
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "Offscreen Color";
     textureInfo.width = extent.width;
     textureInfo.height = extent.height;
     textureInfo.format = GFXPixelFormat::RGBA_32F;
@@ -808,8 +810,11 @@ void Renderer::createOffscreenResources() {
     textureInfo.samplingMode = SamplingMode::ClampToEdge;
 
     offscreenColorTexture = gfx->create_texture(textureInfo);
+
+    textureInfo.label = "Offscreen Back";
     offscreenBackTexture = gfx->create_texture(textureInfo);
 
+    textureInfo.label = "Offscreen Depth";
     textureInfo.format = GFXPixelFormat::DEPTH_32F;
 
     offscreenDepthTexture = gfx->create_texture(textureInfo);
@@ -829,6 +834,7 @@ void Renderer::createOffscreenResources() {
         viewportRenderPass = gfx->create_render_pass(renderPassInfo);
 
         GFXTextureCreateInfo textureInfo = {};
+        textureInfo.label = "Viewport Color";
         textureInfo.width = extent.width;
         textureInfo.height = extent.height;
         textureInfo.format = GFXPixelFormat::RGBA8_UNORM;
@@ -934,6 +940,7 @@ void Renderer::createFontPipeline() {
     worldTextPipeline = gfx->create_graphics_pipeline(pipelineInfo);
 
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "UI Font";
     textureInfo.width = font.width;
     textureInfo.height = font.height;
     textureInfo.format = GFXPixelFormat::R8_UNORM;
@@ -1003,6 +1010,7 @@ void Renderer::createGaussianResources() {
     gHelper = std::make_unique<GaussianHelper>(gfx, extent);
 
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "Blur Store";
     textureInfo.width = extent.width;
     textureInfo.height = extent.height;
     textureInfo.format = GFXPixelFormat::RGBA_32F;
@@ -1031,6 +1039,7 @@ void Renderer::createBRDF() {
     brdfPipeline = gfx->create_graphics_pipeline(pipelineInfo);
     
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "BRDF LUT";
     textureInfo.format = GFXPixelFormat::R8G8_SFLOAT;
     textureInfo.width = brdf_resolution;
     textureInfo.height = brdf_resolution;
@@ -1088,6 +1097,7 @@ void Renderer::create_histogram_resources() {
     histogram_buffer = gfx->create_buffer(nullptr, sizeof(uint32_t) * 256, false, GFXBufferUsage::Storage);
     
     GFXTextureCreateInfo texture_info = {};
+    texture_info.label = "Average Luminance Store";
     texture_info.width = 1;
     texture_info.height = 1;
     texture_info.format = GFXPixelFormat::R_16F;

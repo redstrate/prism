@@ -67,6 +67,7 @@ SceneCapture::SceneCapture(GFX* gfx) {
     renderPass = gfx->create_render_pass(renderPassInfo);
     
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "Scene Capture Color";
     textureInfo.width = scene_cubemap_resolution;
     textureInfo.height = scene_cubemap_resolution;
     textureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
@@ -76,6 +77,7 @@ SceneCapture::SceneCapture(GFX* gfx) {
     offscreenTexture = gfx->create_texture(textureInfo);
     
     GFXTextureCreateInfo depthTextureInfo = {};
+    depthTextureInfo.label = "Scene Capture Depth";
     depthTextureInfo.width = scene_cubemap_resolution;
     depthTextureInfo.height = scene_cubemap_resolution;
     depthTextureInfo.format = GFXPixelFormat::DEPTH_32F;
@@ -91,6 +93,7 @@ SceneCapture::SceneCapture(GFX* gfx) {
     offscreenFramebuffer = gfx->create_framebuffer(info);
     
     GFXTextureCreateInfo cubeTextureInfo = {};
+    cubeTextureInfo.label = "Scene Capture Cubemap";
     cubeTextureInfo.type = GFXTextureType::Cubemap;
     cubeTextureInfo.width = scene_cubemap_resolution;
     cubeTextureInfo.height = scene_cubemap_resolution;
@@ -113,6 +116,7 @@ void SceneCapture::create_scene_resources(Scene& scene) {
     
     if(gfx->supports_feature(GFXFeature::CubemapArray)) {
         GFXTextureCreateInfo cubeTextureInfo = {};
+        cubeTextureInfo.label = "Irriadiance Cubemap";
         cubeTextureInfo.type = GFXTextureType::CubemapArray;
         cubeTextureInfo.width = irradiance_cubemap_resolution;
         cubeTextureInfo.height = irradiance_cubemap_resolution;
@@ -124,6 +128,7 @@ void SceneCapture::create_scene_resources(Scene& scene) {
         scene.irradianceCubeArray = gfx->create_texture(cubeTextureInfo);
         
         cubeTextureInfo = {};
+        cubeTextureInfo.label = "Prefiltered Cubemap";
         cubeTextureInfo.type = GFXTextureType::CubemapArray;
         cubeTextureInfo.width = scene_cubemap_resolution;
         cubeTextureInfo.height = scene_cubemap_resolution;
@@ -408,6 +413,7 @@ void SceneCapture::createIrradianceResources() {
     GFX* gfx = engine->get_gfx();
     
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "Irradiance Offscreen";
     textureInfo.width = irradiance_cubemap_resolution;
     textureInfo.height = irradiance_cubemap_resolution;
     textureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
@@ -461,6 +467,7 @@ void SceneCapture::createPrefilterResources() {
     GFX* gfx = engine->get_gfx();
     
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "Prefiltered Offscreen";
     textureInfo.width = scene_cubemap_resolution;
     textureInfo.height = scene_cubemap_resolution;
     textureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;

@@ -73,6 +73,7 @@ void SMAAPass::create_textures() {
     
     //load area image
     GFXTextureCreateInfo areaInfo = {};
+    areaInfo.label = "SMAA Area";
     areaInfo.width = AREATEX_WIDTH;
     areaInfo.height = AREATEX_HEIGHT;
     areaInfo.format = GFXPixelFormat::R8G8_UNORM;
@@ -85,6 +86,7 @@ void SMAAPass::create_textures() {
     
     // load search image
     GFXTextureCreateInfo searchInfo = {};
+    searchInfo.label = "SMAA Search";
     searchInfo.width = SEARCHTEX_WIDTH;
     searchInfo.height = SEARCHTEX_HEIGHT;
     searchInfo.format = GFXPixelFormat::R8_UNORM;
@@ -138,12 +140,15 @@ void SMAAPass::create_offscreen_resources() {
     auto gfx = engine->get_gfx();
 
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "SMAA Edge";
     textureInfo.width = extent.width;
     textureInfo.height = extent.height;
     textureInfo.format = GFXPixelFormat::R16G16B16A16_SFLOAT;
     textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Sampled;
     
     edge_texture = gfx->create_texture(textureInfo);
+
+    textureInfo.label = "SMAA Blend";
     blend_texture = gfx->create_texture(textureInfo);
     
     GFXFramebufferCreateInfo framebufferInfo = {};

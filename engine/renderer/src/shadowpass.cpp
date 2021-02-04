@@ -45,6 +45,7 @@ void ShadowPass::create_scene_resources(Scene& scene) {
     // sun light
     {
         GFXTextureCreateInfo textureInfo = {};
+        textureInfo.label = "Shadow Depth";
         textureInfo.width = render_options.shadow_resolution;
         textureInfo.height = render_options.shadow_resolution;
         textureInfo.format = GFXPixelFormat::DEPTH_32F;
@@ -62,6 +63,7 @@ void ShadowPass::create_scene_resources(Scene& scene) {
     // point lights
     if(gfx->supports_feature(GFXFeature::CubemapArray)) {
         GFXTextureCreateInfo cubeTextureInfo = {};
+        cubeTextureInfo.label = "Point Light Array";
         cubeTextureInfo.type = GFXTextureType::CubemapArray;
         cubeTextureInfo.width = render_options.shadow_resolution;
         cubeTextureInfo.height = render_options.shadow_resolution;
@@ -76,6 +78,7 @@ void ShadowPass::create_scene_resources(Scene& scene) {
     // spot lights
     {
         GFXTextureCreateInfo spotTextureInfo = {};
+        spotTextureInfo.label = "Spot Light Array";
         spotTextureInfo.type = GFXTextureType::Array2D;
         spotTextureInfo.width = render_options.shadow_resolution;
         spotTextureInfo.height = render_options.shadow_resolution;
@@ -374,6 +377,7 @@ void ShadowPass::create_offscreen_resources() {
     auto gfx = engine->get_gfx();
     
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "Shadow Color";
     textureInfo.width = render_options.shadow_resolution;
     textureInfo.height = render_options.shadow_resolution;
     textureInfo.format = GFXPixelFormat::R_32F;
@@ -383,6 +387,7 @@ void ShadowPass::create_offscreen_resources() {
     offscreen_color_texture = gfx->create_texture(textureInfo);
     
     GFXTextureCreateInfo depthTextureInfo = {};
+    depthTextureInfo.label = "Shadow Depth";
     depthTextureInfo.width = render_options.shadow_resolution;
     depthTextureInfo.height = render_options.shadow_resolution;
     depthTextureInfo.format = GFXPixelFormat::DEPTH_32F;

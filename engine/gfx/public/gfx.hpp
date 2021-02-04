@@ -252,6 +252,8 @@ enum class GFXFilter {
 };
 
 struct GFXTextureCreateInfo {
+    std::string label; // only used for debug
+
     GFXTextureType type = GFXTextureType::Single2D;
     uint32_t width = 0;
     uint32_t height = 0;

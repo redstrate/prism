@@ -16,7 +16,7 @@ void ImGuiPass::initialize() {
     io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
     io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
 
-#if !defined(PLATFORM_TVOS) && !defined(PLATFORM_IOS) && !defined(PLATFORM_WINDOWS)
+#if !defined(PLATFORM_TVOS) && !defined(PLATFORM_IOS)
     load_font("OpenSans-Regular.ttf");
 #endif
     create_font_texture();
@@ -175,6 +175,7 @@ void ImGuiPass::create_font_texture() {
     io.Fonts->GetTexDataAsRGBA32(&pixels, &width, &height);
     
     GFXTextureCreateInfo createInfo = {};
+    createInfo.label = "ImGui Font";
     createInfo.width = width;
     createInfo.height = height;
     createInfo.format = GFXPixelFormat::RGBA8_UNORM;
