@@ -607,49 +607,62 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 
 	VkShaderModule vertex_module = VK_NULL_HANDLE, fragment_module = VK_NULL_HANDLE;
 
-	const bool vertex_use_shader_source = info.shaders.vertex_path.empty();
-	const bool fragment_use_shader_source = info.shaders.fragment_path.empty();
+	const bool has_vertex_stage = !info.shaders.vertex_path.empty() || !info.shaders.vertex_src.empty();
+	const bool has_fragment_stage = !info.shaders.fragment_path.empty() || !info.shaders.fragment_src.empty();
 
-	if (vertex_use_shader_source) {
-		auto& vertex_shader_vector = info.shaders.vertex_src.as_bytecode();
+	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 
-		vertex_module = createShaderModule(vertex_shader_vector.data(), vertex_shader_vector.size() * sizeof(uint32_t));
+	if (has_vertex_stage) {
+		const bool vertex_use_shader_source = info.shaders.vertex_path.empty();
+
+		if (vertex_use_shader_source) {
+			auto& vertex_shader_vector = info.shaders.vertex_src.as_bytecode();
+
+			vertex_module = createShaderModule(vertex_shader_vector.data(), vertex_shader_vector.size() * sizeof(uint32_t));
+		}
+		else {
+			auto vertex_shader = file::open(file::internal_domain / (std::string(info.shaders.vertex_path) + ".spv"), true);
+			vertex_shader->read_all();
+
+			vertex_module = createShaderModule(vertex_shader->cast_data<uint32_t>(), vertex_shader->size());
+		}
+
+		name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vertex_module, info.shaders.vertex_path);
+
+		VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
+		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		vertShaderStageInfo.module = vertex_module;
+		vertShaderStageInfo.pName = "main";
+
+		shaderStages.push_back(vertShaderStageInfo);
 	}
-	else {
-		auto vertex_shader = file::open(file::internal_domain / (std::string(info.shaders.vertex_path) + ".spv"), true);
-		vertex_shader->read_all();
 
-		vertex_module = createShaderModule(vertex_shader->cast_data<uint32_t>(), vertex_shader->size());
+	if (has_fragment_stage) {
+		const bool fragment_use_shader_source = info.shaders.fragment_path.empty();
+
+		if (fragment_use_shader_source) {
+			auto& fragment_shader_vector = info.shaders.fragment_src.as_bytecode();
+
+			fragment_module = createShaderModule(fragment_shader_vector.data(), fragment_shader_vector.size() * sizeof(uint32_t));
+		}
+		else {
+			auto fragment_shader = file::open(file::internal_domain / (std::string(info.shaders.fragment_path) + ".spv"), true);
+			fragment_shader->read_all();
+
+			fragment_module = createShaderModule(fragment_shader->cast_data<uint32_t>(), fragment_shader->size());
+		}
+
+		name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)fragment_module, info.shaders.fragment_path);
+
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
+		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fragShaderStageInfo.module = fragment_module;
+		fragShaderStageInfo.pName = "main";
+
+		shaderStages.push_back(fragShaderStageInfo);
 	}
-
-	if (fragment_use_shader_source) {
-		auto& fragment_shader_vector = info.shaders.fragment_src.as_bytecode();
-
-		fragment_module = createShaderModule(fragment_shader_vector.data(), fragment_shader_vector.size() * sizeof(uint32_t));
-	}
-	else {
-		auto fragment_shader = file::open(file::internal_domain / (std::string(info.shaders.fragment_path) + ".spv"), true);
-		fragment_shader->read_all();
-
-		fragment_module = createShaderModule(fragment_shader->cast_data<uint32_t>(), fragment_shader->size());
-	}
-
-    name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vertex_module, info.shaders.vertex_path);
-    name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)fragment_module, info.shaders.fragment_path);
-
-	VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertShaderStageInfo.module = vertex_module;
-	vertShaderStageInfo.pName = "main";
-
-	VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	fragShaderStageInfo.module = fragment_module;
-	fragShaderStageInfo.pName = "main";
-
-	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
 	// setup vertex inputs/bindings
 	std::vector<VkVertexInputBindingDescription> inputs;
@@ -687,7 +700,6 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 
 	if (info.rasterization.primitive_type == GFXPrimitiveType::TriangleStrip)
 		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-
 
 	VkPipelineViewportStateCreateInfo viewportState = {};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
@@ -816,8 +828,8 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 	// create pipeline
 	VkGraphicsPipelineCreateInfo pipelineInfo = {};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineInfo.stageCount = 2;
-	pipelineInfo.pStages = shaderStages;
+	pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+	pipelineInfo.pStages = shaderStages.data();
 	pipelineInfo.pVertexInputState = &vertexInputInfo;
 	pipelineInfo.pInputAssemblyState = &inputAssembly;
 	pipelineInfo.pViewportState = &viewportState;
@@ -839,13 +851,13 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 
 	vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->handle);
 
-    name_object(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->handle, std::string(info.shaders.vertex_path.data()) + std::string(info.shaders.fragment_path.data()));
-	name_object(device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipeline->layout, std::string(info.shaders.vertex_path.data()) + std::string(info.shaders.fragment_path.data()));
-
 	if (info.label.empty())
-		pipeline->label = std::string(info.shaders.vertex_path.data()) + std::string(info.shaders.fragment_path.data());
+		pipeline->label = std::string(info.shaders.vertex_path) + std::string(info.shaders.fragment_path);
 	else
 		pipeline->label = info.label;
+
+	name_object(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->handle, pipeline->label);
+	name_object(device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipeline->layout, pipeline->label);
 
 	return pipeline;
 }

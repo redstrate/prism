@@ -322,7 +322,7 @@ void ShadowPass::create_pipelines() {
     pipelineInfo.shaders.vertex_path = "shadow.vert";
 
     pipelineInfo.shaders.fragment_constants = { point_light_max_constant };
-    pipelineInfo.shaders.fragment_path = "shadow.frag";
+    //pipelineInfo.shaders.fragment_path = "shadow.frag";
     
     pipelineInfo.shader_input.bindings = {
         {0, GFXBindingType::PushConstant},
