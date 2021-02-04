@@ -870,11 +870,13 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		return;
 
+	VkCommandBuffer& cmd = commandBuffers[currentFrame];
+
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-	vkBeginCommandBuffer(commandBuffers[imageIndex], &beginInfo);
+	vkBeginCommandBuffer(cmd, &beginInfo);
 
 	VkRenderPass currentRenderPass = VK_NULL_HANDLE;
 	GFXVulkanPipeline* currentPipeline = nullptr;
@@ -887,7 +889,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 		{
 			// end the previous render pass
 			if (currentRenderPass != VK_NULL_HANDLE) {
-				vkCmdEndRenderPass(commandBuffers[imageIndex]);
+				vkCmdEndRenderPass(cmd);
 			}
 
 			GFXVulkanRenderPass* renderPass = (GFXVulkanRenderPass*)command.data.set_render_pass.render_pass;
@@ -913,13 +915,13 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                 viewport.height = -static_cast<float>(framebuffer->height);
                 viewport.maxDepth = 1.0f;
 
-                vkCmdSetViewport(commandBuffers[imageIndex], 0, 1, &viewport);
+                vkCmdSetViewport(cmd, 0, 1, &viewport);
 
                 VkRect2D scissor = {};
                 scissor.extent.width = framebuffer->width;
                 scissor.extent.height = framebuffer->height;
 
-                vkCmdSetScissor(commandBuffers[imageIndex], 0, 1, &scissor);
+                vkCmdSetScissor(cmd, 0, 1, &scissor);
 			}
 			else {
 				renderPassInfo.framebuffer = swapchainFramebuffers[imageIndex];
@@ -930,13 +932,13 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                 viewport.height = -static_cast<float>(surfaceHeight);
                 viewport.maxDepth = 1.0f;
 
-                vkCmdSetViewport(commandBuffers[imageIndex], 0, 1, &viewport);
+                vkCmdSetViewport(cmd, 0, 1, &viewport);
 
                 VkRect2D scissor = {};
                 scissor.extent.width = surfaceWidth;
                 scissor.extent.height = surfaceHeight;
 
-                vkCmdSetScissor(commandBuffers[imageIndex], 0, 1, &scissor);
+                vkCmdSetScissor(cmd, 0, 1, &scissor);
 			}
 
 			renderPassInfo.renderArea.offset = { command.data.set_render_pass.render_area.offset.x, command.data.set_render_pass.render_area.offset.y };
@@ -963,7 +965,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 			renderPassInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
 			renderPassInfo.pClearValues = clearColors.data();
 
-			vkCmdBeginRenderPass(commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+			vkCmdBeginRenderPass(cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 			currentPipeline = nullptr;
 		}
@@ -971,7 +973,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 		case GFXCommandType::SetGraphicsPipeline:
 		{
 			currentPipeline = (GFXVulkanPipeline*)command.data.set_graphics_pipeline.pipeline;
-			vkCmdBindPipeline(commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->handle);
+			vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->handle);
 
 			resetDescriptorState();
 			lastDescriptorHash = 0;
@@ -981,7 +983,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 		{
             VkBuffer buffer = ((GFXVulkanBuffer*)command.data.set_vertex_buffer.buffer)->get(currentFrame).handle;
 			VkDeviceSize offset = command.data.set_vertex_buffer.offset;
-			vkCmdBindVertexBuffers(commandBuffers[imageIndex], command.data.set_vertex_buffer.index, 1, &buffer, &offset);
+			vkCmdBindVertexBuffers(cmd, command.data.set_vertex_buffer.index, 1, &buffer, &offset);
 		}
 			break;
 		case GFXCommandType::SetIndexBuffer:
@@ -990,7 +992,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 			if (command.data.set_index_buffer.index_type == IndexType::UINT16)
 				indexType = VK_INDEX_TYPE_UINT16;
 
-            vkCmdBindIndexBuffer(commandBuffers[imageIndex], ((GFXVulkanBuffer*)command.data.set_index_buffer.buffer)->get(currentFrame).handle, 0, indexType);
+            vkCmdBindIndexBuffer(cmd, ((GFXVulkanBuffer*)command.data.set_index_buffer.buffer)->get(currentFrame).handle, 0, indexType);
 
 			currentIndexType = indexType;
 		}
@@ -998,7 +1000,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
         case GFXCommandType::SetPushConstant:
 		{
 			if(currentPipeline != nullptr)
-				vkCmdPushConstants(commandBuffers[imageIndex], currentPipeline->layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, command.data.set_push_constant.size, command.data.set_push_constant.bytes.data());
+				vkCmdPushConstants(cmd, currentPipeline->layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, command.data.set_push_constant.size, command.data.set_push_constant.bytes.data());
 		}
 			break;
         case GFXCommandType::BindShaderBuffer:
@@ -1028,15 +1030,15 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                     cacheDescriptorState(currentPipeline, currentPipeline->descriptorLayout);
 
 				for (auto [texture, trans] : currentPipeline->expectedTransisitions) {
-					inlineTransitionImageLayout(commandBuffers[imageIndex], texture->handle, texture->format, texture->aspect, trans.oldLayout, trans.newLayout);
+					inlineTransitionImageLayout(cmd, texture->handle, texture->format, texture->aspect, trans.oldLayout, trans.newLayout);
 				}
 
-                vkCmdBindDescriptorSets(commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->layout, 0, 1, &currentPipeline->cachedDescriptorSets[getDescriptorHash(currentPipeline)], 0, nullptr);
+                vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->layout, 0, 1, &currentPipeline->cachedDescriptorSets[getDescriptorHash(currentPipeline)], 0, nullptr);
 
 				lastDescriptorHash = getDescriptorHash(currentPipeline);
 			}
 
-			vkCmdDraw(commandBuffers[imageIndex], command.data.draw.vertex_count, command.data.draw.instance_count, command.data.draw.vertex_offset, command.data.draw.base_instance);
+			vkCmdDraw(cmd, command.data.draw.vertex_count, command.data.draw.instance_count, command.data.draw.vertex_offset, command.data.draw.base_instance);
 		}
 			break;
 		case GFXCommandType::DrawIndexed:
@@ -1046,15 +1048,15 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                     cacheDescriptorState(currentPipeline, currentPipeline->descriptorLayout);
 
 				for (auto [texture, trans] : currentPipeline->expectedTransisitions) {
-					inlineTransitionImageLayout(commandBuffers[imageIndex], texture->handle, texture->format, texture->aspect, trans.oldLayout, trans.newLayout);
+					inlineTransitionImageLayout(cmd, texture->handle, texture->format, texture->aspect, trans.oldLayout, trans.newLayout);
 				}
 
-                vkCmdBindDescriptorSets(commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->layout, 0, 1, &currentPipeline->cachedDescriptorSets[getDescriptorHash(currentPipeline)], 0, nullptr);
+                vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->layout, 0, 1, &currentPipeline->cachedDescriptorSets[getDescriptorHash(currentPipeline)], 0, nullptr);
 
 				lastDescriptorHash = getDescriptorHash(currentPipeline);
 			}
 
-			vkCmdDrawIndexed(commandBuffers[imageIndex], command.data.draw_indexed.index_count, 1, command.data.draw_indexed.first_index, command.data.draw_indexed.vertex_offset, 0);
+			vkCmdDrawIndexed(cmd, command.data.draw_indexed.index_count, 1, command.data.draw_indexed.first_index, command.data.draw_indexed.vertex_offset, 0);
 		}
 		break;
 		}
@@ -1062,10 +1064,10 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 
 	// end the last render pass
 	if (currentRenderPass != VK_NULL_HANDLE) {
-		vkCmdEndRenderPass(commandBuffers[imageIndex]);
+		vkCmdEndRenderPass(cmd);
 	}
 
-	vkEndCommandBuffer(commandBuffers[imageIndex]);
+	vkEndCommandBuffer(cmd);
 
 	// submit
 	VkSubmitInfo submitInfo = {};
@@ -1077,7 +1079,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
+	submitInfo.pCommandBuffers = &cmd;
 
 	VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
 	submitInfo.signalSemaphoreCount = 1;
@@ -1405,7 +1407,7 @@ void GFXVulkan::createSwapchain(VkSwapchainKHR oldSwapchain) {
 	}
 
 	// allocate command buffers
-	commandBuffers.resize(imageCount);
+	commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
