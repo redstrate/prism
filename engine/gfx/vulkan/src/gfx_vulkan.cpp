@@ -1414,6 +1414,9 @@ void GFXVulkan::createSwapchain(VkSwapchainKHR oldSwapchain) {
 	allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
 
 	vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data());
+
+	for (auto [i, cmdbuf] : utility::enumerate(commandBuffers))
+		name_object(device, VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)cmdbuf, ("main cmd buf " + std::to_string(i)).c_str());
 }
 
 void GFXVulkan::createDescriptorPool() {
