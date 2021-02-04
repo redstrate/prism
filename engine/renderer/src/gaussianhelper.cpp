@@ -25,7 +25,7 @@ GaussianHelper::GaussianHelper(GFX* gfx, const prism::Extent extent) : extent(ex
     };
 
     pipelineInfo.shader_input.push_constants = {
-        {4, 0}
+        {sizeof(int), 0}
     };
 
     pipelineInfo.render_pass = renderPass;

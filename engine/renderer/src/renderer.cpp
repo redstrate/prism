@@ -729,11 +729,11 @@ void Renderer::create_mesh_pipeline(Material& material) {
     pipelineInfo.shader_input.bindings = {
         {1, GFXBindingType::StorageBuffer},
         {0, GFXBindingType::PushConstant},
-        {2, GFXBindingType::StorageImage},
+        {2, GFXBindingType::SampledImage},
         {3, GFXBindingType::SampledImage},
         {4, GFXBindingType::Sampler},
         {5, GFXBindingType::Sampler},
-        {6, GFXBindingType::StorageImage},
+        {6, GFXBindingType::SampledImage},
         {7, GFXBindingType::Texture},
         {8, GFXBindingType::Texture},
         {9, GFXBindingType::Texture}
