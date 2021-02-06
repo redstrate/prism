@@ -107,9 +107,9 @@ std::optional<ShaderSource> ShaderCompiler::compile(const ShaderLanguage from_la
             
             spirv_cross::CompilerMSL::Options opts;
             if(options.is_apple_mobile) {
-                opts.platform = spirv_cross::CompilerMSL::Options::Platform::macOS;
-            } else {
                 opts.platform = spirv_cross::CompilerMSL::Options::Platform::iOS;
+            } else {
+                opts.platform = spirv_cross::CompilerMSL::Options::Platform::macOS;
             }
             opts.enable_decoration_binding = true;
             
