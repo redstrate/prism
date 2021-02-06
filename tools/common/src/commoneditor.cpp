@@ -1125,6 +1125,10 @@ void CommonEditor::save_thumbnail_cache() {
     GFXBuffer* thumbnailBuffer = engine->get_gfx()->create_buffer(nullptr, thumbnail_resolution * thumbnail_resolution * 4, false, GFXBufferUsage::Storage);
     
     FILE* file = fopen("thumbnail-cache", "wb");
+    if(file == nullptr) {
+        console::error(System::Core, "Failed to write thumbnail cache!");
+        return;
+    }
     
     int size = asset_thumbnails.size();
     fwrite(&size, sizeof(int), 1, file);
