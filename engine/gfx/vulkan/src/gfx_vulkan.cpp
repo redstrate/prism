@@ -4,6 +4,7 @@
 #include <limits>
 #include <cstddef>
 #include <array>
+#include <sstream>
 
 #include "gfx_vulkan_buffer.hpp"
 #include "gfx_vulkan_pipeline.hpp"
@@ -895,6 +896,23 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 	uint64_t lastDescriptorHash = 0;
 	VkIndexType currentIndexType = VK_INDEX_TYPE_UINT32;
 
+	const auto try_bind_descriptor = [cmd, this, &currentPipeline, &lastDescriptorHash]() -> bool {
+		if (lastDescriptorHash != getDescriptorHash(currentPipeline)) {
+			if (!currentPipeline->cachedDescriptorSets.count(getDescriptorHash(currentPipeline)))
+				cacheDescriptorState(currentPipeline, currentPipeline->descriptorLayout);
+
+			auto& descriptor_set = currentPipeline->cachedDescriptorSets[getDescriptorHash(currentPipeline)];
+			if (descriptor_set == VK_NULL_HANDLE)
+				return false;
+
+			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->layout, 0, 1, &descriptor_set, 0, nullptr);
+
+			lastDescriptorHash = getDescriptorHash(currentPipeline);
+		}
+
+		return true;
+	};
+
 	for (auto command : command_buffer->commands) {
 		switch (command.type) {
             case GFXCommandType::SetRenderPass:
@@ -1037,38 +1055,14 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 		break;
 		case GFXCommandType::Draw:
 		{
-			if (lastDescriptorHash != getDescriptorHash(currentPipeline)) {
-                if (!currentPipeline->cachedDescriptorSets.count(getDescriptorHash(currentPipeline)))
-                    cacheDescriptorState(currentPipeline, currentPipeline->descriptorLayout);
-
-				for (auto [texture, trans] : currentPipeline->expectedTransisitions) {
-					inlineTransitionImageLayout(cmd, texture->handle, texture->format, texture->aspect, trans.oldLayout, trans.newLayout);
-				}
-
-                vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->layout, 0, 1, &currentPipeline->cachedDescriptorSets[getDescriptorHash(currentPipeline)], 0, nullptr);
-
-				lastDescriptorHash = getDescriptorHash(currentPipeline);
-			}
-
-			vkCmdDraw(cmd, command.data.draw.vertex_count, command.data.draw.instance_count, command.data.draw.vertex_offset, command.data.draw.base_instance);
+			if(try_bind_descriptor())
+				vkCmdDraw(cmd, command.data.draw.vertex_count, command.data.draw.instance_count, command.data.draw.vertex_offset, command.data.draw.base_instance);
 		}
 			break;
 		case GFXCommandType::DrawIndexed:
 		{
-			if (lastDescriptorHash != getDescriptorHash(currentPipeline)) {
-                if (!currentPipeline->cachedDescriptorSets.count(getDescriptorHash(currentPipeline)))
-                    cacheDescriptorState(currentPipeline, currentPipeline->descriptorLayout);
-
-				for (auto [texture, trans] : currentPipeline->expectedTransisitions) {
-					inlineTransitionImageLayout(cmd, texture->handle, texture->format, texture->aspect, trans.oldLayout, trans.newLayout);
-				}
-
-                vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->layout, 0, 1, &currentPipeline->cachedDescriptorSets[getDescriptorHash(currentPipeline)], 0, nullptr);
-
-				lastDescriptorHash = getDescriptorHash(currentPipeline);
-			}
-
-			vkCmdDrawIndexed(cmd, command.data.draw_indexed.index_count, 1, command.data.draw_indexed.first_index, command.data.draw_indexed.vertex_offset, 0);
+			if(try_bind_descriptor())
+				vkCmdDrawIndexed(cmd, command.data.draw_indexed.index_count, 1, command.data.draw_indexed.first_index, command.data.draw_indexed.vertex_offset, 0);
 		}
 		break;
 		}
@@ -1384,6 +1378,15 @@ void GFXVulkan::createSwapchain(VkSwapchainKHR oldSwapchain) {
 	colorAttachmentRef.attachment = 0;
 	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+	VkSubpassDependency dependency = {};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependency.dependencyFlags = 0;
+
 	VkSubpassDescription subpass = {};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = 1;
@@ -1395,6 +1398,8 @@ void GFXVulkan::createSwapchain(VkSwapchainKHR oldSwapchain) {
 	renderPassInfo.pAttachments = &colorAttachment;
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies = &dependency;
 
 	vkCreateRenderPass(device, &renderPassInfo, nullptr, &swapchainRenderPass);
 
@@ -1496,6 +1501,9 @@ void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSe
 	vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet);
 
 	name_object(device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)descriptorSet, pipeline->label);
+
+	if (descriptorSet == VK_NULL_HANDLE)
+		return;
 
 	// update set
 	int i = 0;
