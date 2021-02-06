@@ -179,6 +179,12 @@ void PrismEditor::open_asset(const file::Path path) {
     }
 }
 
+void PrismEditor::renderEditor(GFXCommandBuffer* command_buffer) {
+    for (auto& editor : editors) {
+        editor->renderer->render(command_buffer, editor->get_scene(), -1);
+    }
+}
+
 void PrismEditor::drawUI() {
     createDockArea();
 
@@ -316,7 +322,6 @@ void PrismEditor::drawUI() {
             if(debugPass != nullptr)
                 debugPass->selected_object = selected_object;
             
-            editor->renderer->render(editor->get_scene(), -1);
             engine->set_current_scene(editor->get_scene());
             set_undo_stack(&editor->undo_stack);
             editor->draw(this);

@@ -116,6 +116,12 @@ public:
 	void begin_frame() override;
 
     void update(float deltaTime) override;
+    
+    virtual void renderEditor([[maybe_unused]] GFXCommandBuffer* command_buffer) {}
+
+    void render(GFXCommandBuffer* command_buffer) override {
+        renderEditor(command_buffer);
+    }
 
     virtual void updateEditor([[maybe_unused]] float deltaTime) {}
 

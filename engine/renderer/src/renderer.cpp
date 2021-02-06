@@ -211,9 +211,15 @@ void Renderer::stopSceneBlur() {
     blurring = false;
 }
 
-void Renderer::render(Scene* scene, int index) {
+void Renderer::start_render(Scene* scene, int index) {
     GFXCommandBuffer* commandbuffer = engine->get_gfx()->acquire_command_buffer();
-    
+
+    render(commandbuffer, scene, index);
+
+    gfx->submit(commandbuffer, index);
+}
+
+void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, int index) {    
     if(render_options.render_scale != current_render_scale) {
         if(viewport_mode)
             resize_viewport(viewport_extent);
@@ -406,8 +412,6 @@ void Renderer::render(Scene* scene, int index) {
         pass->render_post(commandbuffer, index);
     
     commandbuffer->pop_group();
-
-    gfx->submit(commandbuffer, index);
 }
 
 void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Object camera_object, Camera& camera, prism::Extent extent, ControllerContinuity& continuity) {
