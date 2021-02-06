@@ -390,7 +390,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
 
 void SceneCapture::createSkyResources() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
-    pipelineInfo.label = "Sky";
+    pipelineInfo.label = "Sky Scene Capture";
     pipelineInfo.render_pass = renderPass;
     
     pipelineInfo.shaders.vertex_path = "sky.vert";
@@ -401,7 +401,7 @@ void SceneCapture::createSkyResources() {
     };
     
     pipelineInfo.shader_input.push_constants = {
-        {sizeof(Matrix4x4) + sizeof(Vector4) + sizeof(float), 0}
+        {(sizeof(Matrix4x4) + sizeof(Vector4) + sizeof(float)), 0}
     };
     
     pipelineInfo.depth.depth_mode = GFXDepthMode::LessOrEqual;

@@ -60,6 +60,7 @@ void DebugPass::initialize() {
     {
         // render pass
         GFXRenderPassCreateInfo renderPassInfo = {};
+        renderPassInfo.label = "Select";
         renderPassInfo.attachments.push_back(GFXPixelFormat::R8G8B8A8_UNORM);
         renderPassInfo.attachments.push_back(GFXPixelFormat::DEPTH_32F);
 
@@ -99,6 +100,7 @@ void DebugPass::initialize() {
     {
         // render pass
         GFXRenderPassCreateInfo renderPassInfo = {};
+        renderPassInfo.label = "Sobel";
         renderPassInfo.attachments.push_back(GFXPixelFormat::R8_UNORM);
 
         sobelRenderPass = engine->get_gfx()->create_render_pass(renderPassInfo);
