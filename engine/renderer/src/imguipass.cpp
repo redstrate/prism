@@ -3,7 +3,6 @@
 #include <imgui.h>
 
 #include "engine.hpp"
-#include "file.hpp"
 #include "gfx.hpp"
 #include "gfx_commandbuffer.hpp"
 #include "log.hpp"
@@ -16,9 +15,7 @@ void ImGuiPass::initialize() {
     io.BackendFlags |= ImGuiBackendFlags_RendererHasVtxOffset;
     io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
 
-#if !defined(PLATFORM_TVOS) && !defined(PLATFORM_IOS) && !defined(PLATFORM_WINDOWS)
     load_font("OpenSans-Regular.ttf");
-#endif
     create_font_texture();
 }
 
@@ -151,20 +148,20 @@ void ImGuiPass::load_font(const std::string_view filename) {
     
     ImGuiIO& io = ImGui::GetIO();
 
-#if !defined(PLATFORM_IOS) || !defined(PLATFORM_TVOS)
     if(io.Fonts->Fonts.empty()) {
         auto file = file::open(file::app_domain / filename);
         if(file != std::nullopt) {
-            file->read_all();
+            font_file = std::make_unique<file::File>(std::move(file.value()));
+
+            font_file->read_all();
             
-            io.Fonts->AddFontFromMemoryTTF(file->cast_data<unsigned char>(), file->size(), 15.0 * platform::get_window_dpi(0));
+            io.Fonts->AddFontFromMemoryTTF(font_file->cast_data<unsigned char>(), font_file->size(), 15.0 * platform::get_window_dpi(0));
             ImGui::GetIO().FontGlobalScale = 1.0 / platform::get_window_dpi(0);
         } else {
             console::error(System::Renderer, "Failed to load font file for imgui!");
             return;
         }
     }
-#endif
 }
 
 void ImGuiPass::create_font_texture() {
