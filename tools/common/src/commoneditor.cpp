@@ -763,10 +763,9 @@ bool material_readable(const file::Path path) {
 }
 
 void cacheAssetFilesystem() {
-#ifndef PLATFORM_WINDOWS
     asset_files.clear();
     
-    auto data_directory = "../../../data";
+    auto data_directory = "data";
     for(auto& p : std::filesystem::recursive_directory_iterator(data_directory)) {
         if(p.path().extension() == ".model" && mesh_readable(p.path())) {
             asset_files[std::filesystem::relative(p, data_directory)] = AssetType::Mesh;
@@ -778,7 +777,6 @@ void cacheAssetFilesystem() {
     }
     
     filesystem_cached = true;
-#endif
 }
 
 void CommonEditor::drawAssets() {
@@ -989,7 +987,9 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
     GFXCommandBuffer* command_buffer = gfx->acquire_command_buffer();
     
     renderer->shadow_pass->render(command_buffer, scene);
-    renderer->scene_capture->render(command_buffer, &scene);
+
+    if(render_options.enable_ibl)
+        renderer->scene_capture->render(command_buffer, &scene);
     
     GFXRenderPassBeginInfo begin_info = {};
     begin_info.framebuffer = offscreen_framebuffer;
