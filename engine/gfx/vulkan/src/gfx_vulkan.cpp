@@ -121,7 +121,19 @@ bool GFXVulkan::initialize(const GFXCreateInfo& info) {
     const char* surface_name = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
 #endif
 
-    createInstance({ "VK_LAYER_KHRONOS_validation" }, { "VK_EXT_debug_utils", "VK_KHR_surface", surface_name });
+	uint32_t extensionPropertyCount = 0;
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionPropertyCount, nullptr);
+
+	std::vector<VkExtensionProperties> extensionProperties(extensionPropertyCount);
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionPropertyCount, extensionProperties.data());
+
+	std::vector<const char*> enabledExtensions = { "VK_KHR_surface", surface_name };
+	for (auto prop : extensionProperties) {
+		if (!strcmp(prop.extensionName, "VK_EXT_debug_utils"))
+			enabledExtensions.push_back("VK_EXT_debug_utils");
+	}
+
+	createInstance({}, enabledExtensions);
 	createLogicalDevice({ VK_KHR_SWAPCHAIN_EXTENSION_NAME });
 	createDescriptorPool();
 	createSyncPrimitives();
