@@ -785,15 +785,30 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizer.lineWidth = 1.0f;
-	rasterizer.cullMode = VK_CULL_MODE_NONE;
-	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+
+	switch (info.rasterization.culling_mode) {
+	case GFXCullingMode::Backface:
+		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+		break;
+	case GFXCullingMode::Frontface:
+		rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
+		break;
+	case GFXCullingMode::None:
+		rasterizer.cullMode = VK_CULL_MODE_NONE;
+	}
+
+	switch (info.rasterization.winding_mode) {
+	case GFXWindingMode::Clockwise:
+		rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		break;
+	case GFXWindingMode::CounterClockwise:
+		rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		break;
+	}
 
 	if (info.rasterization.polygon_type == GFXPolygonType::Line)
 		rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
 
-	if (info.rasterization.culling_mode == GFXCullingMode::Backface) {
-		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-	}
 
 	VkPipelineMultisampleStateCreateInfo multisampling = {};
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
