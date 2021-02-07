@@ -89,6 +89,70 @@ VkBlendFactor toVkFactor(GFXBlendFactor factor) {
 	return VK_BLEND_FACTOR_ONE;
 }
 
+VkSamplerAddressMode toSamplerMode(SamplingMode mode) {
+	switch (mode) {
+	case SamplingMode::Repeat:
+		return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	case SamplingMode::ClampToBorder:
+		return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	case SamplingMode::ClampToEdge:
+		return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	}
+	
+	return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+}
+
+VkFilter toFilter(GFXFilter filter) {
+	switch (filter) {
+	case GFXFilter::Nearest:
+		return VK_FILTER_NEAREST;
+	case GFXFilter::Linear:
+		return VK_FILTER_LINEAR;
+	}
+
+	return VK_FILTER_LINEAR;
+}
+
+VkBorderColor toBorderColor(GFXBorderColor color) {
+	switch (color) {
+	case GFXBorderColor::OpaqueBlack:
+		return VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	case GFXBorderColor::OpaqueWhite:
+		return VK_BORDER_COLOR_INT_OPAQUE_WHITE;
+	}
+
+	return VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+}
+
+VkCompareOp toCompareFunc(GFXCompareFunction func) {
+	switch (func) {
+	case GFXCompareFunction::Never:
+		return VK_COMPARE_OP_NEVER;
+		break;
+	case GFXCompareFunction::Less:
+		return VK_COMPARE_OP_LESS;
+		break;
+	case GFXCompareFunction::Equal:
+		return VK_COMPARE_OP_EQUAL;
+		break;
+	case GFXCompareFunction::LessOrEqual:
+		return VK_COMPARE_OP_LESS_OR_EQUAL;
+		break;
+	case GFXCompareFunction::Greater:
+		return VK_COMPARE_OP_GREATER;
+		break;
+	case GFXCompareFunction::NotEqual:
+		return VK_COMPARE_OP_NOT_EQUAL;
+		break;
+	case GFXCompareFunction::GreaterOrEqual:
+		return VK_COMPARE_OP_GREATER_OR_EQUAL;
+		break;
+	case GFXCompareFunction::Always:
+		return VK_COMPARE_OP_ALWAYS;
+		break;
+	}
+}
+
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -363,9 +427,7 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 
 	vkCreateImageView(device, &viewInfo, nullptr, &texture->view);
 
-    VkSamplerAddressMode samplerMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    if(info.samplingMode == SamplingMode::ClampToEdge)
-        samplerMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	const VkSamplerAddressMode samplerMode = toSamplerMode(info.samplingMode);
 
 	// create sampler
 	VkSamplerCreateInfo samplerInfo = {};
@@ -377,8 +439,9 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
     samplerInfo.addressModeW = samplerMode;
 	samplerInfo.anisotropyEnable = VK_TRUE;
 	samplerInfo.maxAnisotropy = 16;
-	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.compareEnable = info.compare_enabled;
+	samplerInfo.borderColor = toBorderColor(info.border_color);
+	samplerInfo.compareOp = toCompareFunc(info.compare_function);
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
 	vkCreateSampler(device, &samplerInfo, nullptr, &texture->sampler);
@@ -474,21 +537,20 @@ void GFXVulkan::copy_texture(GFXTexture* from, GFXBuffer* to) {
 GFXSampler* GFXVulkan::create_sampler(const GFXSamplerCreateInfo& info) {
 	GFXVulkanSampler* sampler = new GFXVulkanSampler();
 
-	VkSamplerAddressMode samplerMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	if (info.samplingMode == SamplingMode::ClampToEdge)
-		samplerMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	const VkSamplerAddressMode samplerMode = toSamplerMode(info.samplingMode);
 
 	VkSamplerCreateInfo samplerInfo = {};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	samplerInfo.magFilter = VK_FILTER_LINEAR;
-	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.magFilter = toFilter(info.mag_filter);
+	samplerInfo.minFilter = toFilter(info.min_filter);
 	samplerInfo.addressModeU = samplerMode;
 	samplerInfo.addressModeV = samplerMode;
 	samplerInfo.addressModeW = samplerMode;
 	samplerInfo.anisotropyEnable = VK_TRUE;
 	samplerInfo.maxAnisotropy = 16;
-	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.borderColor = toBorderColor(info.border_color);
+	samplerInfo.compareEnable = info.compare_enabled;
+	samplerInfo.compareOp = toCompareFunc(info.compare_function);
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
 	vkCreateSampler(device, &samplerInfo, nullptr, &sampler->sampler);
