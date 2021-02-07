@@ -60,8 +60,8 @@ int platform::open_window(const std::string_view title, const prism::Rectangle r
         flags == WindowFlags::Resizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX), // Window style
         rect.offset.x,
         rect.offset.y,
-		wr.right - wr.left,
-        wr.bottom - wr.top,
+		rect.extent.width,
+        rect.extent.height,
         NULL,
         NULL,
         instance,
