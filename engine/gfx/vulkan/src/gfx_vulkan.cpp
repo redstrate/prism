@@ -821,7 +821,18 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 	if (info.depth.depth_mode != GFXDepthMode::None) {
 		depthStencil.depthTestEnable = VK_TRUE;
 		depthStencil.depthWriteEnable = VK_TRUE;
-		depthStencil.depthCompareOp = info.depth.depth_mode == GFXDepthMode::Less ? VK_COMPARE_OP_LESS : VK_COMPARE_OP_LESS_OR_EQUAL;
+
+		switch (info.depth.depth_mode) {
+		case GFXDepthMode::Less:
+			depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+			break;
+		case GFXDepthMode::LessOrEqual:
+			depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+			break;
+		case GFXDepthMode::Greater:
+			depthStencil.depthCompareOp = VK_COMPARE_OP_GREATER;
+			break;
+		}
 	}
 
 	std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_DEPTH_BIAS};
