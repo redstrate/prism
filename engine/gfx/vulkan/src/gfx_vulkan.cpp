@@ -824,7 +824,7 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 		depthStencil.depthCompareOp = info.depth.depth_mode == GFXDepthMode::Less ? VK_COMPARE_OP_LESS : VK_COMPARE_OP_LESS_OR_EQUAL;
 	}
 
-	std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+	std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_DEPTH_BIAS};
 
 	VkPipelineDynamicStateCreateInfo dynamicState = {};
 	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -1137,6 +1137,11 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 		{
 			if(try_bind_descriptor())
 				vkCmdDrawIndexed(cmd, command.data.draw_indexed.index_count, 1, command.data.draw_indexed.first_index, command.data.draw_indexed.vertex_offset, 0);
+		}
+		break;
+		case GFXCommandType::SetDepthBias:
+		{
+			vkCmdSetDepthBias(cmd, command.data.set_depth_bias.constant, command.data.set_depth_bias.clamp, command.data.set_depth_bias.slope_factor);
 		}
 		break;
 		}
