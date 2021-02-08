@@ -70,7 +70,6 @@ public:
         int elementOffset = 0;
     };
 
-    void start_render(Scene* scene, int index);
     void render(GFXCommandBuffer* command_buffer, Scene* scene, int index);
 
     void render_screen(GFXCommandBuffer* commandBuffer, ui::Screen* screen, ControllerContinuity& continuity, RenderScreenOptions options = RenderScreenOptions());
