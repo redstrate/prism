@@ -284,8 +284,6 @@ std::unique_ptr<Material> load_material(const file::Path path) {
         n->id = node["id"];
         n->x = node["x"];
         n->y = node["y"];
-        n->width = node["width"];
-        n->height = node["height"];
         
         for(auto& property : node["properties"]) {
             for(auto& p : n->properties) {
@@ -352,9 +350,7 @@ void save_material(Material* material, const file::Path path) {
         n["id"] = node->id;
         n["x"] = node->x;
         n["y"] = node->y;
-        n["width"] = node->width;
-        n["height"] = node->height;
-        
+
         for(auto property : node->properties) {
             nlohmann::json p;
             p["name"] = property.name;
