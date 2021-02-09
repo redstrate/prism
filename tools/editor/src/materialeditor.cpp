@@ -173,10 +173,9 @@ void MaterialEditor::draw(CommonEditor* editor) {
             ImGui::EndMenu();
         }
         
-        if(ImGui::Button("Recompile")) {
+        if(ImGui::MenuItem("Compile"))
             recompile(*material);
-        }
-        
+
         ImGui::EndMenuBar();
     }
     
