@@ -1,5 +1,5 @@
 # Prism
-A cross-platform engine that integrates a real-time physically renderer and makes it easy to get started writing games or other graphical applications in C++!
+A cross-platform engine that integrates a real-time physically based renderer and makes it easy to get started writing games or other graphical applications in C++!
 
 Here are a couple of screenshots that provide a sense of the graphical capabilities of Prism:
 
