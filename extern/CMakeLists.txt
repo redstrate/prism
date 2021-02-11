@@ -108,3 +108,12 @@ if(ENABLE_OPENXR)
 
 	FetchContent_MakeAvailable(openxr)
 endif()
+if(BUILD_TOOLS)
+	FetchContent_Declare(
+	  assimp
+	  GIT_REPOSITORY https://github.com/assimp/assimp
+	  GIT_TAG v5.0.1
+	)
+
+	FetchContent_MakeAvailable(assimp)
+endif()

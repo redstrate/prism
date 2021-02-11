@@ -442,8 +442,8 @@ void Engine::resize(const int identifier, const prism::Extent extent) {
     Expects(identifier >= 0);
     
     auto window = get_window(identifier);
-    
-    Expects(window != nullptr);
+    if (window == nullptr)
+        return;
 
     window->extent = extent;
     
@@ -769,8 +769,14 @@ void Engine::render(const int index) {
         _imgui->render(0);
     }
 
+    GFXCommandBuffer* commandbuffer = _gfx->acquire_command_buffer();
+
+    _app->render(commandbuffer);
+
     if(window->renderer != nullptr)
-        window->renderer->render(_current_scene, index);
+        window->renderer->render(commandbuffer, _current_scene, index);
+
+    _gfx->submit(commandbuffer, index);
 }
 
 void Engine::add_timer(Timer& timer) {

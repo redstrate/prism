@@ -29,7 +29,7 @@ int defaultWidth, defaultHeight;
 
 bool shouldConfineMouse = false;
 
-const wchar_t CLASS_NAME[]  = L"@APP_NAME@";
+const wchar_t CLASS_NAME[]  = L"PrismApp";
 
 wchar_t* convertToUnicode(const char* str) {
 	size_t ret = 0;
@@ -41,6 +41,8 @@ wchar_t* convertToUnicode(const char* str) {
 
 	return buf;
 }
+
+void platform::force_quit() {}
 
 int platform::open_window(const std::string_view title, const prism::Rectangle rect, const WindowFlags flags) {
 	RECT wr = {rect.offset.x, rect.offset.y, rect.extent.width, rect.extent.height};
@@ -58,8 +60,8 @@ int platform::open_window(const std::string_view title, const prism::Rectangle r
         flags == WindowFlags::Resizable ? WS_OVERLAPPEDWINDOW : (WS_OVERLAPPED | WS_CAPTION | WS_SYSMENU | WS_MINIMIZEBOX), // Window style
         rect.offset.x,
         rect.offset.y,
-		wr.right - wr.left,
-        wr.bottom - wr.top,
+		rect.extent.width,
+        rect.extent.height,
         NULL,
         NULL,
         instance,

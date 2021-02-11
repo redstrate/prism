@@ -5,6 +5,9 @@
 #include <winuser.h>
 #include <thread>
 #include <map>
+#include <winrt/Windows.UI.ViewManagement.h>
+
+#pragma comment(lib, "windowsapp")
 
 std::map<InputButton, int> inputToKeyCode = { {
 	{InputButton::C, 67},
@@ -92,5 +95,15 @@ void platform::unmute_output() {
 }
 
 PlatformTheme platform::get_theme() {
-	return PlatformTheme::Light;
+	using namespace winrt::Windows::UI::ViewManagement;
+
+	// TODO: figure out if this works pre-anniversary update/other windows other than 10
+	UISettings settings;
+	auto background = settings.GetColorValue(UIColorType::Background);
+	auto foreground = settings.GetColorValue(UIColorType::Foreground);
+
+	if (background == winrt::Windows::UI::Colors::White())
+		return PlatformTheme::Light;
+	else
+		return PlatformTheme::Dark;
 }

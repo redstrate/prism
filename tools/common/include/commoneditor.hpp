@@ -116,6 +116,12 @@ public:
 	void begin_frame() override;
 
     void update(float deltaTime) override;
+    
+    virtual void renderEditor([[maybe_unused]] GFXCommandBuffer* command_buffer) {}
+
+    void render(GFXCommandBuffer* command_buffer) override {
+        renderEditor(command_buffer);
+    }
 
     virtual void updateEditor([[maybe_unused]] float deltaTime) {}
 
@@ -181,14 +187,14 @@ public:
     }
     
     GFXTexture* get_asset_thumbnail(const file::Path path) {
-        if(asset_thumbnails.count(path)) {
-            return asset_thumbnails[path];
+        if(asset_thumbnails.count(path.string())) {
+            return asset_thumbnails[path.string()];
         } else {
             auto [asset, block] = assetm->load_asset_generic(path);
             
             // store as dummy texture, as to stop infinite reload because of failure (e.g. out of date model)
             if(asset == nullptr) {
-                asset_thumbnails[path] = engine->get_renderer()->dummyTexture;
+                asset_thumbnails[path.string()] = engine->get_renderer()->dummyTexture;
 
                 return engine->get_renderer()->dummyTexture;
             }
@@ -344,7 +350,7 @@ inline void editPath(const char* label, std::string& path, bool editable = true,
 
     if(ImGui::Button("...")) {
         platform::open_dialog(false, [&path, &on_selected](std::string p) {
-            path = file::get_relative_path(file::Domain::App, p);
+            path = file::get_relative_path(file::Domain::App, p).string();
 
             if(on_selected != nullptr)
                 on_selected();

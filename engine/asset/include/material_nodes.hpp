@@ -136,7 +136,6 @@ public:
     }
     
     float x = 0.0f, y = 0.0f;
-    float width = 150.0f, height = 75.0f;
 };
 
 class MaterialOutput : public MaterialNode {

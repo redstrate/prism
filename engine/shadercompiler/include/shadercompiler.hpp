@@ -37,12 +37,12 @@ public:
 /// Represents the source code of a shader either in plaintext (GLSL, MSL) or bytecode (SPIR-V).
 class ShaderSource {
 public:
-    ShaderSource() {}
+    ShaderSource() : source(std::monostate()) {}
     ShaderSource(const ShaderSource& rhs) : source (rhs.source) {}
     ShaderSource(const std::string source_string) : source(source_string) {}
     ShaderSource(const std::vector<uint32_t> source_bytecode) : source(source_bytecode) {}
         
-    std::variant<std::string, std::vector<uint32_t>> source;
+    std::variant<std::monostate, std::string, std::vector<uint32_t>> source;
     
     /// Returns a view of the shader source as plaintext.
     std::string_view as_string() const {
@@ -52,6 +52,10 @@ public:
     /// Returns a copy of the shader source as bytecode.
     std::vector<uint32_t> as_bytecode() const {
         return std::get<std::vector<uint32_t>>(source);
+    }
+
+    bool empty() const {
+        return std::holds_alternative<std::monostate>(source);
     }
 };
 

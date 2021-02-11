@@ -51,13 +51,13 @@ CommonEditor::CommonEditor(std::string id) : id(id) {
 #ifdef PLATFORM_MACOS
     file::set_domain_path(file::Domain::App, "../../../data");
 #else
-    file::set_domain_path(Domain::App, "data");
+    file::set_domain_path(file::Domain::App, "data");
 #endif
     file::set_domain_path(file::Domain::Internal, "{resource_dir}/shaders");
     
     ImGuiIO& io = ImGui::GetIO();
     
-    iniFileName = file::get_writeable_directory() / "imgui.ini";
+    iniFileName = (file::get_writeable_directory() / "imgui.ini").string();
     
     io.IniFilename = iniFileName.c_str();
     
@@ -765,7 +765,7 @@ bool material_readable(const file::Path path) {
 void cacheAssetFilesystem() {
     asset_files.clear();
     
-    auto data_directory = "../../../data";
+    auto data_directory = "data";
     for(auto& p : std::filesystem::recursive_directory_iterator(data_directory)) {
         if(p.path().extension() == ".model" && mesh_readable(p.path())) {
             asset_files[std::filesystem::relative(p, data_directory)] = AssetType::Mesh;
@@ -805,7 +805,7 @@ void CommonEditor::drawAssets() {
             ImGui::Separator();
             
             if(ImGui::Button("Regenerate thumbnail")) {
-                asset_thumbnails.erase(asset_thumbnails.find(file::app_domain / p));
+                asset_thumbnails.erase(asset_thumbnails.find((file::app_domain / p).string()));
             }
             
             ImGui::EndPopup();
@@ -863,6 +863,7 @@ GFXTexture* CommonEditor::get_texture_preview(Texture& texture) {
     auto gfx = engine->get_gfx();
     
     GFXTextureCreateInfo texture_create_info = {};
+    texture_create_info.label = "Preview of " + texture.path;
     texture_create_info.width = thumbnail_resolution;
     texture_create_info.height = thumbnail_resolution;
     texture_create_info.format = GFXPixelFormat::RGBA8_UNORM;
@@ -986,7 +987,9 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
     GFXCommandBuffer* command_buffer = gfx->acquire_command_buffer();
     
     renderer->shadow_pass->render(command_buffer, scene);
-    renderer->scene_capture->render(command_buffer, &scene);
+
+    if(render_options.enable_ibl)
+        renderer->scene_capture->render(command_buffer, &scene);
     
     GFXRenderPassBeginInfo begin_info = {};
     begin_info.framebuffer = offscreen_framebuffer;
@@ -1103,6 +1106,7 @@ void CommonEditor::load_thumbnail_cache() {
             thumbnail_cache->read(image.data(), thumbnail_resolution * thumbnail_resolution * 4);
             
             GFXTextureCreateInfo info;
+            info.label = "Preview of " + filename;
             info.width = thumbnail_resolution;
             info.height = thumbnail_resolution;
             info.format = GFXPixelFormat::RGBA8_UNORM;
@@ -1121,6 +1125,10 @@ void CommonEditor::save_thumbnail_cache() {
     GFXBuffer* thumbnailBuffer = engine->get_gfx()->create_buffer(nullptr, thumbnail_resolution * thumbnail_resolution * 4, false, GFXBufferUsage::Storage);
     
     FILE* file = fopen("thumbnail-cache", "wb");
+    if(file == nullptr) {
+        console::error(System::Core, "Failed to write thumbnail cache!");
+        return;
+    }
     
     int size = asset_thumbnails.size();
     fwrite(&size, sizeof(int), 1, file);

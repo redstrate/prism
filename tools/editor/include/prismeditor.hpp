@@ -56,6 +56,7 @@ class PrismEditor : public CommonEditor {
 public:
     PrismEditor();
     
+    void renderEditor(GFXCommandBuffer* command_buffer) override;
     void drawUI() override;
     void updateEditor(float deltaTime) override;
     

@@ -3,6 +3,7 @@
 #include <string_view>
 
 #include "pass.hpp"
+#include "file.hpp"
 
 class GFXBuffer;
 class GFXCommandBuffer;
@@ -22,6 +23,8 @@ private:
     void load_font(const std::string_view filename);
     void create_font_texture();
     void update_buffers(const ImDrawData& draw_data);
+
+    std::unique_ptr<file::File> font_file;
     
     GFXPipeline* pipeline = nullptr;
     GFXTexture* font_texture = nullptr;

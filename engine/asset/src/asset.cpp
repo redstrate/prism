@@ -220,6 +220,7 @@ std::unique_ptr<Texture> load_texture(const file::Path path) {
     texture->height = height;
     
     GFXTextureCreateInfo createInfo = {};
+    createInfo.label = path.string();
     createInfo.width = width;
     createInfo.height = height;
     createInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
@@ -283,8 +284,6 @@ std::unique_ptr<Material> load_material(const file::Path path) {
         n->id = node["id"];
         n->x = node["x"];
         n->y = node["y"];
-        n->width = node["width"];
-        n->height = node["height"];
         
         for(auto& property : node["properties"]) {
             for(auto& p : n->properties) {
@@ -351,9 +350,7 @@ void save_material(Material* material, const file::Path path) {
         n["id"] = node->id;
         n["x"] = node->x;
         n["y"] = node->y;
-        n["width"] = node->width;
-        n["height"] = node->height;
-        
+
         for(auto property : node->properties) {
             nlohmann::json p;
             p["name"] = property.name;

@@ -89,4 +89,6 @@ private:
     GFXPipeline* sobelPipeline = nullptr;
     GFXFramebuffer* sobelFramebuffer = nullptr;
     GFXRenderPass* sobelRenderPass = nullptr;
+
+    GFXBuffer* scene_info_buffer = nullptr;
 };

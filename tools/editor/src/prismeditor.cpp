@@ -131,7 +131,7 @@ void PrismEditor::setup_editor(Editor* editor) {
 void PrismEditor::open_asset(const file::Path path) {
     if(path.extension() == ".prefab") {
         PrefabEditor* editor = new PrefabEditor();
-        editor->path = path;
+        editor->path = path.string();
         setup_editor(editor);
 
         engine->create_empty_scene();
@@ -144,7 +144,7 @@ void PrismEditor::open_asset(const file::Path path) {
         editors.push_back(editor);
     } else if(path.extension() == ".scene") {
         SceneEditor* editor = new SceneEditor();
-        editor->path = path;
+        editor->path = path.string();
         setup_editor(editor);
   
         editor->scene = engine->load_scene(path);
@@ -153,7 +153,7 @@ void PrismEditor::open_asset(const file::Path path) {
         editors.push_back(editor);
     } else if(path.extension() == ".material") {
         MaterialEditor* editor = new MaterialEditor();
-        editor->path = path;
+        editor->path = path.string();
         setup_editor(editor);
         
         engine->create_empty_scene();
@@ -169,13 +169,19 @@ void PrismEditor::open_asset(const file::Path path) {
         editors.push_back(editor);
     } else if(path.extension() == ".json") {
         UIEditor* editor = new UIEditor();
-        editor->path = path;
+        editor->path = path.string();
         setup_editor(editor);
         
         editor->screen = engine->load_screen(path);
         editor->screen->calculate_sizes();
 
         editors.push_back(editor);
+    }
+}
+
+void PrismEditor::renderEditor(GFXCommandBuffer* command_buffer) {
+    for (auto& editor : editors) {
+        editor->renderer->render(command_buffer, editor->get_scene(), -1);
     }
 }
 
@@ -316,7 +322,6 @@ void PrismEditor::drawUI() {
             if(debugPass != nullptr)
                 debugPass->selected_object = selected_object;
             
-            editor->renderer->render(editor->get_scene(), -1);
             engine->set_current_scene(editor->get_scene());
             set_undo_stack(&editor->undo_stack);
             editor->draw(this);

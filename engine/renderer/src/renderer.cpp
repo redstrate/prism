@@ -81,6 +81,12 @@ struct UIPushConstant {
     Matrix4x4 mvp;
 };
 
+struct SkyPushConstant {
+    Matrix4x4 view;
+    Vector4 sun_position_fov;
+    float aspect;
+};
+
 Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     Expects(gfx != nullptr);
     
@@ -205,9 +211,7 @@ void Renderer::stopSceneBlur() {
     blurring = false;
 }
 
-void Renderer::render(Scene* scene, int index) {
-    GFXCommandBuffer* commandbuffer = engine->get_gfx()->acquire_command_buffer();
-    
+void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, int index) {    
     if(render_options.render_scale != current_render_scale) {
         if(viewport_mode)
             resize_viewport(viewport_extent);
@@ -283,7 +287,8 @@ void Renderer::render(Scene* scene, int index) {
         
         commandbuffer->pop_group();
 
-        dofPass->render(commandbuffer, *scene);
+        if(render_options.enable_depth_of_field)
+            dofPass->render(commandbuffer, *scene);
         
         if(!viewport_mode) {
             beginInfo.framebuffer = nullptr;
@@ -399,8 +404,6 @@ void Renderer::render(Scene* scene, int index) {
         pass->render_post(commandbuffer, index);
     
     commandbuffer->pop_group();
-
-    gfx->submit(commandbuffer, index);
 }
 
 void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Object camera_object, Camera& camera, prism::Extent extent, ControllerContinuity& continuity) {
@@ -533,12 +536,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         render_screen(command_buffer, screen.screen, continuity, options);
     }
     
-    struct SkyPushConstant {
-        Matrix4x4 view;
-        Vector4 sun_position_fov;
-        float aspect;
-    } pc;
-    
+    SkyPushConstant pc;
     pc.view = matrix_from_quat(scene.get<Transform>(camera_object).rotation);
     pc.aspect = static_cast<float>(extent.width) / static_cast<float>(extent.height);
     
@@ -770,6 +768,7 @@ void Renderer::create_mesh_pipeline(Material& material) {
 
 void Renderer::createDummyTexture() {
     GFXTextureCreateInfo createInfo = {};
+    createInfo.label = "Dummy";
     createInfo.width = 1;
     createInfo.height = 1;
     createInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
@@ -799,6 +798,7 @@ void Renderer::createOffscreenResources() {
     const auto extent = get_render_extent();
     
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "Offscreen Color";
     textureInfo.width = extent.width;
     textureInfo.height = extent.height;
     textureInfo.format = GFXPixelFormat::RGBA_32F;
@@ -806,8 +806,11 @@ void Renderer::createOffscreenResources() {
     textureInfo.samplingMode = SamplingMode::ClampToEdge;
 
     offscreenColorTexture = gfx->create_texture(textureInfo);
+
+    textureInfo.label = "Offscreen Back";
     offscreenBackTexture = gfx->create_texture(textureInfo);
 
+    textureInfo.label = "Offscreen Depth";
     textureInfo.format = GFXPixelFormat::DEPTH_32F;
 
     offscreenDepthTexture = gfx->create_texture(textureInfo);
@@ -827,6 +830,7 @@ void Renderer::createOffscreenResources() {
         viewportRenderPass = gfx->create_render_pass(renderPassInfo);
 
         GFXTextureCreateInfo textureInfo = {};
+        textureInfo.label = "Viewport Color";
         textureInfo.width = extent.width;
         textureInfo.height = extent.height;
         textureInfo.format = GFXPixelFormat::RGBA8_UNORM;
@@ -932,6 +936,7 @@ void Renderer::createFontPipeline() {
     worldTextPipeline = gfx->create_graphics_pipeline(pipelineInfo);
 
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "UI Font";
     textureInfo.width = font.width;
     textureInfo.height = font.height;
     textureInfo.format = GFXPixelFormat::R8_UNORM;
@@ -955,7 +960,7 @@ void Renderer::createSkyPipeline() {
     };
 
     pipelineInfo.shader_input.push_constants = {
-        {sizeof(Matrix4x4) + sizeof(Vector4) + sizeof(float), 0}
+        {sizeof(SkyPushConstant), 0}
     };
 
     pipelineInfo.depth.depth_mode = GFXDepthMode::LessOrEqual;
@@ -1001,6 +1006,7 @@ void Renderer::createGaussianResources() {
     gHelper = std::make_unique<GaussianHelper>(gfx, extent);
 
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "Blur Store";
     textureInfo.width = extent.width;
     textureInfo.height = extent.height;
     textureInfo.format = GFXPixelFormat::RGBA_32F;
@@ -1029,6 +1035,7 @@ void Renderer::createBRDF() {
     brdfPipeline = gfx->create_graphics_pipeline(pipelineInfo);
     
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "BRDF LUT";
     textureInfo.format = GFXPixelFormat::R8G8_SFLOAT;
     textureInfo.width = brdf_resolution;
     textureInfo.height = brdf_resolution;
@@ -1086,6 +1093,7 @@ void Renderer::create_histogram_resources() {
     histogram_buffer = gfx->create_buffer(nullptr, sizeof(uint32_t) * 256, false, GFXBufferUsage::Storage);
     
     GFXTextureCreateInfo texture_info = {};
+    texture_info.label = "Average Luminance Store";
     texture_info.width = 1;
     texture_info.height = 1;
     texture_info.format = GFXPixelFormat::R_16F;

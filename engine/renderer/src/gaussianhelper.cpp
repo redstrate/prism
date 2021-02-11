@@ -25,7 +25,7 @@ GaussianHelper::GaussianHelper(GFX* gfx, const prism::Extent extent) : extent(ex
     };
 
     pipelineInfo.shader_input.push_constants = {
-        {4, 0}
+        {sizeof(int), 0}
     };
 
     pipelineInfo.render_pass = renderPass;
@@ -34,6 +34,7 @@ GaussianHelper::GaussianHelper(GFX* gfx, const prism::Extent extent) : extent(ex
 
     // resources
     GFXTextureCreateInfo textureInfo = {};
+    textureInfo.label = "Gaussian";
     textureInfo.width = extent.width;
     textureInfo.height = extent.height;
     textureInfo.format = GFXPixelFormat::RGBA_32F;

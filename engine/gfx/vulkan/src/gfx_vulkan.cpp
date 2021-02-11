@@ -4,6 +4,7 @@
 #include <limits>
 #include <cstddef>
 #include <array>
+#include <sstream>
 
 #include "gfx_vulkan_buffer.hpp"
 #include "gfx_vulkan_pipeline.hpp"
@@ -88,6 +89,70 @@ VkBlendFactor toVkFactor(GFXBlendFactor factor) {
 	return VK_BLEND_FACTOR_ONE;
 }
 
+VkSamplerAddressMode toSamplerMode(SamplingMode mode) {
+	switch (mode) {
+	case SamplingMode::Repeat:
+		return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	case SamplingMode::ClampToBorder:
+		return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
+	case SamplingMode::ClampToEdge:
+		return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	}
+	
+	return VK_SAMPLER_ADDRESS_MODE_REPEAT;
+}
+
+VkFilter toFilter(GFXFilter filter) {
+	switch (filter) {
+	case GFXFilter::Nearest:
+		return VK_FILTER_NEAREST;
+	case GFXFilter::Linear:
+		return VK_FILTER_LINEAR;
+	}
+
+	return VK_FILTER_LINEAR;
+}
+
+VkBorderColor toBorderColor(GFXBorderColor color) {
+	switch (color) {
+	case GFXBorderColor::OpaqueBlack:
+		return VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+	case GFXBorderColor::OpaqueWhite:
+		return VK_BORDER_COLOR_INT_OPAQUE_WHITE;
+	}
+
+	return VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+}
+
+VkCompareOp toCompareFunc(GFXCompareFunction func) {
+	switch (func) {
+	case GFXCompareFunction::Never:
+		return VK_COMPARE_OP_NEVER;
+		break;
+	case GFXCompareFunction::Less:
+		return VK_COMPARE_OP_LESS;
+		break;
+	case GFXCompareFunction::Equal:
+		return VK_COMPARE_OP_EQUAL;
+		break;
+	case GFXCompareFunction::LessOrEqual:
+		return VK_COMPARE_OP_LESS_OR_EQUAL;
+		break;
+	case GFXCompareFunction::Greater:
+		return VK_COMPARE_OP_GREATER;
+		break;
+	case GFXCompareFunction::NotEqual:
+		return VK_COMPARE_OP_NOT_EQUAL;
+		break;
+	case GFXCompareFunction::GreaterOrEqual:
+		return VK_COMPARE_OP_GREATER_OR_EQUAL;
+		break;
+	case GFXCompareFunction::Always:
+		return VK_COMPARE_OP_ALWAYS;
+		break;
+	}
+}
+
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
     VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
     VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -120,7 +185,19 @@ bool GFXVulkan::initialize(const GFXCreateInfo& info) {
     const char* surface_name = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
 #endif
 
-    createInstance({ "VK_LAYER_KHRONOS_validation" }, { "VK_EXT_debug_utils", "VK_KHR_surface", surface_name });
+	uint32_t extensionPropertyCount = 0;
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionPropertyCount, nullptr);
+
+	std::vector<VkExtensionProperties> extensionProperties(extensionPropertyCount);
+	vkEnumerateInstanceExtensionProperties(nullptr, &extensionPropertyCount, extensionProperties.data());
+
+	std::vector<const char*> enabledExtensions = { "VK_KHR_surface", surface_name };
+	for (auto prop : extensionProperties) {
+		if (!strcmp(prop.extensionName, "VK_EXT_debug_utils"))
+			enabledExtensions.push_back("VK_EXT_debug_utils");
+	}
+
+	createInstance({}, enabledExtensions);
 	createLogicalDevice({ VK_KHR_SWAPCHAIN_EXTENSION_NAME });
 	createDescriptorPool();
 	createSyncPrimitives();
@@ -266,26 +343,7 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 		imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	}
 
-	VkImageLayout imageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	if ((info.usage & GFXTextureUsage::Attachment) == GFXTextureUsage::Attachment) {
-		if (info.format == GFXPixelFormat::DEPTH_32F) {
-            if((info.usage & GFXTextureUsage::Sampled) == GFXTextureUsage::Sampled)
-                imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-            else
-                imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-		}
-		else {
-            if((info.usage & GFXTextureUsage::Sampled) == GFXTextureUsage::Sampled)
-                imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-            else
-                imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		}
-	}
-	else {
-		imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-	}
-
-	VkImageAspectFlags imageAspect;
+	VkImageAspectFlagBits imageAspect;
 	if (info.format == GFXPixelFormat::DEPTH_32F)
 		imageAspect = VK_IMAGE_ASPECT_DEPTH_BIT;
 	else
@@ -318,10 +376,13 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 
 	vkCreateImage(device, &imageInfo, nullptr, &texture->handle);
 
-	texture->layout = imageLayout;
+	name_object(device, VK_OBJECT_TYPE_IMAGE, (uint64_t)texture->handle, info.label);
+
 	texture->width = info.width;
     texture->height = info.height;
 	texture->format = imageFormat;
+	texture->aspect = imageAspect;
+	texture->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 	// allocate memory
 	VkMemoryRequirements memRequirements;
@@ -336,7 +397,7 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 
 	vkBindImageMemory(device, texture->handle, texture->memory, 0);
 
-	transitionImageLayout(texture->handle, imageFormat, imageAspect, VK_IMAGE_LAYOUT_UNDEFINED, imageLayout);
+	transitionImageLayout(texture->handle, imageFormat, imageAspect, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	// create image view
 	VkImageViewCreateInfo viewInfo = {};
@@ -366,9 +427,7 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 
 	vkCreateImageView(device, &viewInfo, nullptr, &texture->view);
 
-    VkSamplerAddressMode samplerMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    if(info.samplingMode == SamplingMode::ClampToEdge)
-        samplerMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	const VkSamplerAddressMode samplerMode = toSamplerMode(info.samplingMode);
 
 	// create sampler
 	VkSamplerCreateInfo samplerInfo = {};
@@ -380,8 +439,9 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
     samplerInfo.addressModeW = samplerMode;
 	samplerInfo.anisotropyEnable = VK_TRUE;
 	samplerInfo.maxAnisotropy = 16;
-	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.compareEnable = info.compare_enabled;
+	samplerInfo.borderColor = toBorderColor(info.border_color);
+	samplerInfo.compareOp = toCompareFunc(info.compare_function);
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
 	vkCreateSampler(device, &samplerInfo, nullptr, &texture->sampler);
@@ -426,12 +486,12 @@ void GFXVulkan::copy_texture(GFXTexture* texture, void* data, GFXSize size) {
 	vkUnmapMemory(device, stagingBufferMemory);
 
 	// copy staging buffer to image
-	transitionImageLayout(vulkanTexture->handle, vulkanTexture->format, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
+	inlineTransitionImageLayout(commandBuffer, vulkanTexture->handle, vulkanTexture->format, vulkanTexture->aspect, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
 	VkBufferImageCopy region = {};
-	region.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+	region.imageSubresource.aspectMask = vulkanTexture->aspect;
 	region.imageSubresource.mipLevel = 0;
 	region.imageSubresource.baseArrayLayer = 0;
 	region.imageSubresource.layerCount = 1;
@@ -443,9 +503,9 @@ void GFXVulkan::copy_texture(GFXTexture* texture, void* data, GFXSize size) {
 
 	vkCmdCopyBufferToImage(commandBuffer, stagingBuffer, vulkanTexture->handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-	endSingleTimeCommands(commandBuffer);
+	inlineTransitionImageLayout(commandBuffer, vulkanTexture->handle, vulkanTexture->format, vulkanTexture->aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
-	transitionImageLayout(vulkanTexture->handle, vulkanTexture->format, VK_IMAGE_ASPECT_COLOR_BIT, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	endSingleTimeCommands(commandBuffer);
 }
 
 void GFXVulkan::copy_texture(GFXTexture* from, GFXTexture* to) {
@@ -453,27 +513,44 @@ void GFXVulkan::copy_texture(GFXTexture* from, GFXTexture* to) {
 }
 
 void GFXVulkan::copy_texture(GFXTexture* from, GFXBuffer* to) {
-    console::error(System::GFX, "Copy Texture->Buffer unimplemented!");
+	GFXVulkanTexture* vulkanTexture = (GFXVulkanTexture*)from;
+	GFXVulkanBuffer* vulkanBuffer = (GFXVulkanBuffer*)to;
+
+	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
+
+	VkBufferImageCopy region = {};
+	region.imageSubresource.aspectMask = vulkanTexture->aspect;
+	region.imageSubresource.mipLevel = 0;
+	region.imageSubresource.baseArrayLayer = 0;
+	region.imageSubresource.layerCount = 1;
+	region.imageExtent = {
+		(uint32_t)vulkanTexture->width,
+		(uint32_t)vulkanTexture->height,
+		1
+	};
+
+	vkCmdCopyImageToBuffer(commandBuffer, vulkanTexture->handle, vulkanTexture->layout, vulkanBuffer->get(0).handle, 1, &region);
+
+	endSingleTimeCommands(commandBuffer);
 }
 
 GFXSampler* GFXVulkan::create_sampler(const GFXSamplerCreateInfo& info) {
 	GFXVulkanSampler* sampler = new GFXVulkanSampler();
 
-	VkSamplerAddressMode samplerMode = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	if (info.samplingMode == SamplingMode::ClampToEdge)
-		samplerMode = VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
+	const VkSamplerAddressMode samplerMode = toSamplerMode(info.samplingMode);
 
 	VkSamplerCreateInfo samplerInfo = {};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	samplerInfo.magFilter = VK_FILTER_LINEAR;
-	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.magFilter = toFilter(info.mag_filter);
+	samplerInfo.minFilter = toFilter(info.min_filter);
 	samplerInfo.addressModeU = samplerMode;
 	samplerInfo.addressModeV = samplerMode;
 	samplerInfo.addressModeW = samplerMode;
 	samplerInfo.anisotropyEnable = VK_TRUE;
 	samplerInfo.maxAnisotropy = 16;
-	samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-	samplerInfo.compareOp = VK_COMPARE_OP_ALWAYS;
+	samplerInfo.borderColor = toBorderColor(info.border_color);
+	samplerInfo.compareEnable = info.compare_enabled;
+	samplerInfo.compareOp = toCompareFunc(info.compare_function);
 	samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
 	vkCreateSampler(device, &samplerInfo, nullptr, &sampler->sampler);
@@ -492,6 +569,12 @@ GFXFramebuffer* GFXVulkan::create_framebuffer(const GFXFramebufferCreateInfo& in
 	for (auto& attachment : info.attachments) {
 		GFXVulkanTexture* texture = (GFXVulkanTexture*)attachment;
 		attachments.push_back(texture->view);
+
+		VkImageLayout expectedLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		if (texture->aspect & VK_IMAGE_ASPECT_DEPTH_BIT)
+			expectedLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+		transitionImageLayout(texture->handle, texture->format, texture->aspect, texture->layout, expectedLayout);
 	}
 
 	VkFramebufferCreateInfo framebufferInfo = {};
@@ -530,10 +613,6 @@ GFXRenderPass* GFXVulkan::create_render_pass(const GFXRenderPassCreateInfo& info
 		if (info.attachments[i] == GFXPixelFormat::DEPTH_32F)
 			isDepthAttachment = true;
 
-		VkImageLayout imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-		if (isDepthAttachment)
-			imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
 		VkAttachmentDescription attachment = {};
 		attachment.format = toVkFormat(info.attachments[i]);
 		attachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -542,17 +621,19 @@ GFXRenderPass* GFXVulkan::create_render_pass(const GFXRenderPassCreateInfo& info
 		attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachment.finalLayout = imageLayout;
 
-		if (imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-			attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
-        if (imageLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+        if (isDepthAttachment)
             attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+		else
+			attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 		VkAttachmentReference attachmentRef = {};
 		attachmentRef.attachment = i;
-		attachmentRef.layout = imageLayout;
+
+		if (isDepthAttachment)
+			attachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+		else
+			attachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		if (isDepthAttachment) {
 			hasDepthAttachment = true;
@@ -601,49 +682,62 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 
 	VkShaderModule vertex_module = VK_NULL_HANDLE, fragment_module = VK_NULL_HANDLE;
 
-	const bool vertex_use_shader_source = info.shaders.vertex_path.empty();
-	const bool fragment_use_shader_source = info.shaders.fragment_path.empty();
+	const bool has_vertex_stage = !info.shaders.vertex_path.empty() || !info.shaders.vertex_src.empty();
+	const bool has_fragment_stage = !info.shaders.fragment_path.empty() || !info.shaders.fragment_src.empty();
 
-	if (vertex_use_shader_source) {
-		auto& vertex_shader_vector = info.shaders.vertex_src.as_bytecode();
+	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 
-		vertex_module = createShaderModule(vertex_shader_vector.data(), vertex_shader_vector.size() * sizeof(uint32_t));
+	if (has_vertex_stage) {
+		const bool vertex_use_shader_source = info.shaders.vertex_path.empty();
+
+		if (vertex_use_shader_source) {
+			auto& vertex_shader_vector = info.shaders.vertex_src.as_bytecode();
+
+			vertex_module = createShaderModule(vertex_shader_vector.data(), vertex_shader_vector.size() * sizeof(uint32_t));
+		}
+		else {
+			auto vertex_shader = file::open(file::internal_domain / (std::string(info.shaders.vertex_path) + ".spv"), true);
+			vertex_shader->read_all();
+
+			vertex_module = createShaderModule(vertex_shader->cast_data<uint32_t>(), vertex_shader->size());
+		}
+
+		name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vertex_module, info.shaders.vertex_path);
+
+		VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
+		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
+		vertShaderStageInfo.module = vertex_module;
+		vertShaderStageInfo.pName = "main";
+
+		shaderStages.push_back(vertShaderStageInfo);
 	}
-	else {
-		auto vertex_shader = file::open(file::internal_domain / (std::string(info.shaders.vertex_path) + ".spv"), true);
-		vertex_shader->read_all();
 
-		vertex_module = createShaderModule(vertex_shader->cast_data<uint32_t>(), vertex_shader->size());
+	if (has_fragment_stage) {
+		const bool fragment_use_shader_source = info.shaders.fragment_path.empty();
+
+		if (fragment_use_shader_source) {
+			auto& fragment_shader_vector = info.shaders.fragment_src.as_bytecode();
+
+			fragment_module = createShaderModule(fragment_shader_vector.data(), fragment_shader_vector.size() * sizeof(uint32_t));
+		}
+		else {
+			auto fragment_shader = file::open(file::internal_domain / (std::string(info.shaders.fragment_path) + ".spv"), true);
+			fragment_shader->read_all();
+
+			fragment_module = createShaderModule(fragment_shader->cast_data<uint32_t>(), fragment_shader->size());
+		}
+
+		name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)fragment_module, info.shaders.fragment_path);
+
+		VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
+		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+		fragShaderStageInfo.module = fragment_module;
+		fragShaderStageInfo.pName = "main";
+
+		shaderStages.push_back(fragShaderStageInfo);
 	}
-
-	if (fragment_use_shader_source) {
-		auto& fragment_shader_vector = info.shaders.fragment_src.as_bytecode();
-
-		fragment_module = createShaderModule(fragment_shader_vector.data(), fragment_shader_vector.size() * sizeof(uint32_t));
-	}
-	else {
-		auto fragment_shader = file::open(file::internal_domain / (std::string(info.shaders.fragment_path) + ".spv"), true);
-		fragment_shader->read_all();
-
-		fragment_module = createShaderModule(fragment_shader->cast_data<uint32_t>(), fragment_shader->size());
-	}
-
-    name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vertex_module, info.shaders.vertex_path);
-    name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)fragment_module, info.shaders.fragment_path);
-
-	VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
-	vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	vertShaderStageInfo.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	vertShaderStageInfo.module = vertex_module;
-	vertShaderStageInfo.pName = "main";
-
-	VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
-	fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	fragShaderStageInfo.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	fragShaderStageInfo.module = fragment_module;
-	fragShaderStageInfo.pName = "main";
-
-	VkPipelineShaderStageCreateInfo shaderStages[] = { vertShaderStageInfo, fragShaderStageInfo };
 
 	// setup vertex inputs/bindings
 	std::vector<VkVertexInputBindingDescription> inputs;
@@ -682,7 +776,6 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 	if (info.rasterization.primitive_type == GFXPrimitiveType::TriangleStrip)
 		inputAssembly.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
 
-
 	VkPipelineViewportStateCreateInfo viewportState = {};
 	viewportState.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
 	viewportState.viewportCount = 1;
@@ -692,15 +785,30 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 	rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
 	rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
 	rasterizer.lineWidth = 1.0f;
-	rasterizer.cullMode = VK_CULL_MODE_NONE;
-	rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+
+	switch (info.rasterization.culling_mode) {
+	case GFXCullingMode::Backface:
+		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+		break;
+	case GFXCullingMode::Frontface:
+		rasterizer.cullMode = VK_CULL_MODE_FRONT_BIT;
+		break;
+	case GFXCullingMode::None:
+		rasterizer.cullMode = VK_CULL_MODE_NONE;
+	}
+
+	switch (info.rasterization.winding_mode) {
+	case GFXWindingMode::Clockwise:
+		rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		break;
+	case GFXWindingMode::CounterClockwise:
+		rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+		break;
+	}
 
 	if (info.rasterization.polygon_type == GFXPolygonType::Line)
 		rasterizer.polygonMode = VK_POLYGON_MODE_LINE;
 
-	if (info.rasterization.culling_mode == GFXCullingMode::Backface) {
-		rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
-	}
 
 	VkPipelineMultisampleStateCreateInfo multisampling = {};
 	multisampling.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
@@ -728,10 +836,21 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 	if (info.depth.depth_mode != GFXDepthMode::None) {
 		depthStencil.depthTestEnable = VK_TRUE;
 		depthStencil.depthWriteEnable = VK_TRUE;
-		depthStencil.depthCompareOp = info.depth.depth_mode == GFXDepthMode::Less ? VK_COMPARE_OP_LESS : VK_COMPARE_OP_LESS_OR_EQUAL;
+
+		switch (info.depth.depth_mode) {
+		case GFXDepthMode::Less:
+			depthStencil.depthCompareOp = VK_COMPARE_OP_LESS;
+			break;
+		case GFXDepthMode::LessOrEqual:
+			depthStencil.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+			break;
+		case GFXDepthMode::Greater:
+			depthStencil.depthCompareOp = VK_COMPARE_OP_GREATER;
+			break;
+		}
 	}
 
-	std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR};
+	std::vector<VkDynamicState> dynamicStates = {VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR, VK_DYNAMIC_STATE_DEPTH_BIAS};
 
 	VkPipelineDynamicStateCreateInfo dynamicState = {};
 	dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -810,8 +929,8 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 	// create pipeline
 	VkGraphicsPipelineCreateInfo pipelineInfo = {};
 	pipelineInfo.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	pipelineInfo.stageCount = 2;
-	pipelineInfo.pStages = shaderStages;
+	pipelineInfo.stageCount = static_cast<uint32_t>(shaderStages.size());
+	pipelineInfo.pStages = shaderStages.data();
 	pipelineInfo.pVertexInputState = &vertexInputInfo;
 	pipelineInfo.pInputAssemblyState = &inputAssembly;
 	pipelineInfo.pViewportState = &viewportState;
@@ -833,13 +952,13 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 
 	vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->handle);
 
-    name_object(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->handle, std::string(info.shaders.vertex_path.data()) + std::string(info.shaders.fragment_path.data()));
-	name_object(device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipeline->layout, std::string(info.shaders.vertex_path.data()) + std::string(info.shaders.fragment_path.data()));
-
 	if (info.label.empty())
-		pipeline->label = std::string(info.shaders.vertex_path.data()) + std::string(info.shaders.fragment_path.data());
+		pipeline->label = std::string(info.shaders.vertex_path) + std::string(info.shaders.fragment_path);
 	else
 		pipeline->label = info.label;
+
+	name_object(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->handle, pipeline->label);
+	name_object(device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipeline->layout, pipeline->label);
 
 	return pipeline;
 }
@@ -864,16 +983,35 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 	if (result == VK_ERROR_OUT_OF_DATE_KHR)
 		return;
 
+	VkCommandBuffer& cmd = commandBuffers[currentFrame];
+
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 	beginInfo.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
 
-	vkBeginCommandBuffer(commandBuffers[imageIndex], &beginInfo);
+	vkBeginCommandBuffer(cmd, &beginInfo);
 
 	VkRenderPass currentRenderPass = VK_NULL_HANDLE;
 	GFXVulkanPipeline* currentPipeline = nullptr;
 	uint64_t lastDescriptorHash = 0;
 	VkIndexType currentIndexType = VK_INDEX_TYPE_UINT32;
+
+	const auto try_bind_descriptor = [cmd, this, &currentPipeline, &lastDescriptorHash]() -> bool {
+		if (lastDescriptorHash != getDescriptorHash(currentPipeline)) {
+			if (!currentPipeline->cachedDescriptorSets.count(getDescriptorHash(currentPipeline)))
+				cacheDescriptorState(currentPipeline, currentPipeline->descriptorLayout);
+
+			auto& descriptor_set = currentPipeline->cachedDescriptorSets[getDescriptorHash(currentPipeline)];
+			if (descriptor_set == VK_NULL_HANDLE)
+				return false;
+
+			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->layout, 0, 1, &descriptor_set, 0, nullptr);
+
+			lastDescriptorHash = getDescriptorHash(currentPipeline);
+		}
+
+		return true;
+	};
 
 	for (auto command : command_buffer->commands) {
 		switch (command.type) {
@@ -881,7 +1019,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 		{
 			// end the previous render pass
 			if (currentRenderPass != VK_NULL_HANDLE) {
-				vkCmdEndRenderPass(commandBuffers[imageIndex]);
+				vkCmdEndRenderPass(cmd);
 			}
 
 			GFXVulkanRenderPass* renderPass = (GFXVulkanRenderPass*)command.data.set_render_pass.render_pass;
@@ -907,13 +1045,13 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                 viewport.height = -static_cast<float>(framebuffer->height);
                 viewport.maxDepth = 1.0f;
 
-                vkCmdSetViewport(commandBuffers[imageIndex], 0, 1, &viewport);
+                vkCmdSetViewport(cmd, 0, 1, &viewport);
 
                 VkRect2D scissor = {};
                 scissor.extent.width = framebuffer->width;
                 scissor.extent.height = framebuffer->height;
 
-                vkCmdSetScissor(commandBuffers[imageIndex], 0, 1, &scissor);
+                vkCmdSetScissor(cmd, 0, 1, &scissor);
 			}
 			else {
 				renderPassInfo.framebuffer = swapchainFramebuffers[imageIndex];
@@ -924,13 +1062,13 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                 viewport.height = -static_cast<float>(surfaceHeight);
                 viewport.maxDepth = 1.0f;
 
-                vkCmdSetViewport(commandBuffers[imageIndex], 0, 1, &viewport);
+                vkCmdSetViewport(cmd, 0, 1, &viewport);
 
                 VkRect2D scissor = {};
                 scissor.extent.width = surfaceWidth;
                 scissor.extent.height = surfaceHeight;
 
-                vkCmdSetScissor(commandBuffers[imageIndex], 0, 1, &scissor);
+                vkCmdSetScissor(cmd, 0, 1, &scissor);
 			}
 
 			renderPassInfo.renderArea.offset = { command.data.set_render_pass.render_area.offset.x, command.data.set_render_pass.render_area.offset.y };
@@ -957,7 +1095,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 			renderPassInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
 			renderPassInfo.pClearValues = clearColors.data();
 
-			vkCmdBeginRenderPass(commandBuffers[imageIndex], &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+			vkCmdBeginRenderPass(cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
 
 			currentPipeline = nullptr;
 		}
@@ -965,7 +1103,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 		case GFXCommandType::SetGraphicsPipeline:
 		{
 			currentPipeline = (GFXVulkanPipeline*)command.data.set_graphics_pipeline.pipeline;
-			vkCmdBindPipeline(commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->handle);
+			vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->handle);
 
 			resetDescriptorState();
 			lastDescriptorHash = 0;
@@ -975,7 +1113,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 		{
             VkBuffer buffer = ((GFXVulkanBuffer*)command.data.set_vertex_buffer.buffer)->get(currentFrame).handle;
 			VkDeviceSize offset = command.data.set_vertex_buffer.offset;
-			vkCmdBindVertexBuffers(commandBuffers[imageIndex], command.data.set_vertex_buffer.index, 1, &buffer, &offset);
+			vkCmdBindVertexBuffers(cmd, command.data.set_vertex_buffer.index, 1, &buffer, &offset);
 		}
 			break;
 		case GFXCommandType::SetIndexBuffer:
@@ -984,7 +1122,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 			if (command.data.set_index_buffer.index_type == IndexType::UINT16)
 				indexType = VK_INDEX_TYPE_UINT16;
 
-            vkCmdBindIndexBuffer(commandBuffers[imageIndex], ((GFXVulkanBuffer*)command.data.set_index_buffer.buffer)->get(currentFrame).handle, 0, indexType);
+            vkCmdBindIndexBuffer(cmd, ((GFXVulkanBuffer*)command.data.set_index_buffer.buffer)->get(currentFrame).handle, 0, indexType);
 
 			currentIndexType = indexType;
 		}
@@ -992,7 +1130,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
         case GFXCommandType::SetPushConstant:
 		{
 			if(currentPipeline != nullptr)
-				vkCmdPushConstants(commandBuffers[imageIndex], currentPipeline->layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, command.data.set_push_constant.size, command.data.set_push_constant.bytes.data());
+				vkCmdPushConstants(cmd, currentPipeline->layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, command.data.set_push_constant.size, command.data.set_push_constant.bytes.data());
 		}
 			break;
         case GFXCommandType::BindShaderBuffer:
@@ -1017,30 +1155,19 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 		break;
 		case GFXCommandType::Draw:
 		{
-			if (lastDescriptorHash != getDescriptorHash(currentPipeline)) {
-                if (!currentPipeline->cachedDescriptorSets.count(getDescriptorHash(currentPipeline)))
-                    cacheDescriptorState(currentPipeline, currentPipeline->descriptorLayout);
-
-                vkCmdBindDescriptorSets(commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->layout, 0, 1, &currentPipeline->cachedDescriptorSets[getDescriptorHash(currentPipeline)], 0, nullptr);
-
-				lastDescriptorHash = getDescriptorHash(currentPipeline);
-			}
-
-			vkCmdDraw(commandBuffers[imageIndex], command.data.draw.vertex_count, command.data.draw.instance_count, command.data.draw.vertex_offset, command.data.draw.base_instance);
+			if(try_bind_descriptor())
+				vkCmdDraw(cmd, command.data.draw.vertex_count, command.data.draw.instance_count, command.data.draw.vertex_offset, command.data.draw.base_instance);
 		}
 			break;
 		case GFXCommandType::DrawIndexed:
 		{
-			if (lastDescriptorHash != getDescriptorHash(currentPipeline)) {
-                if (!currentPipeline->cachedDescriptorSets.count(getDescriptorHash(currentPipeline)))
-                    cacheDescriptorState(currentPipeline, currentPipeline->descriptorLayout);
-
-                vkCmdBindDescriptorSets(commandBuffers[imageIndex], VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->layout, 0, 1, &currentPipeline->cachedDescriptorSets[getDescriptorHash(currentPipeline)], 0, nullptr);
-
-				lastDescriptorHash = getDescriptorHash(currentPipeline);
-			}
-
-			vkCmdDrawIndexed(commandBuffers[imageIndex], command.data.draw_indexed.index_count, 1, command.data.draw_indexed.first_index, command.data.draw_indexed.vertex_offset, 0);
+			if(try_bind_descriptor())
+				vkCmdDrawIndexed(cmd, command.data.draw_indexed.index_count, 1, command.data.draw_indexed.first_index, command.data.draw_indexed.vertex_offset, 0);
+		}
+		break;
+		case GFXCommandType::SetDepthBias:
+		{
+			vkCmdSetDepthBias(cmd, command.data.set_depth_bias.constant, command.data.set_depth_bias.clamp, command.data.set_depth_bias.slope_factor);
 		}
 		break;
 		}
@@ -1048,10 +1175,10 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 
 	// end the last render pass
 	if (currentRenderPass != VK_NULL_HANDLE) {
-		vkCmdEndRenderPass(commandBuffers[imageIndex]);
+		vkCmdEndRenderPass(cmd);
 	}
 
-	vkEndCommandBuffer(commandBuffers[imageIndex]);
+	vkEndCommandBuffer(cmd);
 
 	// submit
 	VkSubmitInfo submitInfo = {};
@@ -1063,7 +1190,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 	submitInfo.pWaitSemaphores = waitSemaphores;
 	submitInfo.pWaitDstStageMask = waitStages;
 	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &commandBuffers[imageIndex];
+	submitInfo.pCommandBuffers = &cmd;
 
 	VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
 	submitInfo.signalSemaphoreCount = 1;
@@ -1114,8 +1241,8 @@ void GFXVulkan::createInstance(std::vector<const char*> layers, std::vector<cons
     VkDebugUtilsMessengerCreateInfoEXT debugCreateInfo = {};
     debugCreateInfo.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
     debugCreateInfo.messageSeverity =  VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-    debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT ;
-    debugCreateInfo.pfnUserCallback = DebugCallback;    // global function
+    debugCreateInfo.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT ;
+    debugCreateInfo.pfnUserCallback = DebugCallback;
 
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
@@ -1356,6 +1483,15 @@ void GFXVulkan::createSwapchain(VkSwapchainKHR oldSwapchain) {
 	colorAttachmentRef.attachment = 0;
 	colorAttachmentRef.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
+	VkSubpassDependency dependency = {};
+	dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	dependency.dstSubpass = 0;
+	dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+	dependency.srcAccessMask = 0;
+	dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	dependency.dependencyFlags = 0;
+
 	VkSubpassDescription subpass = {};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
 	subpass.colorAttachmentCount = 1;
@@ -1367,6 +1503,8 @@ void GFXVulkan::createSwapchain(VkSwapchainKHR oldSwapchain) {
 	renderPassInfo.pAttachments = &colorAttachment;
 	renderPassInfo.subpassCount = 1;
 	renderPassInfo.pSubpasses = &subpass;
+	renderPassInfo.dependencyCount = 1;
+	renderPassInfo.pDependencies = &dependency;
 
 	vkCreateRenderPass(device, &renderPassInfo, nullptr, &swapchainRenderPass);
 
@@ -1391,7 +1529,7 @@ void GFXVulkan::createSwapchain(VkSwapchainKHR oldSwapchain) {
 	}
 
 	// allocate command buffers
-	commandBuffers.resize(imageCount);
+	commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -1400,6 +1538,9 @@ void GFXVulkan::createSwapchain(VkSwapchainKHR oldSwapchain) {
 	allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
 
 	vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data());
+
+	for (auto [i, cmdbuf] : utility::enumerate(commandBuffers))
+		name_object(device, VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)cmdbuf, ("main cmd buf " + std::to_string(i)).c_str());
 }
 
 void GFXVulkan::createDescriptorPool() {
@@ -1466,6 +1607,9 @@ void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSe
 
 	name_object(device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)descriptorSet, pipeline->label);
 
+	if (descriptorSet == VK_NULL_HANDLE)
+		return;
+
 	// update set
 	int i = 0;
 	for (auto& buffer : boundShaderBuffers) {
@@ -1504,11 +1648,19 @@ void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSe
 		imageInfo.imageLayout = vulkanTexture->layout;
 
 		// color attachments are not the right layout
-		//if (imageInfo.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-		//	imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		if (imageInfo.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
+			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 		imageInfo.imageView = vulkanTexture->view;
 		imageInfo.sampler = vulkanTexture->sampler;
+
+		//if (imageInfo.imageLayout != vulkanTexture->layout) {
+			GFXVulkanPipeline::ExpectedTransisition trans;
+			trans.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+			trans.newLayout = imageInfo.imageLayout;
+
+			pipeline->expectedTransisitions[vulkanTexture] = trans;
+		//}
 
 		VkWriteDescriptorSet descriptorWrite = {};
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -1595,7 +1747,13 @@ uint32_t GFXVulkan::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags pr
 void GFXVulkan::transitionImageLayout(VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageLayout oldLayout, VkImageLayout newLayout) {
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
-	VkImageMemoryBarrier barrier = {};
+	inlineTransitionImageLayout(commandBuffer, image, format, aspect, oldLayout, newLayout);
+
+	endSingleTimeCommands(commandBuffer);
+}
+
+void GFXVulkan::inlineTransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageLayout oldLayout, VkImageLayout newLayout) {
+	VkImageMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.oldLayout = oldLayout;
 	barrier.newLayout = newLayout;
@@ -1607,19 +1765,40 @@ void GFXVulkan::transitionImageLayout(VkImage image, VkFormat format, VkImageAsp
 	barrier.subresourceRange.levelCount = 1;
 	barrier.subresourceRange.baseArrayLayer = 0;
 	barrier.subresourceRange.layerCount = 1;
-	barrier.srcAccessMask = VK_ACCESS_MEMORY_WRITE_BIT; // TODO
-	barrier.dstAccessMask = VK_ACCESS_MEMORY_WRITE_BIT; // TODO
+
+	VkPipelineStageFlags sourceStage;
+	VkPipelineStageFlags destinationStage;
+
+	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
+		barrier.srcAccessMask = 0;
+		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	}
+	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
+		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else {
+		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+		barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
+
+		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+		destinationStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
+	}
 
 	vkCmdPipelineBarrier(
 		commandBuffer,
-		VK_PIPELINE_STAGE_HOST_BIT /* TODO */, VK_PIPELINE_STAGE_HOST_BIT /* TODO */,
+		sourceStage, destinationStage,
 		0,
 		0, nullptr,
 		0, nullptr,
 		1, &barrier
 	);
-
-	endSingleTimeCommands(commandBuffer);
 }
 
 VkShaderModule GFXVulkan::createShaderModule(const uint32_t* code, const int length) {

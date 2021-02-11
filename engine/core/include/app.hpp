@@ -1,6 +1,7 @@
 #pragma once
 
 class Engine;
+class GFXCommandBuffer;
 
 /// The base class for any Prism application.
 class App {
@@ -23,6 +24,8 @@ public:
      @param delta_time Delta time in milliseconds.
      */
     virtual void update([[maybe_unused]] const float delta_time) {}
+
+    virtual void render([[maybe_unused]] GFXCommandBuffer* command_buffer) {}
 };
 
 /// This is an app's equivalent main(). You can check command line arguments through Engine::comand_line_arguments.

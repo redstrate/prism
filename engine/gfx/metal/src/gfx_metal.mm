@@ -441,61 +441,73 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
 
     NSError* error = nil;
     
-    // vertex
-    id<MTLLibrary> vertexLibrary;
-    {
-        std::string vertex_src;
-        if(info.shaders.vertex_path.empty()) {
-            vertex_src = info.shaders.vertex_src.as_string();
-        } else {
-            const auto vertex_path = utility::format("{}.msl", info.shaders.vertex_path);
-
-            auto file = file::open(file::internal_domain / vertex_path);
-            if(file != std::nullopt) {
-                vertex_src = file->read_as_string();
+    MTLRenderPipelineDescriptor *pipelineDescriptor = [MTLRenderPipelineDescriptor new];
+    
+    const bool has_vertex_stage = !info.shaders.vertex_path.empty() || !info.shaders.vertex_src.empty();
+    const bool has_fragment_stage = !info.shaders.fragment_path.empty() || !info.shaders.fragment_src.empty();
+    
+    if(has_vertex_stage) {
+        id<MTLLibrary> vertexLibrary;
+        {
+            std::string vertex_src;
+            if(info.shaders.vertex_path.empty()) {
+                vertex_src = info.shaders.vertex_src.as_string();
             } else {
-                console::error(System::GFX, "Failed to load vertex shader from {}!", vertex_path);
+                const auto vertex_path = utility::format("{}.msl", info.shaders.vertex_path);
+                
+                auto file = file::open(file::internal_domain / vertex_path);
+                if(file != std::nullopt) {
+                    vertex_src = file->read_as_string();
+                } else {
+                    console::error(System::GFX, "Failed to load vertex shader from {}!", vertex_path);
+                }
             }
-        }
-        
-        vertexLibrary = [device newLibraryWithSource:[NSString stringWithFormat:@"%s", vertex_src.c_str()] options:nil error:&error];
-        if(!vertexLibrary)
-            NSLog(@"%@", error.debugDescription);
-    }
-        
-    // fragment
-    id<MTLLibrary> fragmentLibrary;
-    {
-        std::string fragment_src;
-        if(info.shaders.fragment_path.empty()) {
-            fragment_src = info.shaders.fragment_src.as_string();
-        } else {
-            const auto fragment_path = utility::format("{}.msl", info.shaders.fragment_path);
             
-            auto file = file::open(file::internal_domain / fragment_path);
-            if(file != std::nullopt) {
-                fragment_src = file->read_as_string();
-            } else {
-                console::error(System::GFX, "Failed to load fragment shader from {}!", fragment_path);
-            }
+            vertexLibrary = [device newLibraryWithSource:[NSString stringWithFormat:@"%s", vertex_src.c_str()] options:nil error:&error];
+            if(!vertexLibrary)
+                NSLog(@"%@", error.debugDescription);
+            
+            auto vertex_constants = get_constant_values(info.shaders.vertex_constants);
+            
+            id<MTLFunction> vertexFunc = [vertexLibrary newFunctionWithName:@"main0" constantValues:vertex_constants error:nil];
+                        
+            if(debug_enabled)
+                vertexFunc.label = [NSString stringWithFormat:@"%s", info.shaders.vertex_path.data()];
+            
+            pipelineDescriptor.vertexFunction = vertexFunc;
         }
-        
-        fragmentLibrary = [device newLibraryWithSource:[NSString stringWithFormat:@"%s", fragment_src.c_str()] options:nil error:&error];
-        if(!fragmentLibrary)
-            NSLog(@"%@", error.debugDescription);
     }
     
-    auto vertex_constants = get_constant_values(info.shaders.vertex_constants);
-    
-    id<MTLFunction> vertexFunc = [vertexLibrary newFunctionWithName:@"main0" constantValues:vertex_constants error:nil];
-    
-    auto fragment_constants = get_constant_values(info.shaders.fragment_constants);
-    
-    id<MTLFunction> fragmentFunc = [fragmentLibrary newFunctionWithName:@"main0" constantValues:fragment_constants error:nil];
-
-    if(debug_enabled) {
-        vertexFunc.label = [NSString stringWithFormat:@"%s", info.shaders.vertex_path.data()];
-        fragmentFunc.label = [NSString stringWithFormat:@"%s", info.shaders.fragment_path.data()];
+    if(has_fragment_stage) {
+        id<MTLLibrary> fragmentLibrary;
+        {
+            std::string fragment_src;
+            if(info.shaders.fragment_path.empty()) {
+                fragment_src = info.shaders.fragment_src.as_string();
+            } else {
+                const auto fragment_path = utility::format("{}.msl", info.shaders.fragment_path);
+                
+                auto file = file::open(file::internal_domain / fragment_path);
+                if(file != std::nullopt) {
+                    fragment_src = file->read_as_string();
+                } else {
+                    console::error(System::GFX, "Failed to load fragment shader from {}!", fragment_path);
+                }
+            }
+            
+            fragmentLibrary = [device newLibraryWithSource:[NSString stringWithFormat:@"%s", fragment_src.c_str()] options:nil error:&error];
+            if(!fragmentLibrary)
+                NSLog(@"%@", error.debugDescription);
+        }
+        
+        auto fragment_constants = get_constant_values(info.shaders.fragment_constants);
+        
+        id<MTLFunction> fragmentFunc = [fragmentLibrary newFunctionWithName:@"main0" constantValues:fragment_constants error:nil];
+        
+        if(debug_enabled)
+            fragmentFunc.label = [NSString stringWithFormat:@"%s", info.shaders.fragment_path.data()];
+        
+        pipelineDescriptor.fragmentFunction = fragmentFunc;
     }
     
     MTLVertexDescriptor* descriptor = [MTLVertexDescriptor new];
@@ -538,10 +550,6 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
         descriptor.attributes[attribute.location].bufferIndex = (NSUInteger)attribute.binding;
         descriptor.attributes[attribute.location].offset =  (NSUInteger)attribute.offset;
     }
-
-    MTLRenderPipelineDescriptor *pipelineDescriptor = [MTLRenderPipelineDescriptor new];
-    pipelineDescriptor.vertexFunction = vertexFunc;
-    pipelineDescriptor.fragmentFunction = fragmentFunc;
 
     if(info.render_pass != nullptr) {
         GFXMetalRenderPass* metalRenderPass = (GFXMetalRenderPass*)info.render_pass;
@@ -634,15 +642,6 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
 
     if(info.rasterization.polygon_type == GFXPolygonType::Line)
         pipeline->renderWire = true;
-    
-    [vertexFunc release];
-    [fragmentFunc release];
-    
-    [vertexLibrary release];
-    [fragmentLibrary release];
-    
-    [vertex_constants release];
-    [fragment_constants release];
     
     return pipeline;
 }
