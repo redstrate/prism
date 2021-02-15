@@ -323,6 +323,9 @@ int main(int argc, char* argv[]) {
                 {
                     const xcb_configure_notify_event_t *cfgEvent = (const xcb_configure_notify_event_t *)event;
 
+                    window_width = cfgEvent->width;
+                    window_height = cfgEvent->height;
+                    
                     engine->resize(0, {cfgEvent->width, cfgEvent->height});
                 }
                 break;
