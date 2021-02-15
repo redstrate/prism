@@ -342,6 +342,9 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 	else {
 		imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
 	}
+	
+	if((info.usage & GFXTextureUsage::Transfer) == GFXTextureUsage::Transfer)
+        imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 
 	VkImageAspectFlagBits imageAspect;
 	if (info.format == GFXPixelFormat::DEPTH_32F)
@@ -396,8 +399,19 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 	vkAllocateMemory(device, &allocInfo, nullptr, &texture->memory);
 
 	vkBindImageMemory(device, texture->handle, texture->memory, 0);
+    
+    VkImageSubresourceRange range = {};
+    range.baseMipLevel = 0;
+    range.levelCount = info.mip_count;
+    range.baseArrayLayer = 0;
+    range.layerCount = info.array_length;
+    
+    if(info.type == GFXTextureType::Cubemap || info.type == GFXTextureType::CubemapArray)
+        range.layerCount *= 6;
+    
+    texture->range = range;
 
-	transitionImageLayout(texture->handle, imageFormat, imageAspect, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	transitionImageLayout(texture->handle, imageFormat, imageAspect, range, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	// create image view
 	VkImageViewCreateInfo viewInfo = {};
@@ -419,11 +433,8 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 		break;
 	}
 	viewInfo.format = imageFormat;
+    viewInfo.subresourceRange = range;
 	viewInfo.subresourceRange.aspectMask = imageAspect;
-	viewInfo.subresourceRange.baseMipLevel = 0;
-	viewInfo.subresourceRange.levelCount = info.mip_count;
-	viewInfo.subresourceRange.baseArrayLayer = 0;
-	viewInfo.subresourceRange.layerCount = array_length;
 
 	vkCreateImageView(device, &viewInfo, nullptr, &texture->view);
 
@@ -487,8 +498,14 @@ void GFXVulkan::copy_texture(GFXTexture* texture, void* data, GFXSize size) {
 
 	// copy staging buffer to image
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
-
-	inlineTransitionImageLayout(commandBuffer, vulkanTexture->handle, vulkanTexture->format, vulkanTexture->aspect, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+    
+    VkImageSubresourceRange range = {};
+    range.baseMipLevel = 0;
+    range.levelCount = 1;
+    range.baseArrayLayer = 0;
+    range.layerCount = 1;
+    
+	inlineTransitionImageLayout(commandBuffer, vulkanTexture->handle, vulkanTexture->format, vulkanTexture->aspect, range, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
 	VkBufferImageCopy region = {};
 	region.imageSubresource.aspectMask = vulkanTexture->aspect;
@@ -503,7 +520,7 @@ void GFXVulkan::copy_texture(GFXTexture* texture, void* data, GFXSize size) {
 
 	vkCmdCopyBufferToImage(commandBuffer, stagingBuffer, vulkanTexture->handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
 
-	inlineTransitionImageLayout(commandBuffer, vulkanTexture->handle, vulkanTexture->format, vulkanTexture->aspect, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	inlineTransitionImageLayout(commandBuffer, vulkanTexture->handle, vulkanTexture->format, vulkanTexture->aspect, range, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	endSingleTimeCommands(commandBuffer);
 }
@@ -574,7 +591,13 @@ GFXFramebuffer* GFXVulkan::create_framebuffer(const GFXFramebufferCreateInfo& in
 		if (texture->aspect & VK_IMAGE_ASPECT_DEPTH_BIT)
 			expectedLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
-		transitionImageLayout(texture->handle, texture->format, texture->aspect, texture->layout, expectedLayout);
+        VkImageSubresourceRange range = {};
+        range.baseMipLevel = 0;
+        range.levelCount = 1;
+        range.baseArrayLayer = 0;
+        range.layerCount = 1;
+        
+		transitionImageLayout(texture->handle, texture->format, texture->aspect, range, texture->layout, expectedLayout);
 	}
 
 	VkFramebufferCreateInfo framebufferInfo = {};
@@ -1015,91 +1038,91 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 
 	for (auto command : command_buffer->commands) {
 		switch (command.type) {
-            case GFXCommandType::SetRenderPass:
-		{
-			// end the previous render pass
-			if (currentRenderPass != VK_NULL_HANDLE) {
-				vkCmdEndRenderPass(cmd);
-			}
-
-			GFXVulkanRenderPass* renderPass = (GFXVulkanRenderPass*)command.data.set_render_pass.render_pass;
-			GFXVulkanFramebuffer* framebuffer = (GFXVulkanFramebuffer*)command.data.set_render_pass.framebuffer;
-
-			if (renderPass != nullptr) {
-				currentRenderPass = renderPass->handle;
-			}
-			else {
-				currentRenderPass = swapchainRenderPass;
-			}
-
-			VkRenderPassBeginInfo renderPassInfo = {};
-			renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-			renderPassInfo.renderPass = currentRenderPass;
-
-			if (framebuffer != nullptr) {
-				renderPassInfo.framebuffer = framebuffer->handle;
-
+        case GFXCommandType::SetRenderPass:
+        {
+            // end the previous render pass
+            if (currentRenderPass != VK_NULL_HANDLE) {
+                vkCmdEndRenderPass(cmd);
+            }
+            
+            GFXVulkanRenderPass* renderPass = (GFXVulkanRenderPass*)command.data.set_render_pass.render_pass;
+            GFXVulkanFramebuffer* framebuffer = (GFXVulkanFramebuffer*)command.data.set_render_pass.framebuffer;
+            
+            if (renderPass != nullptr) {
+                currentRenderPass = renderPass->handle;
+            }
+            else {
+                currentRenderPass = swapchainRenderPass;
+            }
+            
+            VkRenderPassBeginInfo renderPassInfo = {};
+            renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            renderPassInfo.renderPass = currentRenderPass;
+            
+            if (framebuffer != nullptr) {
+                renderPassInfo.framebuffer = framebuffer->handle;
+                
                 VkViewport viewport = {};
-				viewport.y = static_cast<float>(framebuffer->height);
+                viewport.y = static_cast<float>(framebuffer->height);
                 viewport.width = static_cast<float>(framebuffer->width);
                 viewport.height = -static_cast<float>(framebuffer->height);
                 viewport.maxDepth = 1.0f;
-
+                
                 vkCmdSetViewport(cmd, 0, 1, &viewport);
-
+                
                 VkRect2D scissor = {};
                 scissor.extent.width = framebuffer->width;
                 scissor.extent.height = framebuffer->height;
-
+                
                 vkCmdSetScissor(cmd, 0, 1, &scissor);
-			}
-			else {
-				renderPassInfo.framebuffer = swapchainFramebuffers[imageIndex];
-
+            }
+            else {
+                renderPassInfo.framebuffer = swapchainFramebuffers[imageIndex];
+                
                 VkViewport viewport = {};
-				viewport.y = static_cast<float>(surfaceHeight);
+                viewport.y = static_cast<float>(surfaceHeight);
                 viewport.width = static_cast<float>(surfaceWidth);
                 viewport.height = -static_cast<float>(surfaceHeight);
                 viewport.maxDepth = 1.0f;
-
+                
                 vkCmdSetViewport(cmd, 0, 1, &viewport);
-
+                
                 VkRect2D scissor = {};
                 scissor.extent.width = surfaceWidth;
                 scissor.extent.height = surfaceHeight;
-
+                
                 vkCmdSetScissor(cmd, 0, 1, &scissor);
-			}
-
-			renderPassInfo.renderArea.offset = { command.data.set_render_pass.render_area.offset.x, command.data.set_render_pass.render_area.offset.y };
+            }
+            
+            renderPassInfo.renderArea.offset = { command.data.set_render_pass.render_area.offset.x, command.data.set_render_pass.render_area.offset.y };
             renderPassInfo.renderArea.extent = { command.data.set_render_pass.render_area.extent.width, command.data.set_render_pass.render_area.extent.height };
-
-			std::vector<VkClearValue> clearColors;
-			if (renderPass != nullptr) {
-				clearColors.resize(renderPass->numAttachments);
-			}
-			else {
-				clearColors.resize(1);
-			}
-
-			clearColors[0].color.float32[0] = command.data.set_render_pass.clear_color.r;
-			clearColors[0].color.float32[1] = command.data.set_render_pass.clear_color.g;
-			clearColors[0].color.float32[2] = command.data.set_render_pass.clear_color.b;
-			clearColors[0].color.float32[3] = command.data.set_render_pass.clear_color.a;
-
+            
+            std::vector<VkClearValue> clearColors;
+            if (renderPass != nullptr) {
+                clearColors.resize(renderPass->numAttachments);
+            }
+            else {
+                clearColors.resize(1);
+            }
+            
+            clearColors[0].color.float32[0] = command.data.set_render_pass.clear_color.r;
+            clearColors[0].color.float32[1] = command.data.set_render_pass.clear_color.g;
+            clearColors[0].color.float32[2] = command.data.set_render_pass.clear_color.b;
+            clearColors[0].color.float32[3] = command.data.set_render_pass.clear_color.a;
+            
             if(renderPass != nullptr) {
                 if(renderPass->depth_attachment != -1)
                     clearColors[renderPass->depth_attachment].depthStencil.depth = 1.0f;
             }
-
-			renderPassInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
-			renderPassInfo.pClearValues = clearColors.data();
-
-			vkCmdBeginRenderPass(cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
-
-			currentPipeline = nullptr;
-		}
-		break;
+            
+            renderPassInfo.clearValueCount = static_cast<uint32_t>(clearColors.size());
+            renderPassInfo.pClearValues = clearColors.data();
+            
+            vkCmdBeginRenderPass(cmd, &renderPassInfo, VK_SUBPASS_CONTENTS_INLINE);
+            
+            currentPipeline = nullptr;
+        }
+        break;
 		case GFXCommandType::SetGraphicsPipeline:
 		{
 			currentPipeline = (GFXVulkanPipeline*)command.data.set_graphics_pipeline.pipeline;
@@ -1170,7 +1193,40 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 			vkCmdSetDepthBias(cmd, command.data.set_depth_bias.constant, command.data.set_depth_bias.clamp, command.data.set_depth_bias.slope_factor);
 		}
 		break;
+        case GFXCommandType::CopyTexture:
+        {
+            GFXVulkanTexture* src = (GFXVulkanTexture*)command.data.copy_texture.src;
+            GFXVulkanTexture* dst = (GFXVulkanTexture*)command.data.copy_texture.dst;
+            
+            inlineTransitionImageLayout(cmd, src->handle, src->format, src->aspect, src->range, src->layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+            inlineTransitionImageLayout(cmd, dst->handle, dst->format, dst->aspect, dst->range, dst->layout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+            
+            const int slice_offset = command.data.copy_texture.to_slice + command.data.copy_texture.to_layer * 6;
+            
+            VkImageCopy region = {};
+            region.extent = {static_cast<uint32_t>(command.data.copy_texture.width), static_cast<uint32_t>(command.data.copy_texture.height), 1};
+            region.dstSubresource.baseArrayLayer = slice_offset;
+            region.dstSubresource.mipLevel = command.data.copy_texture.to_level;
+            region.srcSubresource.aspectMask = src->aspect;
+            region.dstSubresource.aspectMask = dst->aspect;
+            region.srcSubresource.layerCount = 1;
+            region.dstSubresource.layerCount = 1;
+            
+            vkCmdCopyImage(cmd, src->handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
+            
+            inlineTransitionImageLayout(cmd, src->handle, src->format, src->aspect, src->range, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src->layout);
+            inlineTransitionImageLayout(cmd, dst->handle, dst->format, dst->aspect, dst->range, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dst->layout);
+        }
+        break;
+        case GFXCommandType::EndRenderPass:
+        {
+            if(currentRenderPass != nullptr) {
+                vkCmdEndRenderPass(cmd);
+                currentRenderPass = nullptr;
+            }
 		}
+		break;
+        }
 	}
 
 	// end the last render pass
@@ -1744,15 +1800,15 @@ uint32_t GFXVulkan::findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags pr
 	return -1;
 }
 
-void GFXVulkan::transitionImageLayout(VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageLayout oldLayout, VkImageLayout newLayout) {
+void GFXVulkan::transitionImageLayout(VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageSubresourceRange range, VkImageLayout oldLayout, VkImageLayout newLayout) {
 	VkCommandBuffer commandBuffer = beginSingleTimeCommands();
 
-	inlineTransitionImageLayout(commandBuffer, image, format, aspect, oldLayout, newLayout);
+	inlineTransitionImageLayout(commandBuffer, image, format, aspect, range, oldLayout, newLayout);
 
 	endSingleTimeCommands(commandBuffer);
 }
 
-void GFXVulkan::inlineTransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageLayout oldLayout, VkImageLayout newLayout) {
+void GFXVulkan::inlineTransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageSubresourceRange range, VkImageLayout oldLayout, VkImageLayout newLayout) {
 	VkImageMemoryBarrier barrier{};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.oldLayout = oldLayout;
@@ -1760,11 +1816,8 @@ void GFXVulkan::inlineTransitionImageLayout(VkCommandBuffer commandBuffer, VkIma
 	barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 	barrier.image = image;
+    barrier.subresourceRange = range;
 	barrier.subresourceRange.aspectMask = aspect;
-	barrier.subresourceRange.baseMipLevel = 0;
-	barrier.subresourceRange.levelCount = 1;
-	barrier.subresourceRange.baseArrayLayer = 0;
-	barrier.subresourceRange.layerCount = 1;
 
 	VkPipelineStageFlags sourceStage;
 	VkPipelineStageFlags destinationStage;

@@ -16,4 +16,5 @@ public:
 	VkFormat format;
 	VkImageLayout layout = VK_IMAGE_LAYOUT_UNDEFINED;
 	VkImageAspectFlagBits aspect;
+    VkImageSubresourceRange range;
 };

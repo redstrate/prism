@@ -245,6 +245,7 @@ void ShadowPass::render_spot(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         if(light.enable_shadows)
             render_meshes(command_buffer, scene, realMVP, Matrix4x4(), scene.get<Transform>(light_object).get_world_position(), Light::Type::Spot, frustum, 0);
         
+        command_buffer->end_render_pass();
         command_buffer->copy_texture(offscreen_depth, render_options.shadow_resolution, render_options.shadow_resolution, scene.spotLightArray, 0, last_spot_light, 0);
         
         scene.spot_light_dirty[last_spot_light] = false;
@@ -286,6 +287,7 @@ void ShadowPass::render_point(GFXCommandBuffer* command_buffer, Scene& scene, Ob
             
             render_meshes(command_buffer, scene, projection * shadowTransforms[face], model, lightPos, Light::Type::Point, frustum, last_point_light);
             
+            command_buffer->end_render_pass();
             command_buffer->copy_texture(offscreen_color_texture, render_options.shadow_resolution, render_options.shadow_resolution, scene.pointLightArray, face, last_point_light, 0);
         }
         

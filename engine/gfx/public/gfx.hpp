@@ -41,6 +41,7 @@ enum class GFXTextureUsage : int {
     Sampled = 1,
     Attachment = 2,
     ShaderWrite = 3,
+    Transfer = 4
 };
 
 inline GFXTextureUsage operator|(const GFXTextureUsage a, const GFXTextureUsage b) {

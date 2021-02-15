@@ -42,6 +42,18 @@ struct SceneInformation {
     int p[3];
 };
 
+struct SkyPushConstant {
+    Matrix4x4 view;
+    Vector4 sun_position_fov;
+    float aspect;
+};
+
+struct FilterPushConstant {
+    Matrix4x4 mvp;
+    float roughness;
+    float buffer[15];
+};
+
 const int mipLevels = 5;
 
 const std::array<Matrix4x4, 6> sceneTransforms = {
@@ -71,7 +83,7 @@ SceneCapture::SceneCapture(GFX* gfx) {
     textureInfo.width = scene_cubemap_resolution;
     textureInfo.height = scene_cubemap_resolution;
     textureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
-    textureInfo.usage = GFXTextureUsage::Attachment;
+    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Transfer;
     textureInfo.samplingMode = SamplingMode::ClampToEdge;
     
     offscreenTexture = gfx->create_texture(textureInfo);
@@ -297,6 +309,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 
                 command_buffer->draw(0, 4, 0, 1);
                 
+                command_buffer->end_render_pass();
                 command_buffer->copy_texture(offscreenTexture, scene_cubemap_resolution, scene_cubemap_resolution, environmentCube, face, 0, 0);
             };
             
@@ -332,7 +345,8 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 command_buffer->set_push_constant(&mvp, sizeof(Matrix4x4));
                 
                 command_buffer->draw_indexed(cubeMesh->num_indices, 0, 0, 0);
-
+                
+                command_buffer->end_render_pass();
                 command_buffer->copy_texture(irradianceOffscreenTexture, irradiance_cubemap_resolution, irradiance_cubemap_resolution, scene->irradianceCubeArray, face, last_probe, 0);
             };
             
@@ -359,11 +373,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 command_buffer->set_vertex_buffer(cubeMesh->position_buffer, 0, 0);
                 command_buffer->set_index_buffer(cubeMesh->index_buffer, IndexType::UINT32);
                 
-                struct PushConstant {
-                    Matrix4x4 mvp;
-                    float roughness;
-                } pc;
-                
+                FilterPushConstant pc;
                 pc.mvp = projection * sceneTransforms[face];
                 pc.roughness = ((float)mip) / (float)(mipLevels - 1);
 
@@ -373,6 +383,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 
                 command_buffer->draw_indexed(cubeMesh->num_indices, 0, 0, 0);
                 
+                command_buffer->end_render_pass();
                 command_buffer->copy_texture(prefilteredOffscreenTexture, info.render_area.extent.width, info.render_area.extent.height, scene->prefilteredCubeArray, face, last_probe, mip);
             };
             
@@ -401,7 +412,7 @@ void SceneCapture::createSkyResources() {
     };
     
     pipelineInfo.shader_input.push_constants = {
-        {(sizeof(Matrix4x4) + sizeof(Vector4) + sizeof(float)), 0}
+        {sizeof(SkyPushConstant), 0}
     };
     
     pipelineInfo.depth.depth_mode = GFXDepthMode::LessOrEqual;
@@ -417,7 +428,7 @@ void SceneCapture::createIrradianceResources() {
     textureInfo.width = irradiance_cubemap_resolution;
     textureInfo.height = irradiance_cubemap_resolution;
     textureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
-    textureInfo.usage = GFXTextureUsage::Attachment;
+    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Transfer;
     textureInfo.samplingMode = SamplingMode::ClampToEdge;
     
     irradianceOffscreenTexture = gfx->create_texture(textureInfo);
@@ -471,7 +482,7 @@ void SceneCapture::createPrefilterResources() {
     textureInfo.width = scene_cubemap_resolution;
     textureInfo.height = scene_cubemap_resolution;
     textureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
-    textureInfo.usage = GFXTextureUsage::Attachment;
+    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Transfer;
     textureInfo.samplingMode = SamplingMode::ClampToEdge;
     
     prefilteredOffscreenTexture = gfx->create_texture(textureInfo);
@@ -504,7 +515,7 @@ void SceneCapture::createPrefilterResources() {
     pipelineInfo.vertex_input.attributes.push_back(positionAttribute);
     
     pipelineInfo.shader_input.push_constants = {
-        {sizeof(Matrix4x4) + sizeof(float), 0}
+        {sizeof(FilterPushConstant), 0}
     };
     
     pipelineInfo.shader_input.bindings = {
