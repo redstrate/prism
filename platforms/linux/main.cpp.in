@@ -56,7 +56,7 @@ static inline xcb_intern_atom_reply_t* intern_atom_helper(xcb_connection_t *conn
     return xcb_intern_atom_reply(conn, cookie, NULL);
 }
 
-int platform::open_window(const std::string_view title, const int x, const int y, const int width, const int height, const WindowFlags flags) {
+int platform::open_window(const std::string_view title, const prism::Rectangle rect, const WindowFlags flags) {
     auto& win = window_connections.emplace_back();
     win.connection = connection;
 
@@ -79,7 +79,7 @@ int platform::open_window(const std::string_view title, const int x, const int y
     win.window = xcb_generate_id(connection);
     cookie = xcb_create_window(win.connection,
                                XCB_COPY_FROM_PARENT, win.window, screen->root,
-                               x, y, width, height,
+                               rect.offset.x, rect.offset.y, rect.extent.width, rect.extent.height,
                                0,
                                XCB_WINDOW_CLASS_INPUT_OUTPUT,
                                screen->root_visual,
@@ -101,7 +101,7 @@ int platform::open_window(const std::string_view title, const int x, const int y
     xcb_map_window(connection, win.window);
     xcb_flush(connection);
 
-    engine->add_window((void*)&win, 0, width, height);
+    engine->add_window((void*)&win, 0, rect.extent);
     app->initialize_render();
 
     return window_connections.size() - 1;
@@ -121,30 +121,31 @@ float platform::get_monitor_dpi() {
     return 1.0;
 }
 
-platform::Rect platform::get_monitor_resolution() {
+prism::Rectangle platform::get_monitor_resolution() {
 }
 
-platform::Rect platform::get_monitor_work_area() {
+prism::Rectangle platform::get_monitor_work_area() {
 }
 
-std::tuple<int, int> platform::get_window_position(const int index) {
+prism::Offset platform::get_window_position(const int index) {
 }
 
-std::tuple<int, int> platform::get_window_size(const int index) {
+prism::Extent platform::get_window_size(const int index) {
 }
 
-std::tuple<int, int> platform::get_window_drawable_size(const int index) {
+prism::Extent platform::get_window_drawable_size(const int index) {
 }
+
 bool platform::is_window_focused(const int index) {
 }
 
 void platform::set_window_focused(const int index) {
 }
 
-void platform::set_window_position(const int index, const int x, const int y) {
+void platform::set_window_position(const int index, const prism::Offset offset) {
 }
 
-void platform::set_window_size(const int index, const int w, const int h) {
+void platform::set_window_size(const int index, const prism::Extent extent) {
 }
 
 void platform::set_window_title(const int index, const std::string_view title) {
@@ -166,11 +167,11 @@ int platform::get_keycode(const InputButton key) {
     return inputToKeyCode[key];
 }
 
-std::tuple<int, int> platform::get_cursor_position() {
+prism::Offset platform::get_cursor_position() {
     return {mouse_x, mouse_y};
 }
 
-std::tuple<int, int> platform::get_screen_cursor_position() {
+prism::Offset platform::get_screen_cursor_position() {
     return {mouse_x, mouse_y};
 }
 
@@ -278,7 +279,7 @@ int main(int argc, char* argv[]) {
                 {
                     auto ev = (xcb_motion_notify_event_t *)event;
 
-                    engine->process_mouse_move(ev->event_x, ev->event_y);
+                    //engine->process_mouse_move(ev->event_x, ev->event_y);
 
                     mouse_x = ev->event_x;
                     mouse_y = ev->event_y;
@@ -291,7 +292,7 @@ int main(int argc, char* argv[]) {
                     if(press->detail == 3)
                         index = 1;
 
-                    engine->process_mouse(index, press->event_x, press->event_y);
+                    //engine->process_mouse(index, press->event_x, press->event_y);
 
                     mouse_down[index] = true;
 
@@ -306,7 +307,7 @@ int main(int argc, char* argv[]) {
                     if(press->detail == 3)
                         index = 1;
 
-                    engine->process_mouse_released(index);
+                    //engine->process_mouse_released(index);
 
                     mouse_down[index] = false;
                 }
@@ -315,21 +316,21 @@ int main(int argc, char* argv[]) {
                 {
                     const xcb_configure_notify_event_t *cfgEvent = (const xcb_configure_notify_event_t *)event;
 
-                    engine->resize(0, cfgEvent->width, cfgEvent->height);
+                    engine->resize(0, {cfgEvent->width, cfgEvent->height});
                 }
                 break;
                 case XCB_KEY_PRESS:
                 {
                     const xcb_key_release_event_t *keyEvent = (const xcb_key_release_event_t *)event;
 
-                    engine->process_key(keyEvent->detail);
+                    //engine->process_key(keyEvent->detail);
                 }
                 break;
                 case XCB_KEY_RELEASE:
                 {
                     const xcb_key_release_event_t *keyEvent = (const xcb_key_release_event_t *)event;
 
-                    engine->process_key_up(keyEvent->detail);
+                    //engine->process_key_up(keyEvent->detail);
                 }
                 break;
             }
@@ -341,9 +342,13 @@ int main(int argc, char* argv[]) {
             break;
 
         engine->update(1.0 / 60.0);
-        engine->begin_frame();
+        engine->begin_frame(1.0 / 60.0);
         engine->render(0);
     }
 
   return 0;
+}
+
+PlatformTheme platform::get_theme() {
+    return PlatformTheme::Light;
 }

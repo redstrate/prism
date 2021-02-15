@@ -1,5 +1,7 @@
 #include "materialcompiler.hpp"
 
+#include <cstring>
+
 #include "file.hpp"
 #include "log.hpp"
 #include "engine.hpp"

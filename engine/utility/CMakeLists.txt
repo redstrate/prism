@@ -14,3 +14,4 @@ set(SRC
 add_library(Utility ${SRC})
 target_link_libraries(Utility PUBLIC Math magic_enum)
 target_include_directories(Utility PUBLIC include)
+set_engine_properties(Utility)

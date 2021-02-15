@@ -1,5 +1,7 @@
 #include "string_utils.hpp"
 
+#include <algorithm>
+
 std::string remove_substring(const std::string_view string, const std::string_view substring) {
     std::string result(string);
     

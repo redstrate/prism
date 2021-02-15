@@ -348,7 +348,7 @@ void Engine::save_cutscene(const std::string_view path) {
         j["shots"].push_back(s);
     }
 
-    std::ofstream out(path);
+    std::ofstream out(path.data());
     out << j;
 }
 

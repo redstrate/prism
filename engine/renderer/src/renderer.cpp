@@ -414,7 +414,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
     sceneInfo.lightspace = scene.lightSpace;
     sceneInfo.options = Vector4(1, 0, 0, 0);
     sceneInfo.camPos = scene.get<Transform>(camera_object).get_world_position();
-    sceneInfo.camPos.w = 2.0f * camera.near * std::tanf(camera.fov * 0.5f) * (static_cast<float>(extent.width) / static_cast<float>(extent.height));
+    sceneInfo.camPos.w = 2.0f * camera.near * std::tan(camera.fov * 0.5f) * (static_cast<float>(extent.width) / static_cast<float>(extent.height));
     sceneInfo.vp =  camera.perspective * camera.view;
     
     for(const auto [obj, light] : scene.get_all<Light>()) {

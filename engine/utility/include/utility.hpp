@@ -6,6 +6,7 @@
 #include <vector>
 #include <random>
 #include <unordered_map>
+#include <cmath>
 
 #include "vector.hpp"
 
@@ -102,7 +103,7 @@ namespace utility {
         Vector3 linear = sRGB;
         for(auto& component : linear.data) {
             if(component > 0.04045f) {
-                component = std::powf((component + 0.055) / (1.055), 2.4f);
+                component = std::pow((component + 0.055) / (1.055), 2.4f);
             } else if (component <= 0.04045) {
                 component /= 12.92f;
             }
