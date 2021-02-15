@@ -845,7 +845,7 @@ GFXTexture* CommonEditor::get_mesh_preview(Mesh& mesh) {
     for(const auto& part : scene.get<Renderable>(mesh_obj).mesh->parts) {
         const auto find_biggest_component = [&biggest_component](const Vector3 vec) {
             for(auto& component : vec.data) {
-                if(std::fabsf(component) > biggest_component)
+                if(std::fabs(component) > biggest_component)
                     biggest_component = component;
             }
         };

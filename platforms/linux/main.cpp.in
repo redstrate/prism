@@ -22,6 +22,8 @@ Display *dpy = nullptr;
 int mouse_x = -1, mouse_y = -1;
 bool mouse_down[2] = {false, false};
 
+int window_width = -1, window_height = -1;
+
 xcb_connection_t* connection = nullptr;
 xcb_screen_t* screen = nullptr;
 
@@ -101,6 +103,9 @@ int platform::open_window(const std::string_view title, const prism::Rectangle r
     xcb_map_window(connection, win.window);
     xcb_flush(connection);
 
+    window_width = rect.extent.width;
+    window_height = rect.extent.height;
+    
     engine->add_window((void*)&win, 0, rect.extent);
     app->initialize_render();
 
@@ -131,9 +136,11 @@ prism::Offset platform::get_window_position(const int index) {
 }
 
 prism::Extent platform::get_window_size(const int index) {
+    return {window_width, window_height};
 }
 
 prism::Extent platform::get_window_drawable_size(const int index) {
+    return {window_width, window_height};
 }
 
 bool platform::is_window_focused(const int index) {
