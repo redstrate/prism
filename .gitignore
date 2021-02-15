@@ -3,6 +3,9 @@ extern/SPIRV-Cross/external/
 out/
 .vs/
 
+.kdev4/
+*.kdev4
+
 build/
 *build/
 CMakeSettings.json
