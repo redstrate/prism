@@ -12,3 +12,8 @@ jobs:
         - run: /bin/bash mkdir -p build
         - run: /bin/bash cmake ..
         - run: /bin/bash make
+
+    windows:
+        runs-on: windows-latest
+        steps:
+        - uses: actions/checkout@v2
