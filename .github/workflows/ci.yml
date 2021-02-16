@@ -15,7 +15,7 @@ jobs:
         - name: Update package list
           run: sudo apt update
         - name: Install Vulkan SDK
-          run: sudo apt install vulkan-sdk
+          run: sudo apt install -f vulkan-sdk
         - name: Configure
           run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release
         - name: Build
