@@ -11,7 +11,7 @@ jobs:
         - name: Download LunarG key
           run: wget -qO - https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
         - name: Add LunarG Vulkan repository
-          run: sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-focal.list https://packages.lunarg.com/vulkan/lunarg-vulkan-focal.list
+          run: sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-bionic.list https://packages.lunarg.com/vulkan/lunarg-vulkan-bionic.list
         - name: Update package list
           run: sudo apt update
         - name: Install Vulkan SDK
