@@ -229,6 +229,8 @@ struct GFXRenderPassCreateInfo {
     std::string label;
 
     std::vector<GFXPixelFormat> attachments;
+    
+    bool will_use_in_shader = false;
 };
 
 enum class GFXBorderColor {

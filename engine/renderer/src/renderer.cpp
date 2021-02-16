@@ -500,8 +500,6 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
 
             command_buffer->bind_texture(scene.depthTexture, 2);
             command_buffer->bind_texture(scene.pointLightArray, 3);
-            command_buffer->bind_sampler(shadow_pass->shadow_sampler, 4);
-            command_buffer->bind_sampler(shadow_pass->pcf_sampler, 5);
             command_buffer->bind_texture(scene.spotLightArray, 6);
             command_buffer->bind_texture(scene.irradianceCubeArray, 7);
             command_buffer->bind_texture(scene.prefilteredCubeArray, 8);
@@ -725,11 +723,9 @@ void Renderer::create_mesh_pipeline(Material& material) {
     pipelineInfo.shader_input.bindings = {
         {1, GFXBindingType::StorageBuffer},
         {0, GFXBindingType::PushConstant},
-        {2, GFXBindingType::SampledImage},
-        {3, GFXBindingType::SampledImage},
-        {4, GFXBindingType::Sampler},
-        {5, GFXBindingType::Sampler},
-        {6, GFXBindingType::SampledImage},
+        {2, GFXBindingType::Texture},
+        {3, GFXBindingType::Texture},
+        {6, GFXBindingType::Texture},
         {7, GFXBindingType::Texture},
         {8, GFXBindingType::Texture},
         {9, GFXBindingType::Texture}
@@ -786,6 +782,7 @@ void Renderer::createOffscreenResources() {
     renderPassInfo.label = "Offscreen";
 	renderPassInfo.attachments.push_back(GFXPixelFormat::RGBA_32F);
 	renderPassInfo.attachments.push_back(GFXPixelFormat::DEPTH_32F);
+    renderPassInfo.will_use_in_shader = true;
 
 	offscreenRenderPass = gfx->create_render_pass(renderPassInfo);
     
@@ -826,6 +823,7 @@ void Renderer::createOffscreenResources() {
         GFXRenderPassCreateInfo renderPassInfo = {};
         renderPassInfo.label = "Viewport";
         renderPassInfo.attachments.push_back(GFXPixelFormat::RGBA8_UNORM);
+        renderPassInfo.will_use_in_shader = true;
 
         viewportRenderPass = gfx->create_render_pass(renderPassInfo);
 
@@ -1021,6 +1019,7 @@ void Renderer::createBRDF() {
     GFXRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.label = "BRDF Gen";
     renderPassInfo.attachments.push_back(GFXPixelFormat::R8G8_SFLOAT);
+    renderPassInfo.will_use_in_shader = true;
     
     brdfRenderPass = gfx->create_render_pass(renderPassInfo);
     

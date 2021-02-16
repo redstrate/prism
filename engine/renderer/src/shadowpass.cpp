@@ -30,13 +30,6 @@ ShadowPass::ShadowPass(GFX* gfx) {
     create_render_passes();
     create_pipelines();
     create_offscreen_resources();
-    
-    GFXSamplerCreateInfo sampler_info = {};
-    sampler_info.samplingMode = SamplingMode::ClampToBorder;
-    sampler_info.border_color = GFXBorderColor::OpaqueWhite;
-    
-    shadow_sampler = gfx->create_sampler(sampler_info);
-    pcf_sampler = gfx->create_sampler(sampler_info); // unused atm
 }
 
 void ShadowPass::create_scene_resources(Scene& scene) {
@@ -304,6 +297,7 @@ void ShadowPass::create_render_passes() {
     GFXRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.label = "Shadow";
     renderPassInfo.attachments.push_back(GFXPixelFormat::DEPTH_32F);
+    renderPassInfo.will_use_in_shader = true;
     
     render_pass = gfx->create_render_pass(renderPassInfo);
     

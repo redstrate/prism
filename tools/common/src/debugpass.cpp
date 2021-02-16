@@ -102,7 +102,8 @@ void DebugPass::initialize() {
         GFXRenderPassCreateInfo renderPassInfo = {};
         renderPassInfo.label = "Sobel";
         renderPassInfo.attachments.push_back(GFXPixelFormat::R8_UNORM);
-
+        renderPassInfo.will_use_in_shader = true;
+        
         sobelRenderPass = engine->get_gfx()->create_render_pass(renderPassInfo);
 
         // pipeline

@@ -75,6 +75,7 @@ SceneCapture::SceneCapture(GFX* gfx) {
     renderPassInfo.label = "Scene Capture Cube";
     renderPassInfo.attachments.push_back(GFXPixelFormat::R8G8B8A8_UNORM);
     renderPassInfo.attachments.push_back(GFXPixelFormat::DEPTH_32F);
+    renderPassInfo.will_use_in_shader = true;
 
     renderPass = gfx->create_render_pass(renderPassInfo);
     
@@ -268,8 +269,6 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                                 command_buffer->bind_shader_buffer(sceneBuffer, 0, 1, sizeof(SceneInformation));
                                 command_buffer->bind_texture(scene->depthTexture, 2);
                                 command_buffer->bind_texture(scene->pointLightArray, 3);
-                                command_buffer->bind_sampler(engine->get_renderer()->shadow_pass->shadow_sampler, 4);
-                                command_buffer->bind_sampler(engine->get_renderer()->shadow_pass->pcf_sampler, 5);
                                 command_buffer->bind_texture(scene->spotLightArray, 6);
 
                                 command_buffer->set_push_constant(&pc, sizeof(PushConstant));
@@ -289,11 +288,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 }
                 
                 // render sky
-                struct SkyPushConstant {
-                    Matrix4x4 view;
-                    Vector4 sun_position_fov;
-                    float aspect;
-                } pc;
+                SkyPushConstant pc;
                 
                 pc.view = sceneTransforms[face];
                 pc.aspect = 1.0f;
@@ -436,6 +431,7 @@ void SceneCapture::createIrradianceResources() {
     GFXRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.label = "Irradiance";
     renderPassInfo.attachments.push_back(GFXPixelFormat::R8G8B8A8_UNORM);
+    renderPassInfo.will_use_in_shader = true;
 
     irradianceRenderPass = gfx->create_render_pass(renderPassInfo);
 

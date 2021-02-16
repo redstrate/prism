@@ -187,10 +187,8 @@ layout(std430, binding = 1) buffer readonly SceneInformation {\n \
     Probe probes[max_probes];\n \
     int numLights;\n \
 } scene;\n \
-layout (binding = 2) uniform texture2D sun_shadow;\n \
-layout (binding = 4) uniform sampler shadow_sampler;\n \
-layout (binding = 5) uniform samplerShadow pcf_sampler;\n \
-layout (binding = 6) uniform texture2DArray spot_shadow;\n \
+layout (binding = 2) uniform sampler2D sun_shadow;\n \
+layout (binding = 6) uniform sampler2DArray spot_shadow;\n \
 layout(push_constant, binding = 0) uniform PushConstant {\n \
     mat4 model;\n \
 };\n";
@@ -223,7 +221,7 @@ ShaderSource MaterialCompiler::compile_material_fragment(Material& material, boo
     
     if(render_options.enable_point_shadows) {
         src += "#define POINT_SHADOWS_SUPPORTED\n";
-        src += "layout (binding = 3) uniform textureCubeArray point_shadow;\n";
+        src += "layout (binding = 3) uniform samplerCubeArray point_shadow;\n";
     }
 
     src += struct_info;

@@ -443,8 +443,8 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 	// create sampler
 	VkSamplerCreateInfo samplerInfo = {};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	samplerInfo.magFilter = VK_FILTER_LINEAR;
-	samplerInfo.minFilter = VK_FILTER_LINEAR;
+	samplerInfo.magFilter = VK_FILTER_NEAREST;
+    samplerInfo.minFilter = VK_FILTER_NEAREST;
     samplerInfo.addressModeU = samplerMode;
     samplerInfo.addressModeV = samplerMode;
     samplerInfo.addressModeW = samplerMode;
@@ -644,11 +644,15 @@ GFXRenderPass* GFXVulkan::create_render_pass(const GFXRenderPassCreateInfo& info
 		attachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 		attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 		attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-
-        if (isDepthAttachment)
-            attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
-		else
-			attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        
+        if(info.will_use_in_shader) {
+            attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        } else {
+            if (isDepthAttachment)
+                attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+            else
+                attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        }
 
 		VkAttachmentReference attachmentRef = {};
 		attachmentRef.attachment = i;
@@ -1701,11 +1705,7 @@ void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSe
 		GFXVulkanTexture* vulkanTexture = (GFXVulkanTexture*)texture;
 
 		VkDescriptorImageInfo imageInfo = {};
-		imageInfo.imageLayout = vulkanTexture->layout;
-
-		// color attachments are not the right layout
-		if (imageInfo.imageLayout == VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL)
-			imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+        imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
 		imageInfo.imageView = vulkanTexture->view;
 		imageInfo.sampler = vulkanTexture->sampler;

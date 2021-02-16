@@ -67,7 +67,7 @@ struct ComputedLightInformation {
 float pcf_sun(const vec4 shadowCoords, const float uvRadius) {
     float sum = 0;
     for(int i = 0; i < 16; i++) {
-        const float z = texture(sampler2D(sun_shadow, shadow_sampler), shadowCoords.xy + PoissonOffsets[i] * uvRadius).r;
+        const float z = texture(sun_shadow, shadowCoords.xy + PoissonOffsets[i] * uvRadius).r;
         sum += (z < (shadowCoords.z - 0.005)) ? 0.0 : 1.0;
     }
     
@@ -92,7 +92,7 @@ void blocker_distance_sun(const vec3 shadowCoords, const float uvLightSize, inou
     blockers = 0;
     
     for(int i = 0; i < numBlockerSearchSamples; i++) {
-        const float z = texture(sampler2D(sun_shadow, shadow_sampler),
+        const float z = texture(sun_shadow,
                                 shadowCoords.xy + PoissonOffsets[i] * searchWidth).r;
         if(z < shadowCoords.z) {
             blockerSum += z;
@@ -127,7 +127,7 @@ ComputedLightInformation calculate_sun(Light light) {
 
         if(shadowCoords.z > -1.0 && shadowCoords.z < 1.0) {
 #ifdef SHADOW_FILTER_NONE
-            shadow = (texture(sampler2D(sun_shadow, shadow_sampler), shadowCoords.xy).r < shadowCoords.z - 0.005) ? 0.0 : 1.0;
+            shadow = (texture(sun_shadow, shadowCoords.xy).r < shadowCoords.z - 0.005) ? 0.0 : 1.0;
 #endif
 #ifdef SHADOW_FILTER_PCF
             shadow = pcf_sun(shadowCoords, 0.1);
@@ -146,7 +146,7 @@ ComputedLightInformation calculate_sun(Light light) {
 float pcf_spot(const vec4 shadowCoords, const int index, const float uvRadius) {
     float sum = 0;
     for(int i = 0; i < 16; i++) {
-        const float z = texture(sampler2DArray(spot_shadow, shadow_sampler), vec3(shadowCoords.xy + PoissonOffsets[i] * uvRadius, index)).r;
+        const float z = texture(spot_shadow, vec3(shadowCoords.xy + PoissonOffsets[i] * uvRadius, index)).r;
         sum += (z < (shadowCoords.z - 0.001)) ? 0.0 : 1.0;
     }
     
@@ -161,7 +161,7 @@ void blocker_distance_spot(const vec3 shadowCoords, const int index, const float
     blockers = 0;
     
     for(int i = 0; i < numBlockerSearchSamples; i++) {
-        const float z = texture(sampler2DArray(spot_shadow, shadow_sampler),
+        const float z = texture(spot_shadow,
                                 vec3(shadowCoords.xy + PoissonOffsets[i] * searchWidth, index)).r;
         if(z < shadowCoords.z) {
             blockerSum += z;
@@ -198,7 +198,7 @@ ComputedLightInformation calculate_spot(Light light) {
         const vec4 shadowCoord = fragPostSpotLightSpace[last_spot_light] / fragPostSpotLightSpace[last_spot_light].w;
 
 #ifdef SHADOW_FILTER_NONE
-            shadow = (texture(sampler2DArray(spot_shadow, shadow_sampler), vec3(shadowCoord.xy, last_spot_light)).r < shadowCoord.z) ? 0.0 : 1.0;
+            shadow = (texture(spot_shadow, vec3(shadowCoord.xy, last_spot_light)).r < shadowCoord.z) ? 0.0 : 1.0;
 #endif
 #ifdef SHADOW_FILTER_PCF
             shadow = pcf_spot(shadowCoord, last_spot_light, 0.01);
@@ -227,7 +227,7 @@ ComputedLightInformation calculate_spot(Light light) {
 float pcf_point(const vec3 shadowCoords, const int index, const float uvRadius) {
     float sum = 0;
     for(int i = 0; i < 16; i++) {
-        const float z = texture(samplerCubeArray(point_shadow, shadow_sampler), vec4(shadowCoords.xyz + vec3(PoissonOffsets[i].xy, PoissonOffsets[i].x) * uvRadius, index)).r;
+        const float z = texture(point_shadow, vec4(shadowCoords.xyz + vec3(PoissonOffsets[i].xy, PoissonOffsets[i].x) * uvRadius, index)).r;
         sum += (z < length(shadowCoords) - 0.05) ? 0.0 : 1.0;
     }
     
@@ -242,7 +242,7 @@ void blocker_distance_point(const vec3 shadowCoords, const int index, const floa
     blockers = 0;
     
     for(int i = 0; i < numBlockerSearchSamples; i++) {
-        const float z = texture(samplerCubeArray(point_shadow, shadow_sampler),
+        const float z = texture(point_shadow,
                                 vec4(shadowCoords + vec3(PoissonOffsets[i], PoissonOffsets[i].x) * searchWidth, index)).r;
         if(z < length(shadowCoords)) {
             blockerSum += z;
@@ -283,7 +283,7 @@ ComputedLightInformation calculate_point(Light light) {
 #ifdef POINT_SHADOWS_SUPPORTED
     if(light.shadowsEnable.x == 1.0) {
 #ifdef SHADOW_FILTER_NONE
-        const float sampledDist = texture(samplerCubeArray(point_shadow, shadow_sampler), vec4(lightVec, last_point_light++)).r;
+        const float sampledDist = texture(point_shadow, vec4(lightVec, last_point_light++)).r;
         const float dist = length(lightVec);
         
         shadow = (dist <= sampledDist + 0.05) ? 1.0 : 0.0;
