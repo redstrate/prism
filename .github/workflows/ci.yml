@@ -9,7 +9,7 @@ jobs:
         steps:
         - uses: actions/checkout@v2
         - run: sudo apt-get install -y cmake
-        - run: mkdir -p build
+        - run: mkdir -p build && cd build
         - run: cmake ..
         - run: make
 
