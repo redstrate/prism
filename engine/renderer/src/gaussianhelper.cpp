@@ -14,8 +14,8 @@ GaussianHelper::GaussianHelper(GFX* gfx, const prism::Extent extent) : extent(ex
     // pipeline
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Gaussian";
-    pipelineInfo.shaders.vertex_path = "gaussian.vert";
-    pipelineInfo.shaders.fragment_path = "gaussian.frag";
+    pipelineInfo.shaders.vertex_src = file::Path("gaussian.vert");
+    pipelineInfo.shaders.fragment_src = file::Path("gaussian.frag");
 
     pipelineInfo.rasterization.primitive_type = GFXPrimitiveType::TriangleStrip;
 

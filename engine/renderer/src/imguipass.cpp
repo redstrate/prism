@@ -22,8 +22,8 @@ void ImGuiPass::initialize() {
 void ImGuiPass::resize(const prism::Extent extent) {
     GFXGraphicsPipelineCreateInfo createInfo;
     createInfo.label = "ImGui";
-    createInfo.shaders.vertex_path = "imgui.vert";
-    createInfo.shaders.fragment_path = "imgui.frag";
+    createInfo.shaders.vertex_src = file::Path("imgui.vert");
+    createInfo.shaders.fragment_src = file::Path("imgui.frag");
 
     GFXVertexInput vertexInput = {};
     vertexInput.stride = sizeof(ImDrawVert);

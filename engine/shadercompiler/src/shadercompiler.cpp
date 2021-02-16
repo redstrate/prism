@@ -9,14 +9,14 @@
 #include "includer.hpp"
 #include "defaultresources.hpp"
 
-static inline std::string include_path;
+static inline std::vector<std::string> include_path;
 
 ShaderCompiler::ShaderCompiler() {
     glslang::InitializeProcess();
 }
 
 void ShaderCompiler::set_include_path(const std::string_view path) {
-    include_path = path;
+    include_path.push_back(path.data());
 }
 
 const std::vector<uint32_t> compile_glsl_to_spv(const std::string_view source_string, const EShLanguage shader_language, const CompileOptions& options) {
@@ -50,7 +50,8 @@ const std::vector<uint32_t> compile_glsl_to_spv(const std::string_view source_st
     EShMessages messages = (EShMessages) (EShMsgDefault);
     
     DirStackFileIncluder includer;
-    includer.pushExternalLocalDirectory(include_path);
+    for(auto path : include_path)
+        includer.pushExternalLocalDirectory(path);
 
     if (!Shader.parse(&Resources, 100, false, messages, includer)) {
         console::error(System::Renderer, "{}", Shader.getInfoLog());

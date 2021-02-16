@@ -315,7 +315,7 @@ void ShadowPass::create_pipelines() {
 
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.shaders.vertex_constants = {point_light_max_constant};
-    pipelineInfo.shaders.vertex_path = "shadow.vert";
+    pipelineInfo.shaders.vertex_src = file::Path("shadow.vert");
 
     pipelineInfo.shaders.fragment_constants = { point_light_max_constant };
     //pipelineInfo.shaders.fragment_path = "shadow.frag";
@@ -360,7 +360,7 @@ void ShadowPass::create_pipelines() {
     {
         pipelineInfo.label = "Point Shadow";
 
-        pipelineInfo.shaders.fragment_path = "omnishadow.frag";
+        pipelineInfo.shaders.fragment_src = file::Path("omnishadow.frag");
         
         auto [static_pipeline, skinned_pipeline] = material_compiler.create_pipeline_permutations(pipelineInfo, true);
         

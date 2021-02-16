@@ -27,9 +27,9 @@ DoFPass::DoFPass(GFX* gfx, Renderer* renderer) : renderer(renderer) {
     height_constant.value = extent.height;
     
     GFXGraphicsPipelineCreateInfo create_info = {};
-    create_info.shaders.vertex_path = "dof.vert";
+    create_info.shaders.vertex_src = file::Path("dof.vert");
     create_info.shaders.vertex_constants = {width_constant, height_constant};
-    create_info.shaders.fragment_path = "dof.frag";
+    create_info.shaders.fragment_src = file::Path("dof.frag");
     
     create_info.shader_input.bindings = {
         {0, GFXBindingType::StorageImage},

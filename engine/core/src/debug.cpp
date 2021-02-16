@@ -11,6 +11,13 @@
 #include "imgui_utility.hpp"
 #include "scene.hpp"
 #include "renderer.hpp"
+#include "file.hpp"
+
+struct Options {
+    std::string shader_source_path;
+};
+
+static inline Options options;
 
 void draw_general() {
     ImGui::Text("Platform: %s", platform::get_name());
@@ -145,6 +152,51 @@ void draw_renderer() {
     }
 }
 
+static inline std::string selected_shader;
+static inline std::string loaded_shader_string;
+
+void draw_shader_editor() {
+    if(options.shader_source_path.empty()) {
+        ImGui::Text("You haven't specified a shader source path yet. Please select one below:");
+        if(ImGui::Button("Select Path")) {
+            platform::open_dialog(false, [](std::string path) {
+                // open_dialog() can't select folders yet, so use this as a workaround
+                options.shader_source_path = file::Path(path).parent_path().string();
+            });
+        }
+    } else {
+        if(ImGui::BeginCombo("Select", nullptr)) {
+            for(auto& shader : engine->get_renderer()->registered_shaders) {
+                if(ImGui::Selectable(shader.filename.data())) {
+                    selected_shader = shader.filename;
+                    loaded_shader_string.clear();
+                }
+            }
+            
+            ImGui::EndCombo();
+        }
+        
+        if(!selected_shader.empty()) {
+            if(loaded_shader_string.empty()) {
+                file::Path base_shader_path = options.shader_source_path;
+                
+                shader_compiler.set_include_path(base_shader_path.string());
+                
+                file::Path shader_path = file::Path(selected_shader);
+                
+                auto file = file::open(base_shader_path / shader_path.replace_extension(shader_path.extension().string() + ".glsl"));
+                
+                loaded_shader_string = file->read_as_string();
+            }
+            
+            ImGui::InputTextMultiline("Source", &loaded_shader_string);
+            
+            if(ImGui::Button("Reload"))
+                engine->get_renderer()->reload_shader(selected_shader, loaded_shader_string);
+        }
+    }
+}
+
 void draw_debug_ui() {
     if(ImGui::Begin("General"))
         draw_general();
@@ -165,4 +217,21 @@ void draw_debug_ui() {
         draw_renderer();
         
     ImGui::End();
+    
+    if(ImGui::Begin("Shader Editor"))
+        draw_shader_editor();
+    
+    ImGui::End();
+}
+
+void load_debug_options() {
+    // stub
+}
+
+void save_debug_options() {
+    // stub
+}
+
+std::string_view get_shader_source_directory() {
+    return options.shader_source_path;
 }

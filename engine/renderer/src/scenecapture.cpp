@@ -399,8 +399,8 @@ void SceneCapture::createSkyResources() {
     pipelineInfo.label = "Sky Scene Capture";
     pipelineInfo.render_pass = renderPass;
     
-    pipelineInfo.shaders.vertex_path = "sky.vert";
-    pipelineInfo.shaders.fragment_path = "sky.frag";
+    pipelineInfo.shaders.vertex_src = file::Path("sky.vert");
+    pipelineInfo.shaders.fragment_src = file::Path("sky.frag");
     
     pipelineInfo.shader_input.bindings = {
         {1, GFXBindingType::PushConstant}
@@ -443,8 +443,8 @@ void SceneCapture::createIrradianceResources() {
 
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Irradiance Convolution";
-    pipelineInfo.shaders.vertex_path = "irradiance.vert";
-    pipelineInfo.shaders.fragment_path = "irradiance.frag";
+    pipelineInfo.shaders.vertex_src = file::Path("irradiance.vert");
+    pipelineInfo.shaders.fragment_src = file::Path("irradiance.frag");
     
     GFXVertexInput input;
     input.stride = sizeof(Vector3);
@@ -495,8 +495,8 @@ void SceneCapture::createPrefilterResources() {
     
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Prefilter";
-    pipelineInfo.shaders.vertex_path = "filter.vert";
-    pipelineInfo.shaders.fragment_path = "filter.frag";
+    pipelineInfo.shaders.vertex_src = file::Path("filter.vert");
+    pipelineInfo.shaders.fragment_src = file::Path("filter.frag");
     
     pipelineInfo.shaders.fragment_constants = {size_constant};
     

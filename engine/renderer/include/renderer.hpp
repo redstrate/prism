@@ -10,6 +10,7 @@
 #include "common.hpp"
 #include "render_options.hpp"
 #include "path.hpp"
+#include "shadercompiler.hpp"
 
 namespace ui {
     class Screen;
@@ -128,7 +129,21 @@ public:
     GFXRenderPass* unormRenderPass = nullptr;
     GFXPipeline* renderToUnormTexturePipeline = nullptr;
     GFXRenderPass* viewportRenderPass = nullptr;
-
+    
+    ShaderSource register_shader(const std::string_view shader_file);
+    void associate_shader_reload(const std::string_view shader_file, const std::function<void()> reload_function);
+    void reload_shader(const std::string_view shader_file, const std::string_view shader_source);
+    
+    struct RegisteredShader {
+        std::string filename;
+        std::string injected_shader_source;
+        std::function<void()> reload_function;
+    };
+    
+    std::vector<RegisteredShader> registered_shaders;
+    
+    bool reloading_shader = false;
+    
 private:
     void createDummyTexture();
     void createOffscreenResources();

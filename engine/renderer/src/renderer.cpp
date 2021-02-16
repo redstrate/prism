@@ -24,6 +24,7 @@
 #include "frustum.hpp"
 #include "shadercompiler.hpp"
 #include "asset.hpp"
+#include "debug.hpp"
 
 struct ElementInstance {
     Vector4 color;
@@ -710,8 +711,8 @@ void Renderer::create_mesh_pipeline(Material& material) {
     
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Mesh";
-    pipelineInfo.shaders.vertex_path = "mesh.vert";
-    pipelineInfo.shaders.fragment_path = "mesh.frag";
+    pipelineInfo.shaders.vertex_src = file::Path("mesh.vert");
+    pipelineInfo.shaders.fragment_src = file::Path("mesh.frag");
     
     pipelineInfo.shaders.vertex_constants = {materials_constant, lights_constant, spot_lights_constant, probes_constant};
     pipelineInfo.shaders.fragment_constants = {materials_constant, lights_constant, spot_lights_constant, probes_constant};
@@ -738,7 +739,6 @@ void Renderer::create_mesh_pipeline(Material& material) {
     pipelineInfo.blending.dst_rgb = GFXBlendFactor::OneMinusSrcAlpha;
     
     pipelineInfo.shaders.fragment_src = material_compiler.compile_material_fragment(material);
-    pipelineInfo.shaders.fragment_path = "";
 
     for (auto [index, texture] : material.bound_textures) {
         GFXShaderBinding binding;
@@ -852,8 +852,8 @@ void Renderer::createPostPipeline() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Post";
 
-    pipelineInfo.shaders.vertex_path = "post.vert";
-    pipelineInfo.shaders.fragment_path = "post.frag";
+    pipelineInfo.shaders.vertex_src = file::Path("post.vert");
+    pipelineInfo.shaders.fragment_src = file::Path("post.frag");
 
     pipelineInfo.shader_input.bindings = {
         {4, GFXBindingType::PushConstant},
@@ -904,8 +904,8 @@ void Renderer::createFontPipeline() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Text";
 
-    pipelineInfo.shaders.vertex_path = "text.vert";
-    pipelineInfo.shaders.fragment_path = "text.frag";
+    pipelineInfo.shaders.vertex_src = file::Path("text.vert");
+    pipelineInfo.shaders.fragment_src = file::Path("text.frag");
 
     pipelineInfo.rasterization.primitive_type = GFXPrimitiveType::TriangleStrip;
 
@@ -950,8 +950,8 @@ void Renderer::createSkyPipeline() {
     pipelineInfo.label = "Sky";
     pipelineInfo.render_pass = offscreenRenderPass;
 
-    pipelineInfo.shaders.vertex_path = "sky.vert";
-    pipelineInfo.shaders.fragment_path = "sky.frag";
+    pipelineInfo.shaders.vertex_src = register_shader("sky.vert");
+    pipelineInfo.shaders.fragment_src = register_shader("sky.frag");
 
     pipelineInfo.shader_input.bindings = {
         {1, GFXBindingType::PushConstant}
@@ -964,14 +964,22 @@ void Renderer::createSkyPipeline() {
     pipelineInfo.depth.depth_mode = GFXDepthMode::LessOrEqual;
 
     skyPipeline = gfx->create_graphics_pipeline(pipelineInfo);
+    
+    associate_shader_reload("sky.vert", [this] {
+        createSkyPipeline();
+    });
+    
+    associate_shader_reload("sky.frag", [this] {
+        createSkyPipeline();
+    });
 }
 
 void Renderer::createUIPipeline() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "UI";
 
-    pipelineInfo.shaders.vertex_path = "ui.vert";
-    pipelineInfo.shaders.fragment_path = "ui.frag";
+    pipelineInfo.shaders.vertex_src = file::Path("ui.vert");
+    pipelineInfo.shaders.fragment_src = file::Path("ui.frag");
 
     pipelineInfo.rasterization.primitive_type = GFXPrimitiveType::TriangleStrip;
 
@@ -1026,8 +1034,8 @@ void Renderer::createBRDF() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "BRDF";
     
-    pipelineInfo.shaders.vertex_path = "brdf.vert";
-    pipelineInfo.shaders.fragment_path = "brdf.frag";
+    pipelineInfo.shaders.vertex_src = file::Path("brdf.vert");
+    pipelineInfo.shaders.fragment_src = file::Path("brdf.frag");
     
     pipelineInfo.render_pass = brdfRenderPass;
     
@@ -1099,4 +1107,65 @@ void Renderer::create_histogram_resources() {
     texture_info.usage = GFXTextureUsage::Sampled | GFXTextureUsage::ShaderWrite;
     
     average_luminance_texture = gfx->create_texture(texture_info);
+}
+
+ShaderSource Renderer::register_shader(const std::string_view shader_file) {
+    if(!reloading_shader) {
+        RegisteredShader shader;
+        shader.filename = shader_file;
+        
+        registered_shaders.push_back(shader);
+    }
+    
+    std::string found_shader_source;
+    for(auto& shader : registered_shaders) {
+        if(shader.filename == shader_file) {
+            found_shader_source = shader.injected_shader_source;
+        }
+    }
+    
+    file::Path base_shader_path = get_shader_source_directory();
+    
+    // if shader editor system is not initialized, use prebuilt shaders
+    if(base_shader_path.empty())
+        return file::Path(shader_file);
+    
+    shader_compiler.set_include_path(base_shader_path.string());
+    
+    file::Path shader_path = file::Path(shader_file);
+    
+    ShaderStage stage;
+    if(shader_path.extension() == ".vert")
+        stage = ShaderStage::Vertex;
+    else if(shader_path.extension() == ".frag")
+        stage = ShaderStage::Fragment;
+
+    if(found_shader_source.empty()) {
+        auto file = file::open(base_shader_path / shader_path.replace_extension(shader_path.extension().string() + ".glsl"));
+        
+        return shader_compiler.compile(ShaderLanguage::GLSL, stage, file->read_as_string(), ShaderLanguage::MSL).value();
+    } else {
+        return shader_compiler.compile(ShaderLanguage::GLSL, stage, found_shader_source, ShaderLanguage::MSL).value();
+    }
+}
+
+void Renderer::associate_shader_reload(const std::string_view shader_file, const std::function<void()> reload_function) {
+    if(reloading_shader)
+        return;
+    
+    for(auto& shader : registered_shaders) {
+        if(shader.filename == shader_file)
+            shader.reload_function = reload_function;
+    }
+}
+
+void Renderer::reload_shader(const std::string_view shader_file, const std::string_view shader_source) {
+    for(auto& shader : registered_shaders) {
+        if(shader.filename == shader_file) {
+            shader.injected_shader_source = shader_source;
+            reloading_shader = true;
+            shader.reload_function();
+            reloading_shader = false;
+        }
+    }
 }

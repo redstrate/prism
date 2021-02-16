@@ -36,7 +36,7 @@ ShaderSource get_shader(std::string filename, bool skinned, bool cubemap) {
 
 GFXPipeline* MaterialCompiler::create_static_pipeline(GFXGraphicsPipelineCreateInfo createInfo, bool positions_only, bool cubemap) {
     // take vertex src
-    std::string vertex_path = createInfo.shaders.vertex_path.data();
+    std::string vertex_path = createInfo.shaders.vertex_src.as_path().string();
     vertex_path += ".glsl";
 
     if (positions_only)
@@ -46,7 +46,6 @@ GFXPipeline* MaterialCompiler::create_static_pipeline(GFXGraphicsPipelineCreateI
         createInfo.label += "cubemap ver";
     
     createInfo.shaders.vertex_src = get_shader(vertex_path, false, cubemap);
-    createInfo.shaders.vertex_path = "";
     
     if(positions_only) {
         createInfo.vertex_input.inputs = {
@@ -81,11 +80,10 @@ GFXPipeline* MaterialCompiler::create_skinned_pipeline(GFXGraphicsPipelineCreate
     createInfo.label += " (Skinned)";
     
     // take vertex src
-    std::string vertex_path = createInfo.shaders.vertex_path.data();
+    std::string vertex_path = createInfo.shaders.vertex_src.as_path().string();
     vertex_path += ".glsl";
     
     createInfo.shaders.vertex_src = get_shader(vertex_path, true, false);
-    createInfo.shaders.vertex_path = "";
      
     createInfo.shader_input.bindings.push_back({ 14, GFXBindingType::StorageBuffer });
     

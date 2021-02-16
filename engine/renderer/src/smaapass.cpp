@@ -112,8 +112,8 @@ void SMAAPass::create_pipelines() {
 
     GFXGraphicsPipelineCreateInfo createInfo = {};
     createInfo.label = "SMAA Edge";
-    createInfo.shaders.vertex_path = "edge.vert";
-    createInfo.shaders.fragment_path = "edge.frag";
+    createInfo.shaders.vertex_src = file::Path("edge.vert");
+    createInfo.shaders.fragment_src = file::Path("edge.frag");
     
     createInfo.render_pass = render_pass;
     
@@ -130,8 +130,8 @@ void SMAAPass::create_pipelines() {
     edge_pipeline = gfx->create_graphics_pipeline(createInfo);
     
     createInfo.label = "SMAA Blend";
-    createInfo.shaders.vertex_path = "blend.vert";
-    createInfo.shaders.fragment_path = "blend.frag";
+    createInfo.shaders.vertex_src = file::Path("blend.vert");
+    createInfo.shaders.fragment_src = file::Path("blend.frag");
     createInfo.shader_input.bindings.push_back({3, GFXBindingType::Texture});
     
     blend_pipeline = gfx->create_graphics_pipeline(createInfo);

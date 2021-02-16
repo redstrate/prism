@@ -443,17 +443,17 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
     
     MTLRenderPipelineDescriptor *pipelineDescriptor = [MTLRenderPipelineDescriptor new];
     
-    const bool has_vertex_stage = !info.shaders.vertex_path.empty() || !info.shaders.vertex_src.empty();
-    const bool has_fragment_stage = !info.shaders.fragment_path.empty() || !info.shaders.fragment_src.empty();
+    const bool has_vertex_stage = !info.shaders.vertex_src.empty();
+    const bool has_fragment_stage = !info.shaders.fragment_src.empty();
     
     if(has_vertex_stage) {
         id<MTLLibrary> vertexLibrary;
         {
             std::string vertex_src;
-            if(info.shaders.vertex_path.empty()) {
+            if(info.shaders.vertex_src.is_string()) {
                 vertex_src = info.shaders.vertex_src.as_string();
             } else {
-                const auto vertex_path = utility::format("{}.msl", info.shaders.vertex_path);
+                const auto vertex_path = utility::format("{}.msl", info.shaders.vertex_src.as_path().string());
                 
                 auto file = file::open(file::internal_domain / vertex_path);
                 if(file != std::nullopt) {
@@ -471,8 +471,8 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
             
             id<MTLFunction> vertexFunc = [vertexLibrary newFunctionWithName:@"main0" constantValues:vertex_constants error:nil];
                         
-            if(debug_enabled)
-                vertexFunc.label = [NSString stringWithFormat:@"%s", info.shaders.vertex_path.data()];
+            if(debug_enabled && info.shaders.vertex_src.is_path())
+                vertexFunc.label = [NSString stringWithFormat:@"%s", info.shaders.vertex_src.as_path().string().data()];
             
             pipelineDescriptor.vertexFunction = vertexFunc;
         }
@@ -482,10 +482,10 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
         id<MTLLibrary> fragmentLibrary;
         {
             std::string fragment_src;
-            if(info.shaders.fragment_path.empty()) {
+            if(info.shaders.fragment_src.is_string()) {
                 fragment_src = info.shaders.fragment_src.as_string();
             } else {
-                const auto fragment_path = utility::format("{}.msl", info.shaders.fragment_path);
+                const auto fragment_path = utility::format("{}.msl", info.shaders.fragment_src.as_path().string());
                 
                 auto file = file::open(file::internal_domain / fragment_path);
                 if(file != std::nullopt) {
@@ -504,8 +504,8 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
         
         id<MTLFunction> fragmentFunc = [fragmentLibrary newFunctionWithName:@"main0" constantValues:fragment_constants error:nil];
         
-        if(debug_enabled)
-            fragmentFunc.label = [NSString stringWithFormat:@"%s", info.shaders.fragment_path.data()];
+        if(debug_enabled && info.shaders.fragment_src.is_path())
+            fragmentFunc.label = [NSString stringWithFormat:@"%s", info.shaders.fragment_src.as_path().string().data()];
         
         pipelineDescriptor.fragmentFunction = fragmentFunc;
     }

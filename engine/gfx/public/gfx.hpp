@@ -157,8 +157,6 @@ struct GFXGraphicsPipelineCreateInfo {
     std::string label; // only used for debug
     
     struct Shaders {
-        std::string_view vertex_path, fragment_path;
-
         ShaderSource vertex_src, fragment_src;
         
         GFXShaderConstants vertex_constants, fragment_constants;
