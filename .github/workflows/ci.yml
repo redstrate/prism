@@ -8,10 +8,13 @@ jobs:
             CXX: g++-9
         steps:
         - uses: actions/checkout@v2
-        - name: Setup Vulkan SDK
+        - name: Download LunarG key
           run: wget -qO - https://packages.lunarg.com/lunarg-signing-key-pub.asc | sudo apt-key add -
+        - name: Add LunarG Vulkan repository
           run: sudo wget -qO /etc/apt/sources.list.d/lunarg-vulkan-focal.list https://packages.lunarg.com/vulkan/lunarg-vulkan-focal.list
+        - name: Update package list
           run: sudo apt update
+        - name: Install Vulkan SDK
           run: sudo apt install vulkan-sdk
         - name: Configure
           run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release
