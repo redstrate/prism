@@ -9,9 +9,9 @@ jobs:
         steps:
         - uses: actions/checkout@v2
         - run: sudo apt-get install -y cmake
-        - run: /bin/bash mkdir -p build
-        - run: /bin/bash cmake ..
-        - run: /bin/bash make
+        - run: mkdir -p build
+        - run: cmake ..
+        - run: make
 
     windows:
         runs-on: windows-latest
