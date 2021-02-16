@@ -8,10 +8,10 @@ jobs:
             CXX: g++-9
         steps:
         - uses: actions/checkout@v2
-        - run: sudo apt-get install -y cmake
-        - run: mkdir -p build && cd build
-        - run: cmake ..
-        - run: make
+        - name: Configure
+        run: cmake -S. -Bbuild -DCMAKE_BUILD_TYPE=Release
+        - name: Build
+        run: cmake --build build --target all -v
 
     windows:
         runs-on: windows-latest
