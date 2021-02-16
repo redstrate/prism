@@ -1,0 +1,11 @@
+name: CI
+on: [push]
+jobs:
+    linux:
+        runs-on: ubuntu-latest
+        steps:
+        - uses: actions/checkout@v2
+        - run: sudo apt-get install -y cmake
+        - run: /bin/bash mkdir -p build
+        - run: /bin/bash cmake ..
+        - run: /bin/bash make
