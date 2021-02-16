@@ -3,6 +3,9 @@ on: [push]
 jobs:
     linux:
         runs-on: ubuntu-latest
+        env:
+            CC: gcc-9
+            CXX: g++-9
         steps:
         - uses: actions/checkout@v2
         - run: sudo apt-get install -y cmake
