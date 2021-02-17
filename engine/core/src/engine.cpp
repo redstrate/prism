@@ -755,6 +755,8 @@ void Engine::render(const int index) {
     if(window == nullptr)
         return;
     
+    GFXCommandBuffer* commandbuffer = _gfx->acquire_command_buffer(true);
+    
     if(index == 0) {
         if(_current_screen != nullptr && _current_screen->view_changed) {
             _renderer->update_screen();
@@ -762,11 +764,9 @@ void Engine::render(const int index) {
         }
         
         _imgui->render(0);
+        
+        _app->render(commandbuffer);
     }
-
-    GFXCommandBuffer* commandbuffer = _gfx->acquire_command_buffer(true);
-
-    _app->render(commandbuffer);
 
     if(_renderer != nullptr)
         _renderer->render(commandbuffer, _current_scene, *window->render_target, index);

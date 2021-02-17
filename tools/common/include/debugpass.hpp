@@ -47,8 +47,8 @@ class DebugPass : public Pass {
 public:
     void initialize() override;
 
-    void resize(const prism::Extent extent) override;
-    
+    void create_render_target_resources(RenderTarget& target) override;
+
 	void render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) override;
 
     void get_selected_object(int x, int y, std::function<void(SelectableObject)> callback);

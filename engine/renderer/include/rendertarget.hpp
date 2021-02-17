@@ -31,4 +31,11 @@ public:
 
     GFXFramebuffer* edge_framebuffer = nullptr;
     GFXFramebuffer* blend_framebuffer = nullptr;
+    
+    // imgui
+    GFXBuffer* vertex_buffer = nullptr;
+    int current_vertex_size = 0;
+    
+    GFXBuffer* index_buffer = nullptr;
+    int current_index_size = 0;
 };

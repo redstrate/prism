@@ -172,7 +172,7 @@ void Renderer::resize_render_target(RenderTarget& target, const prism::Extent ex
     createUIPipeline();
 
     for(auto& pass : passes)
-        pass->resize(extent);
+        pass->create_render_target_resources(target);
 }
 
 void Renderer::recreate_all_render_targets() {
@@ -224,6 +224,24 @@ void Renderer::update_screen() {
 void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarget& target, int index) {
     const auto extent = target.extent;
     const auto render_extent = target.get_render_extent();
+    
+    if(index > 0) {
+        GFXRenderPassBeginInfo beginInfo = {};
+        beginInfo.render_area.extent = render_extent;
+
+        commandbuffer->set_render_pass(beginInfo);
+        
+        Viewport viewport = {};
+        viewport.width = render_extent.width;
+        viewport.height = render_extent.height;
+        
+        commandbuffer->set_viewport(viewport);
+        
+        for(auto& pass : passes)
+            pass->render_post(commandbuffer, target, index);
+        
+        return;
+    }
 
     commandbuffer->push_group("Scene Rendering");
     
@@ -368,7 +386,7 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
     commandbuffer->push_group("Extra Passes");
     
     for(auto& pass : passes)
-        pass->render_post(commandbuffer, index);
+        pass->render_post(commandbuffer, target, index);
     
     commandbuffer->pop_group();
 }

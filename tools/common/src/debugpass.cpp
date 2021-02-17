@@ -170,8 +170,8 @@ void DebugPass::initialize() {
     }
 }
 
-void DebugPass::resize(const prism::Extent extent) {
-    this->extent = extent;
+void DebugPass::create_render_target_resources(RenderTarget& target) {
+    this->extent = target.extent;
     
     createOffscreenResources();
 }
