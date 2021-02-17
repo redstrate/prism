@@ -284,8 +284,11 @@ GFXBuffer* GFXVulkan::create_buffer(void *data, const GFXSize size, const bool d
 void GFXVulkan::copy_buffer(GFXBuffer* buffer, void* data, GFXSize offset, GFXSize size) {
 	GFXVulkanBuffer* vulkanBuffer = (GFXVulkanBuffer*)buffer;
 
-	void* mapped_data;
+	void* mapped_data = nullptr;
 	vkMapMemory(device, vulkanBuffer->memory, offset, vulkanBuffer->size - offset, 0, &mapped_data);
+    if(mapped_data == nullptr)
+        return;
+    
 	memcpy(mapped_data, data, size);
     
     VkMappedMemoryRange range = {};

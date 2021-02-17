@@ -7,6 +7,7 @@ add_platform(
     LINK_LIBRARIES
     X11
     xcb
+    xcb-randr
     Core
     GFXVulkan
     COMPILE_OPTIONS
