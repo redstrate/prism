@@ -104,8 +104,10 @@ void draw_renderer() {
     
     auto targets = engine->get_renderer()->get_all_render_targets();
     for(auto target : targets) {
+        ImGui::Text("Frame %i", target->current_frame);
         ImGui::Text("%i %i", target->extent.width, target->extent.height);
         ImGui::Image(target->offscreenColorTexture, ImVec2(100, 100));
+        ImGui::Separator();
     }
     
     ImGui::Text("Performance");

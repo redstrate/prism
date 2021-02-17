@@ -15,6 +15,29 @@
 #include "gfx.hpp"
 #include "gfx_vulkan_constants.hpp"
 
+struct NativeSurface {
+    int identifier = -1;
+    
+    void* windowNativeHandle;
+    uint32_t surfaceWidth = -1, surfaceHeight = -1;
+    
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkFence> inFlightFences;
+    size_t currentFrame = 0;
+    
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+    VkExtent2D swapchainExtent = {};
+    
+    std::vector<VkImage> swapchainImages;
+    std::vector<VkImageView> swapchainImageViews;
+    
+    VkRenderPass swapchainRenderPass = VK_NULL_HANDLE;
+    
+    std::vector<VkFramebuffer> swapchainFramebuffers;
+};
+
 class GFXVulkanPipeline;
 
 class GFXVulkan : public GFX {
@@ -64,9 +87,9 @@ public:
 private:
 	void createInstance(std::vector<const char*> layers, std::vector<const char*> extensions);
 	void createLogicalDevice(std::vector<const char*> extensions);
-	void createSwapchain(VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE);
+	void createSwapchain(NativeSurface* native_surface, VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE);
 	void createDescriptorPool();
-	void createSyncPrimitives();
+    void createSyncPrimitives(NativeSurface* native_surface);
 
 	// dynamic descriptor sets
 	void resetDescriptorState();
@@ -92,23 +115,7 @@ private:
 
 	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 
-	uint32_t surfaceWidth = -1, surfaceHeight = -1;
-
-	std::vector<VkSemaphore> imageAvailableSemaphores;
-	std::vector<VkSemaphore> renderFinishedSemaphores;
-	std::vector<VkFence> inFlightFences;
-	size_t currentFrame = 0;
-
-	VkSurfaceKHR surface = VK_NULL_HANDLE;
-	VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-	VkExtent2D swapchainExtent = {};
-
-	std::vector<VkImage> swapchainImages;
-	std::vector<VkImageView> swapchainImageViews;
-
-	VkRenderPass swapchainRenderPass = VK_NULL_HANDLE;
-
-	std::vector<VkFramebuffer> swapchainFramebuffers;
+    std::vector<NativeSurface*> native_surfaces;
 
 	std::vector<VkCommandBuffer> commandBuffers;
 

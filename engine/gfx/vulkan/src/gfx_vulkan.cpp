@@ -18,8 +18,6 @@
 #include "utility.hpp"
 #include "gfx_vulkan_commandbuffer.hpp"
 
-void* windowNativeHandle;
-
 VkFormat toVkFormat(GFXPixelFormat format) {
 	switch (format) {
     case GFXPixelFormat::R_32F:
@@ -201,34 +199,42 @@ bool GFXVulkan::initialize(const GFXCreateInfo& info) {
 	createInstance({}, enabledExtensions);
 	createLogicalDevice({ VK_KHR_SWAPCHAIN_EXTENSION_NAME });
 	createDescriptorPool();
-	createSyncPrimitives();
 
     return true;
 }
 
 void GFXVulkan::initialize_view(void* native_handle, const int identifier, const uint32_t width, const uint32_t height) {
 	vkDeviceWaitIdle(device);
+    
+    NativeSurface* surface = new NativeSurface();
+    surface->identifier = identifier;
+    surface->surfaceWidth = width;
+    surface->surfaceHeight = height;
+	surface->windowNativeHandle = native_handle;
 
-	surfaceWidth = width;
-	surfaceHeight = height;
-
-	windowNativeHandle = native_handle;
-
-	createSwapchain();
+	createSwapchain(surface);
+    createSyncPrimitives(surface);
+    
+    native_surfaces.push_back(surface);
 }
 
 void GFXVulkan::recreate_view(const int identifier, const uint32_t width, const uint32_t height) {
 	vkDeviceWaitIdle(device);
+    
+    NativeSurface* found_surface = nullptr;
+    for(auto surface : native_surfaces) {
+        if(surface->identifier == identifier)
+            found_surface = surface;
+    }
 
-	surfaceWidth = width;
-	surfaceHeight = height;
+	found_surface->surfaceWidth = width;
+    found_surface->surfaceHeight = height;
 
-	createSwapchain(swapchain);
+	createSwapchain(found_surface, found_surface->swapchain);
 }
 
 GFXBuffer* GFXVulkan::create_buffer(void *data, const GFXSize size, const bool dynamic_data, const GFXBufferUsage usage) {
 	GFXVulkanBuffer* buffer = new GFXVulkanBuffer();
-    buffer->is_dynamic_data = dynamic_data;
 
 	vkDeviceWaitIdle(device);
 
@@ -248,50 +254,28 @@ GFXBuffer* GFXVulkan::create_buffer(void *data, const GFXSize size, const bool d
 	bufferInfo.usage = bufferUsage;
 	bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
-    if(dynamic_data) {
-        for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-            vkCreateBuffer(device, &bufferInfo, nullptr, &buffer->data[i].handle);
-    } else {
-        vkCreateBuffer(device, &bufferInfo, nullptr, &buffer->data[0].handle);
-    }
+    vkCreateBuffer(device, &bufferInfo, nullptr, &buffer->handle);
 
 	buffer->size = size;
 
 	// allocate memory
 	VkMemoryRequirements memRequirements;
-	vkGetBufferMemoryRequirements(device, buffer->data[0].handle, &memRequirements);
+	vkGetBufferMemoryRequirements(device, buffer->handle, &memRequirements);
 
 	VkMemoryAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	allocInfo.allocationSize = memRequirements.size;
 	allocInfo.memoryTypeIndex = findMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
-    if(dynamic_data) {
-        for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-            vkAllocateMemory(device, &allocInfo, nullptr, &buffer->data[i].memory);
+    vkAllocateMemory(device, &allocInfo, nullptr, &buffer->memory);
 
-            vkBindBufferMemory(device, buffer->data[i].handle, buffer->data[i].memory, 0);
-        }
-    } else {
-        vkAllocateMemory(device, &allocInfo, nullptr, &buffer->data[0].memory);
-
-        vkBindBufferMemory(device, buffer->data[0].handle, buffer->data[0].memory, 0);
-    }
+    vkBindBufferMemory(device, buffer->handle, buffer->memory, 0);
 
 	if (data != nullptr) {
-        if(dynamic_data) {
-            for(int i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-                void* mapped_data;
-                vkMapMemory(device, buffer->data[i].memory, 0, size, 0, &mapped_data);
-                memcpy(mapped_data, data, size);
-                vkUnmapMemory(device, buffer->data[i].memory);
-            }
-        } else {
-            void* mapped_data;
-            vkMapMemory(device, buffer->data[0].memory, 0, size, 0, &mapped_data);
-            memcpy(mapped_data, data, size);
-            vkUnmapMemory(device, buffer->data[0].memory);
-        }
+        void* mapped_data;
+        vkMapMemory(device, buffer->memory, 0, size, 0, &mapped_data);
+        memcpy(mapped_data, data, size);
+        vkUnmapMemory(device, buffer->memory);
     }
 
 	return buffer;
@@ -301,23 +285,30 @@ void GFXVulkan::copy_buffer(GFXBuffer* buffer, void* data, GFXSize offset, GFXSi
 	GFXVulkanBuffer* vulkanBuffer = (GFXVulkanBuffer*)buffer;
 
 	void* mapped_data;
-	vkMapMemory(device, vulkanBuffer->get(currentFrame).memory, offset, vulkanBuffer->size - offset, 0, &mapped_data);
+	vkMapMemory(device, vulkanBuffer->memory, offset, vulkanBuffer->size - offset, 0, &mapped_data);
 	memcpy(mapped_data, data, size);
-    vkUnmapMemory(device, vulkanBuffer->get(currentFrame).memory);
+    
+    VkMappedMemoryRange range = {};
+    range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    range.memory = vulkanBuffer->memory;
+    range.size = VK_WHOLE_SIZE;
+    vkFlushMappedMemoryRanges(device, 1, &range);
+    
+    vkUnmapMemory(device, vulkanBuffer->memory);
 }
 
 void* GFXVulkan::get_buffer_contents(GFXBuffer* buffer) {
     GFXVulkanBuffer* vulkanBuffer = (GFXVulkanBuffer*)buffer;
 
     void* mapped_data;
-    vkMapMemory(device, vulkanBuffer->get(currentFrame).memory, 0, vulkanBuffer->size, 0, &mapped_data);
+    vkMapMemory(device, vulkanBuffer->memory, 0, vulkanBuffer->size, 0, &mapped_data);
 
     return mapped_data;
 }
 
 void GFXVulkan::release_buffer_contents(GFXBuffer* buffer, void* handle) {
     GFXVulkanBuffer* vulkanBuffer = (GFXVulkanBuffer*)buffer;
-    vkUnmapMemory(device, vulkanBuffer->get(currentFrame).memory);
+    vkUnmapMemory(device, vulkanBuffer->memory);
 }
 
 GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
@@ -547,7 +538,7 @@ void GFXVulkan::copy_texture(GFXTexture* from, GFXBuffer* to) {
 		1
 	};
 
-	vkCmdCopyImageToBuffer(commandBuffer, vulkanTexture->handle, vulkanTexture->layout, vulkanBuffer->get(0).handle, 1, &region);
+	vkCmdCopyImageToBuffer(commandBuffer, vulkanTexture->handle, vulkanTexture->layout, vulkanBuffer->handle, 1, &region);
 
 	endSingleTimeCommands(commandBuffer);
 }
@@ -974,7 +965,7 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 		pipelineInfo.renderPass = ((GFXVulkanRenderPass*)info.render_pass)->handle;
 	}
 	else {
-		pipelineInfo.renderPass = swapchainRenderPass;
+		pipelineInfo.renderPass = native_surfaces[0]->swapchainRenderPass;
 	}
 
 	if (info.render_pass != nullptr && ((GFXVulkanRenderPass*)info.render_pass)->hasDepthAttachment)
@@ -1015,11 +1006,17 @@ GFXCommandBuffer* GFXVulkan::acquire_command_buffer(bool for_presentation_use) {
 }
 
 void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
+    NativeSurface* current_surface = nullptr;
+    for(auto surface : native_surfaces) {
+        if(surface->identifier == identifier)
+            current_surface = surface;
+    }
+    
     uint32_t imageIndex = 0;
-    if(identifier != -1) {
-        vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+    if(identifier != -1 && current_surface != nullptr) {
+        vkWaitForFences(device, 1, &current_surface->inFlightFences[current_surface->currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
-        VkResult result = vkAcquireNextImageKHR(device, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+        VkResult result = vkAcquireNextImageKHR(device, current_surface->swapchain, std::numeric_limits<uint64_t>::max(), current_surface->imageAvailableSemaphores[current_surface->currentFrame], VK_NULL_HANDLE, &imageIndex);
         if (result == VK_ERROR_OUT_OF_DATE_KHR)
             return;
     }
@@ -1030,7 +1027,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
     if(cmdbuf->handle != VK_NULL_HANDLE)
         cmd = cmdbuf->handle;
     else
-        cmd = commandBuffers[currentFrame];
+        cmd = commandBuffers[current_surface-> currentFrame];
 
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1076,7 +1073,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                 currentRenderPass = renderPass->handle;
             }
             else {
-                currentRenderPass = swapchainRenderPass;
+                currentRenderPass = current_surface->swapchainRenderPass;
             }
             
             VkRenderPassBeginInfo renderPassInfo = {};
@@ -1101,19 +1098,19 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                 vkCmdSetScissor(cmd, 0, 1, &scissor);
             }
             else {
-                renderPassInfo.framebuffer = swapchainFramebuffers[imageIndex];
+                renderPassInfo.framebuffer = current_surface->swapchainFramebuffers[imageIndex];
                 
                 VkViewport viewport = {};
-                viewport.y = static_cast<float>(surfaceHeight);
-                viewport.width = static_cast<float>(surfaceWidth);
-                viewport.height = -static_cast<float>(surfaceHeight);
+                viewport.y = static_cast<float>(current_surface->surfaceHeight);
+                viewport.width = static_cast<float>(current_surface->surfaceWidth);
+                viewport.height = -static_cast<float>(current_surface->surfaceHeight);
                 viewport.maxDepth = 1.0f;
                 
                 vkCmdSetViewport(cmd, 0, 1, &viewport);
                 
                 VkRect2D scissor = {};
-                scissor.extent.width = surfaceWidth;
-                scissor.extent.height = surfaceHeight;
+                scissor.extent.width = current_surface->surfaceWidth;
+                scissor.extent.height = current_surface->surfaceHeight;
                 
                 vkCmdSetScissor(cmd, 0, 1, &scissor);
             }
@@ -1158,7 +1155,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 		break;
 		case GFXCommandType::SetVertexBuffer:
 		{
-            VkBuffer buffer = ((GFXVulkanBuffer*)command.data.set_vertex_buffer.buffer)->get(currentFrame).handle;
+            VkBuffer buffer = ((GFXVulkanBuffer*)command.data.set_vertex_buffer.buffer)->handle;
 			VkDeviceSize offset = command.data.set_vertex_buffer.offset;
 			vkCmdBindVertexBuffers(cmd, command.data.set_vertex_buffer.index, 1, &buffer, &offset);
 		}
@@ -1169,7 +1166,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 			if (command.data.set_index_buffer.index_type == IndexType::UINT16)
 				indexType = VK_INDEX_TYPE_UINT16;
 
-            vkCmdBindIndexBuffer(cmd, ((GFXVulkanBuffer*)command.data.set_index_buffer.buffer)->get(currentFrame).handle, 0, indexType);
+            vkCmdBindIndexBuffer(cmd, ((GFXVulkanBuffer*)command.data.set_index_buffer.buffer)->handle, 0, indexType);
 
 			currentIndexType = indexType;
 		}
@@ -1272,7 +1269,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
         
-        VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
+        VkSemaphore waitSemaphores[] = { current_surface->imageAvailableSemaphores[current_surface->currentFrame] };
         VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         submitInfo.waitSemaphoreCount = 1;
         submitInfo.pWaitSemaphores = waitSemaphores;
@@ -1280,13 +1277,13 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
         submitInfo.commandBufferCount = 1;
         submitInfo.pCommandBuffers = &cmd;
         
-        VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+        VkSemaphore signalSemaphores[] = { current_surface->renderFinishedSemaphores[current_surface->currentFrame] };
         submitInfo.signalSemaphoreCount = 1;
         submitInfo.pSignalSemaphores = signalSemaphores;
         
-        vkResetFences(device, 1, &inFlightFences[currentFrame]);
+        vkResetFences(device, 1, &current_surface->inFlightFences[current_surface->currentFrame]);
         
-        if(vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
+        if(vkQueueSubmit(graphicsQueue, 1, &submitInfo, current_surface->inFlightFences[current_surface->currentFrame]) != VK_SUCCESS)
             return;
         
         // present
@@ -1295,14 +1292,14 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
         
         presentInfo.waitSemaphoreCount = 1;
         presentInfo.pWaitSemaphores = signalSemaphores;
-        VkSwapchainKHR swapChains[] = { swapchain };
+        VkSwapchainKHR swapChains[] = { current_surface->swapchain };
         presentInfo.swapchainCount = 1;
         presentInfo.pSwapchains = swapChains;
         presentInfo.pImageIndices = &imageIndex;
         
         vkQueuePresentKHR(presentQueue, &presentInfo);
         
-        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+        current_surface->currentFrame = (current_surface->currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
     }
 }
 
@@ -1429,59 +1426,59 @@ void GFXVulkan::createLogicalDevice(std::vector<const char*> extensions) {
 	vkCreateCommandPool(device, &poolInfo, nullptr, &commandPool);
 }
 
-void GFXVulkan::createSwapchain(VkSwapchainKHR oldSwapchain) {
+void GFXVulkan::createSwapchain(NativeSurface* native_surface, VkSwapchainKHR oldSwapchain) {
 
 #ifdef PLATFORM_WINDOWS
 	// create win32 surface
-	if(surface == VK_NULL_HANDLE)
+    if(native_surface->surface == VK_NULL_HANDLE)
 	{
 		VkWin32SurfaceCreateInfoKHR createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_WIN32_SURFACE_CREATE_INFO_KHR;
-		createInfo.hwnd = (HWND)windowNativeHandle;
+        createInfo.hwnd = (HWND)native_surface->windowNativeHandle;
 		createInfo.hinstance = GetModuleHandle(nullptr);
 
-		vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &surface);
+        vkCreateWin32SurfaceKHR(instance, &createInfo, nullptr, &native_surface->surface);
 	}
 #else
-    if(surface == VK_NULL_HANDLE) {
+    if(native_surface->surface == VK_NULL_HANDLE) {
         struct WindowConnection {
             xcb_connection_t* connection;
             xcb_window_t window;
         };
 
-        WindowConnection* wincon = reinterpret_cast<WindowConnection*>(windowNativeHandle);
+        WindowConnection* wincon = reinterpret_cast<WindowConnection*>(native_surface->windowNativeHandle);
 
         VkXcbSurfaceCreateInfoKHR createInfo = {};
         createInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
         createInfo.window = wincon->window;
         createInfo.connection = wincon->connection;
 
-        vkCreateXcbSurfaceKHR(instance, &createInfo, nullptr, &surface);
+        vkCreateXcbSurfaceKHR(instance, &createInfo, nullptr, &native_surface->surface);
     }
 #endif
 
 	// TODO: fix this pls
 	VkBool32 supported;
-	vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, 0, surface, &supported);
+    vkGetPhysicalDeviceSurfaceSupportKHR(physicalDevice, 0, native_surface->surface, &supported);
 
 	// query swapchain support
 	VkSurfaceCapabilitiesKHR capabilities;
-	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, surface, &capabilities);
+    vkGetPhysicalDeviceSurfaceCapabilitiesKHR(physicalDevice, native_surface->surface, &capabilities);
 
 	std::vector<VkSurfaceFormatKHR> formats;
 
 	uint32_t formatCount;
-	vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, nullptr);
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, native_surface->surface, &formatCount, nullptr);
 
 	formats.resize(formatCount);
-	vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, surface, &formatCount, formats.data());
+    vkGetPhysicalDeviceSurfaceFormatsKHR(physicalDevice, native_surface->surface, &formatCount, formats.data());
 
 	std::vector<VkPresentModeKHR> presentModes;
 	uint32_t presentModeCount;
-	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, nullptr);
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, native_surface->surface, &presentModeCount, nullptr);
 
 	presentModes.resize(presentModeCount);
-	vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, surface, &presentModeCount, presentModes.data());
+    vkGetPhysicalDeviceSurfacePresentModesKHR(physicalDevice, native_surface->surface, &presentModeCount, presentModes.data());
 
 	// choosing swapchain features
 	VkSurfaceFormatKHR swapchainSurfaceFormat = formats[0];
@@ -1506,12 +1503,12 @@ void GFXVulkan::createSwapchain(VkSwapchainKHR oldSwapchain) {
 	// create swapchain
 	VkSwapchainCreateInfoKHR createInfo = {};
 	createInfo.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	createInfo.surface = surface;
+    createInfo.surface = native_surface->surface;
 	createInfo.minImageCount = imageCount;
 	createInfo.imageFormat = swapchainSurfaceFormat.format;
 	createInfo.imageColorSpace = swapchainSurfaceFormat.colorSpace;
-	createInfo.imageExtent.width = surfaceWidth;
-	createInfo.imageExtent.height = surfaceHeight;
+    createInfo.imageExtent.width = native_surface->surfaceWidth;
+    createInfo.imageExtent.height = native_surface->surfaceHeight;
 	createInfo.imageArrayLayers = 1;
 	createInfo.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 	createInfo.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
@@ -1521,27 +1518,27 @@ void GFXVulkan::createSwapchain(VkSwapchainKHR oldSwapchain) {
 	createInfo.clipped = VK_TRUE;
 	createInfo.oldSwapchain = oldSwapchain;
 
-	vkCreateSwapchainKHR(device, &createInfo, nullptr, &swapchain);
+    vkCreateSwapchainKHR(device, &createInfo, nullptr, &native_surface->swapchain);
 
 	if (oldSwapchain != VK_NULL_HANDLE) {
 		vkDestroySwapchainKHR(device, oldSwapchain, nullptr);
 	}
 
-	swapchainExtent.width = surfaceWidth;
-	swapchainExtent.height = surfaceHeight;
+	native_surface->swapchainExtent.width = native_surface->surfaceWidth;
+    native_surface->swapchainExtent.height = native_surface->surfaceHeight;
 
 	// get swapchain images
-	vkGetSwapchainImagesKHR(device, swapchain, &imageCount, nullptr);
-	swapchainImages.resize(imageCount);
-	vkGetSwapchainImagesKHR(device, swapchain, &imageCount, swapchainImages.data());
+    vkGetSwapchainImagesKHR(device, native_surface->swapchain, &imageCount, nullptr);
+    native_surface->swapchainImages.resize(imageCount);
+    vkGetSwapchainImagesKHR(device, native_surface->swapchain, &imageCount, native_surface->swapchainImages.data());
 
 	// create swapchain image views
-	swapchainImageViews.resize(swapchainImages.size());
+    native_surface->swapchainImageViews.resize(native_surface->swapchainImages.size());
 
-	for (size_t i = 0; i < swapchainImages.size(); i++) {
+    for (size_t i = 0; i < native_surface->swapchainImages.size(); i++) {
 		VkImageViewCreateInfo createInfo = {};
 		createInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		createInfo.image = swapchainImages[i];
+        createInfo.image = native_surface->swapchainImages[i];
 		createInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
 		createInfo.format = swapchainSurfaceFormat.format;
 		createInfo.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -1554,7 +1551,7 @@ void GFXVulkan::createSwapchain(VkSwapchainKHR oldSwapchain) {
 		createInfo.subresourceRange.baseArrayLayer = 0;
 		createInfo.subresourceRange.layerCount = 1;
 
-		vkCreateImageView(device, &createInfo, nullptr, &swapchainImageViews[i]);
+        vkCreateImageView(device, &createInfo, nullptr, &native_surface->swapchainImageViews[i]);
 	}
 
 	// create render pass
@@ -1595,26 +1592,26 @@ void GFXVulkan::createSwapchain(VkSwapchainKHR oldSwapchain) {
 	renderPassInfo.dependencyCount = 1;
 	renderPassInfo.pDependencies = &dependency;
 
-	vkCreateRenderPass(device, &renderPassInfo, nullptr, &swapchainRenderPass);
+    vkCreateRenderPass(device, &renderPassInfo, nullptr, &native_surface->swapchainRenderPass);
 
 	// create swapchain framebuffers
-	swapchainFramebuffers.resize(swapchainImageViews.size());
+    native_surface->swapchainFramebuffers.resize(native_surface->swapchainImageViews.size());
 
-	for (size_t i = 0; i < swapchainImageViews.size(); i++) {
+    for (size_t i = 0; i < native_surface->swapchainImageViews.size(); i++) {
 		VkImageView attachments[] = {
-			swapchainImageViews[i]
+            native_surface->swapchainImageViews[i]
 		};
 
 		VkFramebufferCreateInfo framebufferInfo = {};
 		framebufferInfo.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		framebufferInfo.renderPass = swapchainRenderPass;
+        framebufferInfo.renderPass = native_surface->swapchainRenderPass;
 		framebufferInfo.attachmentCount = 1;
 		framebufferInfo.pAttachments = attachments;
-		framebufferInfo.width = surfaceWidth;
-		framebufferInfo.height = surfaceHeight;
+        framebufferInfo.width = native_surface->surfaceWidth;
+        framebufferInfo.height = native_surface->surfaceHeight;
 		framebufferInfo.layers = 1;
 
-		vkCreateFramebuffer(device, &framebufferInfo, nullptr, &swapchainFramebuffers[i]);
+		vkCreateFramebuffer(device, &framebufferInfo, nullptr, &native_surface->swapchainFramebuffers[i]);
 	}
 
 	// allocate command buffers
@@ -1648,10 +1645,10 @@ void GFXVulkan::createDescriptorPool() {
 	vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool);
 }
 
-void GFXVulkan::createSyncPrimitives() {
-	imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
-	inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
+void GFXVulkan::createSyncPrimitives(NativeSurface* native_surface) {
+    native_surface->imageAvailableSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    native_surface->renderFinishedSemaphores.resize(MAX_FRAMES_IN_FLIGHT);
+    native_surface->inFlightFences.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkSemaphoreCreateInfo semaphoreInfo = {};
 	semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -1661,9 +1658,9 @@ void GFXVulkan::createSyncPrimitives() {
 	fenceCreateInfo.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
 	for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
-		vkCreateSemaphore(device, &semaphoreInfo, nullptr, &imageAvailableSemaphores[i]);
-		vkCreateSemaphore(device, &semaphoreInfo, nullptr, &renderFinishedSemaphores[i]);
-		vkCreateFence(device, &fenceCreateInfo, nullptr, &inFlightFences[i]);
+        vkCreateSemaphore(device, &semaphoreInfo, nullptr, &native_surface->imageAvailableSemaphores[i]);
+        vkCreateSemaphore(device, &semaphoreInfo, nullptr, &native_surface->renderFinishedSemaphores[i]);
+        vkCreateFence(device, &fenceCreateInfo, nullptr, &native_surface->inFlightFences[i]);
 	}
 }
 
@@ -1706,7 +1703,7 @@ void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSe
 			GFXVulkanBuffer* vulkanBuffer = (GFXVulkanBuffer*)buffer.buffer;
 
 			VkDescriptorBufferInfo bufferInfo = {};
-			bufferInfo.buffer = vulkanBuffer->get(currentFrame).handle; // will this break?
+			bufferInfo.buffer = vulkanBuffer->handle; // will this break?
 			bufferInfo.offset = buffer.offset;
 			bufferInfo.range = buffer.size;
 

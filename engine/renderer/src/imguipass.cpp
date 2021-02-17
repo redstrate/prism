@@ -88,21 +88,20 @@ void ImGuiPass::render_post(GFXCommandBuffer* command_buffer, RenderTarget& targ
     if(draw_data == nullptr)
         return;
     
-    if(draw_data->TotalIdxCount == 0 || draw_data->TotalVtxCount == 0)
-        return;
-    
     const int framebuffer_width = static_cast<int>(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
     const int framebuffer_height = static_cast<int>(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
     
-    Expects(framebuffer_width > 0);
-    Expects(framebuffer_height > 0);
-    
-    update_buffers(target, *draw_data);
+    if (framebuffer_width <= 0 || framebuffer_height <= 0)
+        return;
 
     command_buffer->set_graphics_pipeline(pipeline);
 
-    command_buffer->set_vertex_buffer(target.vertex_buffer, 0, 0);
-    command_buffer->set_index_buffer(target.index_buffer, IndexType::UINT16);
+    if(draw_data->TotalVtxCount > 0) {
+        update_buffers(target, *draw_data);
+        
+        command_buffer->set_vertex_buffer(target.vertex_buffer[target.current_frame], 0, 0);
+        command_buffer->set_index_buffer(target.index_buffer[target.current_frame], IndexType::UINT16);
+    }
 
     const Matrix4x4 projection = transform::orthographic(draw_data->DisplayPos.x,
                                                 draw_data->DisplayPos.x + draw_data->DisplaySize.x,
@@ -146,6 +145,8 @@ void ImGuiPass::render_post(GFXCommandBuffer* command_buffer, RenderTarget& targ
         index_offset += cmd_list->IdxBuffer.Size;
         vertex_offset += cmd_list->VtxBuffer.Size;
     }
+    
+    target.current_frame = (target.current_frame + 1) % RT_MAX_FRAMES_IN_FLIGHT;
 }
 
 void ImGuiPass::load_font(const std::string_view filename) {
@@ -196,14 +197,14 @@ void ImGuiPass::update_buffers(RenderTarget& target, const ImDrawData& draw_data
     Expects(new_vertex_size > 0);
     Expects(new_index_size > 0);
     
-    if(target.vertex_buffer == nullptr || target.current_vertex_size < new_vertex_size) {
-        target.vertex_buffer = engine->get_gfx()->create_buffer(nullptr, new_vertex_size, true, GFXBufferUsage::Vertex);
-        target.current_vertex_size = new_vertex_size;
+    if(target.vertex_buffer[target.current_frame] == nullptr || target.current_vertex_size[target.current_frame] < new_vertex_size) {
+        target.vertex_buffer[target.current_frame] = engine->get_gfx()->create_buffer(nullptr, new_vertex_size, true, GFXBufferUsage::Vertex);
+        target.current_vertex_size[target.current_frame] = new_vertex_size;
     }
     
-    if(target.index_buffer == nullptr || target.current_index_size < new_index_size) {
-        target.index_buffer = engine->get_gfx()->create_buffer(nullptr, new_index_size, true, GFXBufferUsage::Index);
-        target.current_index_size = new_index_size;
+    if(target.index_buffer[target.current_frame] == nullptr || target.current_index_size[target.current_frame] < new_index_size) {
+        target.index_buffer[target.current_frame] = engine->get_gfx()->create_buffer(nullptr, new_index_size, true, GFXBufferUsage::Index);
+        target.current_index_size[target.current_frame] = new_index_size;
     }
     
     int vertex_offset = 0;
@@ -211,8 +212,8 @@ void ImGuiPass::update_buffers(RenderTarget& target, const ImDrawData& draw_data
     for(int i = 0; i < draw_data.CmdListsCount; i++) {
         const ImDrawList* cmd_list = draw_data.CmdLists[i];
         
-        engine->get_gfx()->copy_buffer(target.vertex_buffer, cmd_list->VtxBuffer.Data, vertex_offset, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-        engine->get_gfx()->copy_buffer(target.index_buffer, cmd_list->IdxBuffer.Data, index_offset, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+        engine->get_gfx()->copy_buffer(target.vertex_buffer[target.current_frame], cmd_list->VtxBuffer.Data, vertex_offset, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+        engine->get_gfx()->copy_buffer(target.index_buffer[target.current_frame], cmd_list->IdxBuffer.Data, index_offset, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
         
         vertex_offset += cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
         index_offset += cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);

@@ -7,6 +7,8 @@ class GFXTexture;
 class GFXFramebuffer;
 class GFXBuffer;
 
+constexpr int RT_MAX_FRAMES_IN_FLIGHT = 3;
+
 class RenderTarget {
 public:
     prism::Extent extent;
@@ -33,9 +35,11 @@ public:
     GFXFramebuffer* blend_framebuffer = nullptr;
     
     // imgui
-    GFXBuffer* vertex_buffer = nullptr;
-    int current_vertex_size = 0;
+    GFXBuffer* vertex_buffer[RT_MAX_FRAMES_IN_FLIGHT] = {};
+    int current_vertex_size[RT_MAX_FRAMES_IN_FLIGHT] = {};
     
-    GFXBuffer* index_buffer = nullptr;
-    int current_index_size = 0;
+    GFXBuffer* index_buffer[RT_MAX_FRAMES_IN_FLIGHT] = {};
+    int current_index_size[RT_MAX_FRAMES_IN_FLIGHT] = {};
+    
+    uint32_t current_frame = 0;
 };

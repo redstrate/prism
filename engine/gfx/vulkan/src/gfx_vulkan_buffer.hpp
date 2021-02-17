@@ -7,20 +7,9 @@
 
 class GFXVulkanBuffer : public GFXBuffer {
 public:
-    bool is_dynamic_data = false;
-
-    struct Data {
-        VkBuffer handle;
-        VkDeviceMemory memory;
-    } data[MAX_FRAMES_IN_FLIGHT];
-
-    Data get(int frameIndex) {
-        if(is_dynamic_data) {
-            return data[frameIndex];
-        } else {
-            return data[0];
-        }
-    }
-
+    VkBuffer handle;
+    VkDeviceMemory memory;
+    
 	VkDeviceSize size;
+    uint32_t frame_index = 0;
 };

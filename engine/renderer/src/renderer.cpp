@@ -224,7 +224,7 @@ void Renderer::update_screen() {
 void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarget& target, int index) {
     const auto extent = target.extent;
     const auto render_extent = target.get_render_extent();
-    
+        
     if(index > 0) {
         GFXRenderPassBeginInfo beginInfo = {};
         beginInfo.render_area.extent = render_extent;
