@@ -80,8 +80,9 @@ void ImGuiPass::render_post(GFXCommandBuffer* command_buffer, const int index) {
                     draw_data = io.Viewports[i]->DrawData;
         }
     }
-
-    Expects(draw_data != nullptr);
+    
+    if(draw_data == nullptr)
+        return;
     
     if(draw_data->TotalIdxCount == 0 || draw_data->TotalVtxCount == 0)
         return;

@@ -468,9 +468,6 @@ void Engine::process_key_up(const unsigned int keyCode) {
 }
 
 void Engine::process_mouse_down(const int button, const prism::Offset offset) {
-    Expects(offset.x >= 0);
-    Expects(offset.y >= 0);
-    
 	if(_current_screen != nullptr && button == 0)
         _current_screen->process_mouse(offset.x, offset.y);
 }

@@ -177,8 +177,8 @@ void PrismEditor::open_asset(const file::Path path) {
 }
 
 void PrismEditor::renderEditor(GFXCommandBuffer* command_buffer) {
-    for (auto& editor : editors) {
-        //editor->renderer->render(command_buffer, editor->get_scene(), -1);
+    for(auto [id, render_target] : viewport_render_targets) {
+        engine->get_renderer()->render(command_buffer, render_target.scene, *render_target.target, -1);
     }
 }
 

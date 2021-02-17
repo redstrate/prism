@@ -110,6 +110,14 @@ public:
     
     bool reloading_shader = false;
     
+    std::vector<RenderTarget*> get_all_render_targets() const {
+        std::vector<RenderTarget*> targets;
+        for(auto& target : render_targets)
+            targets.push_back(target.get());
+        
+        return targets;
+    }
+    
 private:
     void createDummyTexture();
     void create_render_target_resources(RenderTarget& target);

@@ -124,12 +124,14 @@ RenderTarget* Renderer::allocate_render_target(const prism::Extent extent) {
     
     resize_render_target(*target, extent);
     
-    return render_targets.emplace_back(std::move(target)).get();;
+    render_targets.push_back(std::move(target));
+    
+    return render_targets.back().get();
 }
 
 void Renderer::resize_render_target(RenderTarget& target, const prism::Extent extent) {
     target.extent = extent;
-    
+        
     create_render_target_resources(target);
     smaaPass->create_render_target_resources(target);
     createPostPipeline();
@@ -769,29 +771,29 @@ void Renderer::create_render_target_resources(RenderTarget& target) {
 
     target.offscreenFramebuffer = gfx->create_framebuffer(framebufferInfo);
     
-    GFXGraphicsPipelineCreateInfo pipelineInfo = {};
-    pipelineInfo.label = "Post";
+    if(postPipeline == nullptr) {
+        GFXGraphicsPipelineCreateInfo pipelineInfo = {};
+        pipelineInfo.label = "Post";
+        
+        pipelineInfo.shaders.vertex_src = file::Path("post.vert");
+        pipelineInfo.shaders.fragment_src = file::Path("post.frag");
+        
+        pipelineInfo.shader_input.bindings = {
+            {4, GFXBindingType::PushConstant},
+            {1, GFXBindingType::Texture},
+            {2, GFXBindingType::Texture},
+            {3, GFXBindingType::Texture},
+            {5, GFXBindingType::Texture},
+            {6, GFXBindingType::Texture},
+            {7, GFXBindingType::Texture}
+        };
+        
+        pipelineInfo.shader_input.push_constants = {
+            {sizeof(PostPushConstants), 0}
+        };
+        
+        postPipeline = gfx->create_graphics_pipeline(pipelineInfo);
     
-    pipelineInfo.shaders.vertex_src = file::Path("post.vert");
-    pipelineInfo.shaders.fragment_src = file::Path("post.frag");
-    
-    pipelineInfo.shader_input.bindings = {
-        {4, GFXBindingType::PushConstant},
-        {1, GFXBindingType::Texture},
-        {2, GFXBindingType::Texture},
-        {3, GFXBindingType::Texture},
-        {5, GFXBindingType::Texture},
-        {6, GFXBindingType::Texture},
-        {7, GFXBindingType::Texture}
-    };
-    
-    pipelineInfo.shader_input.push_constants = {
-        {sizeof(PostPushConstants), 0}
-    };
-    
-    postPipeline = gfx->create_graphics_pipeline(pipelineInfo);
-    
-    if(renderToTexturePipeline == nullptr) {
         pipelineInfo.label = "Render to Texture";
         pipelineInfo.render_pass = offscreenRenderPass;
         

@@ -703,26 +703,29 @@ void CommonEditor::createDockArea() {
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
 }
 
-void CommonEditor::drawViewport() {
+void CommonEditor::drawViewport(Scene* scene) {
     const auto size = ImGui::GetContentRegionAvail();
     const auto real_size = ImVec2(size.x * platform::get_window_dpi(0), size.y * platform::get_window_dpi(0));
     
     if(real_size.x <= 0 || real_size.y <= 0)
         return;
     
-    auto window_id = ImGui::GetCurrentWindow()->ID;
+    auto window = ImGui::GetCurrentWindowRead();
+    auto window_id = window->ID;
     
-    RenderTarget* target = nullptr;
-    if(viewport_render_targets.count(window_id)) {
-        target = viewport_render_targets[window_id];
+    if(!viewport_render_targets.count(window_id)) {
+        ViewportRenderTarget new_target;
+        new_target.target = engine->get_renderer()->allocate_render_target(real_size);
         
-        if(real_size.x != target->extent.width || real_size.y != target->extent.height)
-            engine->get_renderer()->resize_render_target(*target, real_size);
-    } else {
-        target = engine->get_renderer()->allocate_render_target(real_size);
-        
-        viewport_render_targets[window_id] = target;
+        viewport_render_targets[window_id] = new_target;
     }
+    
+    auto target = &viewport_render_targets[window_id];
+    
+    if(real_size.x != target->target->extent.width || real_size.y != target->target->extent.height)
+        engine->get_renderer()->resize_render_target(*target->target, real_size);
+    
+    target->scene = scene;
     
     viewport_width = size.x;
     viewport_height = size.y;
@@ -733,7 +736,7 @@ void CommonEditor::drawViewport() {
     viewport_x = mouse_pos.x - real_pos.x;
     viewport_y = mouse_pos.y - real_pos.y;
     
-    ImGui::Image((ImTextureID)target->offscreenColorTexture, size);
+    ImGui::Image((ImTextureID)target->target->offscreenColorTexture, size);
     
     accepting_viewport_input = ImGui::IsWindowHovered();
     

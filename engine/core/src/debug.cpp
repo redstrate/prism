@@ -102,6 +102,12 @@ void draw_renderer() {
         ImGui::TextDisabled("No scene loaded for budgeting.");
     }
     
+    auto targets = engine->get_renderer()->get_all_render_targets();
+    for(auto target : targets) {
+        ImGui::Text("%i %i", target->extent.width, target->extent.height);
+        ImGui::Image(target->offscreenColorTexture, ImVec2(100, 100));
+    }
+    
     ImGui::Text("Performance");
     ImGui::Separator();
     
