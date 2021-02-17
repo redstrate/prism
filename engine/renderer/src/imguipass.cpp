@@ -75,9 +75,11 @@ void ImGuiPass::render_post(GFXCommandBuffer* command_buffer, const int index) {
     } else {
         auto& io = ImGui::GetPlatformIO();
         for(int i = 1; i < io.Viewports.size(); i++) {
-            if((io.Viewports[i]->Flags & ImGuiViewportFlags_Minimized) == 0)
-                if(*(int*)io.Viewports[i]->PlatformHandle == index)
+            if((io.Viewports[i]->Flags & ImGuiViewportFlags_Minimized) == 0) {
+                auto platform_handle = (int*)io.Viewports[i]->PlatformHandle;
+                if(platform_handle != nullptr && *platform_handle == index)
                     draw_data = io.Viewports[i]->DrawData;
+            }
         }
     }
     

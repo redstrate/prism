@@ -84,11 +84,11 @@ bool Engine::is_paused() const {
 }
 
 void Engine::quit() {
-    _windows[0].quitRequested = true;
+    _windows[0]->quitRequested = true;
 }
 
 bool Engine::is_quitting() const {
-    return _windows[0].quitRequested;
+    return _windows[0]->quitRequested;
 }
 
 void Engine::prepare_quit() {
@@ -193,7 +193,7 @@ ui::Screen* Engine::load_screen(const file::Path path) {
 void Engine::set_screen(ui::Screen* screen) {
     _current_screen = screen;
     
-    screen->extent = _windows[0].extent;
+    screen->extent = _windows[0]->extent;
     screen->calculate_sizes();
     
     get_renderer()->set_screen(screen);
@@ -414,10 +414,12 @@ void Engine::add_window(void* native_handle, const int identifier, const prism::
     
     _gfx->initialize_view(native_handle, identifier, drawable_extent.width, drawable_extent.height);
 
-    Window& window = _windows.emplace_back();
-    window.identifier = identifier;
-    window.extent = extent;
-    window.render_target = _renderer->allocate_render_target(drawable_extent);
+    _windows.push_back(std::move(std::make_unique<Window>()));
+    
+    Window* window = _windows.back().get();
+    window->identifier = identifier;
+    window->extent = extent;
+    window->render_target = _renderer->allocate_render_target(drawable_extent);
 
     render_ready = true;
 }
@@ -425,8 +427,8 @@ void Engine::add_window(void* native_handle, const int identifier, const prism::
 void Engine::remove_window(const int identifier) {
     Expects(identifier >= 0);
 
-    utility::erase_if(_windows, [identifier](Window& w) {
-        return w.identifier == identifier;
+    utility::erase_if(_windows, [identifier](std::unique_ptr<Window>& w) {
+        return w->identifier == identifier;
     });
 }
 
@@ -656,6 +658,10 @@ void Engine::begin_frame(const float delta_time) {
 
     if(_app != nullptr)
         _app->begin_frame();
+}
+
+void Engine::end_frame() {
+    ImGui::UpdatePlatformWindows();
 }
 
 int frame_delay = 0;

@@ -76,6 +76,8 @@ public:
      @param index The index of the window to begin rendering for.
      */
     void render(const int index);
+    
+    void end_frame();
 
     /// Pause updating.
     void pause();
@@ -344,12 +346,12 @@ private:
         RenderTarget* render_target;
     };
 
-    std::vector<Window> _windows;
+    std::vector<std::unique_ptr<Window>> _windows;
 
     Window* get_window(const int identifier) {
         for(auto& window : _windows) {
-            if(window.identifier == identifier)
-                return &window;
+            if(window->identifier == identifier)
+                return window.get();
         }
         
         return nullptr;
