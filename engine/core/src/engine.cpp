@@ -107,8 +107,8 @@ Input* Engine::get_input() {
 	return _input.get();
 }
 
-Renderer* Engine::get_renderer(const int index) {
-    return _windows[index].renderer.get();
+Renderer* Engine::get_renderer() {
+    return _renderer.get();
 }
 
 Physics* Engine::get_physics() {
@@ -406,6 +406,10 @@ void Engine::add_window(void* native_handle, const int identifier, const prism::
     Expects(native_handle != nullptr);
     Expects(identifier >= 0);
     
+    if(identifier == 0) {
+        _renderer = std::make_unique<Renderer>(_gfx);
+    }
+    
     const auto drawable_extent = platform::get_window_drawable_size(identifier);
     
     _gfx->initialize_view(native_handle, identifier, drawable_extent.width, drawable_extent.height);
@@ -413,9 +417,7 @@ void Engine::add_window(void* native_handle, const int identifier, const prism::
     Window& window = _windows.emplace_back();
     window.identifier = identifier;
     window.extent = extent;
-    window.renderer = std::make_unique<Renderer>(_gfx);
-
-    window.renderer->resize(drawable_extent);
+    window.render_target = _renderer->allocate_render_target(drawable_extent);
 
     render_ready = true;
 }
@@ -440,7 +442,7 @@ void Engine::resize(const int identifier, const prism::Extent extent) {
     const auto drawable_extent = platform::get_window_drawable_size(identifier);
 
     _gfx->recreate_view(identifier, drawable_extent.width, drawable_extent.height);
-    window->renderer->resize(drawable_extent);
+    _renderer->resize_render_target(*window->render_target, drawable_extent);
 
     if(identifier == 0) {
         if(_current_screen != nullptr) {
@@ -752,7 +754,7 @@ void Engine::render(const int index) {
     
     if(index == 0) {
         if(_current_screen != nullptr && _current_screen->view_changed) {
-            _windows[0].renderer->update_screen();
+            _renderer->update_screen();
             _current_screen->view_changed = false;
         }
         
@@ -763,8 +765,8 @@ void Engine::render(const int index) {
 
     _app->render(commandbuffer);
 
-    if(window->renderer != nullptr)
-        window->renderer->render(commandbuffer, _current_scene, index);
+    if(_renderer != nullptr)
+        _renderer->render(commandbuffer, _current_scene, *window->render_target, index);
 
     _gfx->submit(commandbuffer, index);
 }

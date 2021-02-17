@@ -17,7 +17,8 @@ DoFPass::DoFPass(GFX* gfx, Renderer* renderer) : renderer(renderer) {
     
     renderpass = gfx->create_render_pass(renderPassInfo);
     
-    const auto extent = renderer->get_render_extent();
+    //const auto extent = renderer->get_render_extent();
+    const auto extent = prism::Extent();
     
     GFXShaderConstant width_constant = {};
     width_constant.value = extent.width;
@@ -77,7 +78,9 @@ DoFPass::DoFPass(GFX* gfx, Renderer* renderer) : renderer(renderer) {
 }
 
 void DoFPass::render(GFXCommandBuffer* command_buffer, Scene&) {
-    const auto render_extent = renderer->get_render_extent();
+    //const auto render_extent = renderer->get_render_extent();
+    const auto extent = prism::Extent();
+    const auto render_extent = prism::Extent();
     
     // render far field
     GFXRenderPassBeginInfo beginInfo = {};
@@ -94,11 +97,11 @@ void DoFPass::render(GFXCommandBuffer* command_buffer, Scene&) {
     
     command_buffer->set_graphics_pipeline(pipeline);
     
-    command_buffer->bind_texture(renderer->offscreenColorTexture, 0);
-    command_buffer->bind_texture(renderer->offscreenDepthTexture, 1);
+    //command_buffer->bind_texture(renderer->offscreenColorTexture, 0);
+    //command_buffer->bind_texture(renderer->offscreenDepthTexture, 1);
     command_buffer->bind_texture(aperture_texture->handle, 3);
 
-    const auto extent = renderer->get_render_extent();
+    //const auto extent = renderer->get_render_extent();
     
     Vector4 params(render_options.depth_of_field_strength, 0.0, 0.0, 0.0);
     
@@ -113,8 +116,8 @@ void DoFPass::render(GFXCommandBuffer* command_buffer, Scene&) {
     
     command_buffer->set_graphics_pipeline(pipeline);
     
-    command_buffer->bind_texture(renderer->offscreenColorTexture, 0);
-    command_buffer->bind_texture(renderer->offscreenDepthTexture, 1);
+    //command_buffer->bind_texture(renderer->offscreenColorTexture, 0);
+    //command_buffer->bind_texture(renderer->offscreenDepthTexture, 1);
     command_buffer->bind_texture(aperture_texture->handle, 2);
 
     params.y = 1;

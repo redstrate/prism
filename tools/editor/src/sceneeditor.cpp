@@ -156,7 +156,7 @@ void SceneEditor::draw(CommonEditor* editor) {
         if(showViewport) {
             ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
             if(begin("Viewport", &showViewport))
-                editor->drawViewport(*renderer);
+                editor->drawViewport();
 
             ImGui::PopStyleVar();
 

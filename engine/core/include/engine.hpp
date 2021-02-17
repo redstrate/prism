@@ -19,6 +19,7 @@ class App;
 class Scene;
 class Input;
 class Renderer;
+class RenderTarget;
 class Physics;
 class ImGuiLayer;
 struct Timer;
@@ -115,7 +116,7 @@ public:
      @param index Index of the window. Default is 0.
      @return Instance of the renderer. Will not be null.
      */
-    Renderer* get_renderer(const int index = 0);
+    Renderer* get_renderer();
     
     /** Get the physics system.
      @return Instance of the physics system. Will not be null.
@@ -340,7 +341,7 @@ private:
         prism::Extent extent;
         bool quitRequested = false;
         
-        std::unique_ptr<Renderer> renderer;
+        RenderTarget* render_target;
     };
 
     std::vector<Window> _windows;
@@ -368,6 +369,7 @@ private:
 
     std::unique_ptr<Input> _input;
     std::unique_ptr<Physics> _physics;
+    std::unique_ptr<Renderer> _renderer;
 
     std::vector<Timer*> _timers, _timersToRemove;
 

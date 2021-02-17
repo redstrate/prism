@@ -10,10 +10,7 @@ class Scene;
 class Editor {
 public:
     std::string path;
-    
-    std::unique_ptr<Renderer> renderer;
-    DebugPass* debug_pass = nullptr;
-    
+        
     bool has_been_docked = false;
     bool modified = false;
     bool wants_to_close = false;

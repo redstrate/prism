@@ -126,7 +126,7 @@ void draw_renderer() {
     float render_scale = render_options.render_scale;
     if(ImGui::DragFloat("Render Scale", &render_scale, 0.1f, 1.0f, 0.1f) && render_scale > 0.0f) {
         render_options.render_scale = render_scale;
-        engine->get_renderer()->resize(engine->get_renderer()->get_extent());
+        engine->get_renderer()->recreate_all_render_targets();
     }
     
     if(ImGui::InputInt("Shadow Resolution", &render_options.shadow_resolution)) {

@@ -10,23 +10,21 @@ class GFXPipeline;
 class GFXRenderPass;
 class GFXTexture;
 class Renderer;
+class RenderTarget;
 
 class SMAAPass {
 public:
     SMAAPass(GFX* gfx, Renderer* renderer);
     
-    void render(GFXCommandBuffer* command_buffer);
+    void create_render_target_resources(RenderTarget& target);
     
-    GFXTexture* edge_texture = nullptr;
-    GFXTexture* blend_texture = nullptr;
+    void render(GFXCommandBuffer* command_buffer, RenderTarget& target);
 
 private:
     void create_textures();
     void create_render_pass();
     void create_pipelines();
-    void create_offscreen_resources();
     
-    prism::Extent extent;
     Renderer* renderer = nullptr;
     
     GFXTexture* area_image = nullptr;
@@ -36,8 +34,4 @@ private:
     
     GFXPipeline* edge_pipeline = nullptr;
     GFXPipeline* blend_pipeline = nullptr;
-    
-    GFXFramebuffer* edge_framebuffer = nullptr;
-    
-    GFXFramebuffer* blend_framebuffer = nullptr;
 };

@@ -89,8 +89,6 @@ CommonEditor::CommonEditor(std::string id) : id(id) {
 }
 
 void CommonEditor::initialize_render() {
-    engine->get_renderer()->gui_only_mode = true;
-    
     load_thumbnail_cache();
 }
 
@@ -705,15 +703,26 @@ void CommonEditor::createDockArea() {
     ImGui::DockSpace(dockspace_id, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_PassthruCentralNode);
 }
 
-void CommonEditor::drawViewport(Renderer& renderer) {
+void CommonEditor::drawViewport() {
     const auto size = ImGui::GetContentRegionAvail();
     const auto real_size = ImVec2(size.x * platform::get_window_dpi(0), size.y * platform::get_window_dpi(0));
     
     if(real_size.x <= 0 || real_size.y <= 0)
         return;
     
-    if(real_size.x != renderer.viewport_extent.width || real_size.y != renderer.viewport_extent.height)
-        renderer.resize_viewport(real_size);
+    auto window_id = ImGui::GetCurrentWindow()->ID;
+    
+    RenderTarget* target = nullptr;
+    if(viewport_render_targets.count(window_id)) {
+        target = viewport_render_targets[window_id];
+        
+        if(real_size.x != target->extent.width || real_size.y != target->extent.height)
+            engine->get_renderer()->resize_render_target(*target, real_size);
+    } else {
+        target = engine->get_renderer()->allocate_render_target(real_size);
+        
+        viewport_render_targets[window_id] = target;
+    }
     
     viewport_width = size.x;
     viewport_height = size.y;
@@ -724,7 +733,7 @@ void CommonEditor::drawViewport(Renderer& renderer) {
     viewport_x = mouse_pos.x - real_pos.x;
     viewport_y = mouse_pos.y - real_pos.y;
     
-    ImGui::Image((ImTextureID)renderer.viewportColorTexture, size);
+    ImGui::Image((ImTextureID)target->offscreenColorTexture, size);
     
     accepting_viewport_input = ImGui::IsWindowHovered();
     
@@ -974,7 +983,7 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
     
     GFXFramebufferCreateInfo framebuffer_create_info = {};
     framebuffer_create_info.attachments = {offscreen_color_texture, offscreen_depth_texture};
-    framebuffer_create_info.render_pass = renderer->getOffscreenRenderPass();
+    framebuffer_create_info.render_pass = renderer->offscreenRenderPass;
     
     auto offscreen_framebuffer = gfx->create_framebuffer(framebuffer_create_info);
     
@@ -993,7 +1002,7 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
     
     GFXRenderPassBeginInfo begin_info = {};
     begin_info.framebuffer = offscreen_framebuffer;
-    begin_info.render_pass = renderer->getOffscreenRenderPass();
+    begin_info.render_pass = renderer->offscreenRenderPass;
     begin_info.render_area.extent = {thumbnail_resolution, thumbnail_resolution};
     
     command_buffer->set_render_pass(begin_info);

@@ -129,7 +129,7 @@ public:
     virtual void asset_selected([[maybe_unused]] std::filesystem::path path, [[maybe_unused]] AssetType type) {}
 
     void createDockArea();
-    void drawViewport(Renderer& renderer);
+    void drawViewport();
     void drawAssets();
 
 	// options
@@ -335,6 +335,8 @@ private:
     void edit_asset_mesh(const char* name, AssetPtr<Mesh>& asset);
     void edit_asset_texture(const char* name, AssetPtr<Texture>& asset);
     void edit_asset_material(const char* name, AssetPtr<Material>& asset);
+    
+    std::unordered_map<ImGuiID, RenderTarget*> viewport_render_targets;
 };
 
 inline void editPath(const char* label, std::string& path, bool editable = true, const std::function<void()> on_selected = nullptr) {
