@@ -34,7 +34,6 @@ SurfaceBRDF brdf(const vec3 L, const ComputedSurfaceInfo surface_info) {
     
     // half-vector
     const vec3 H = normalize(surface_info.V + L);
-    const float HdotV = clamp(dot(H, surface_info.V), 0.0, 1.0);
 
     // fresnel reflectance function
     const vec3 F = fresnel_schlick(surface_info.NdotV, surface_info.F0);    
