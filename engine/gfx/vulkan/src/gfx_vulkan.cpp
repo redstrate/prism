@@ -16,6 +16,7 @@
 #include "file.hpp"
 #include "log.hpp"
 #include "utility.hpp"
+#include "gfx_vulkan_commandbuffer.hpp"
 
 void* windowNativeHandle;
 
@@ -709,13 +710,13 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 
 	VkShaderModule vertex_module = VK_NULL_HANDLE, fragment_module = VK_NULL_HANDLE;
 
-	const bool has_vertex_stage = !info.shaders.vertex_path.empty() || !info.shaders.vertex_src.empty();
-	const bool has_fragment_stage = !info.shaders.fragment_path.empty() || !info.shaders.fragment_src.empty();
+	const bool has_vertex_stage = !info.shaders.vertex_src.empty();
+	const bool has_fragment_stage = !info.shaders.fragment_src.empty();
 
 	std::vector<VkPipelineShaderStageCreateInfo> shaderStages;
 
 	if (has_vertex_stage) {
-		const bool vertex_use_shader_source = info.shaders.vertex_path.empty();
+		const bool vertex_use_shader_source = !info.shaders.vertex_src.is_path();
 
 		if (vertex_use_shader_source) {
 			auto vertex_shader_vector = info.shaders.vertex_src.as_bytecode();
@@ -723,13 +724,14 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 			vertex_module = createShaderModule(vertex_shader_vector.data(), vertex_shader_vector.size() * sizeof(uint32_t));
 		}
 		else {
-			auto vertex_shader = file::open(file::internal_domain / (std::string(info.shaders.vertex_path) + ".spv"), true);
+			auto vertex_shader = file::open(file::internal_domain / (info.shaders.vertex_src.as_path().string() + ".spv"), true);
 			vertex_shader->read_all();
 
 			vertex_module = createShaderModule(vertex_shader->cast_data<uint32_t>(), vertex_shader->size());
 		}
 
-		name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vertex_module, info.shaders.vertex_path);
+		if(!vertex_use_shader_source)
+            name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)vertex_module, info.shaders.vertex_src.as_path().string());
 
 		VkPipelineShaderStageCreateInfo vertShaderStageInfo = {};
 		vertShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -741,7 +743,7 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 	}
 
 	if (has_fragment_stage) {
-		const bool fragment_use_shader_source = info.shaders.fragment_path.empty();
+        const bool fragment_use_shader_source = !info.shaders.fragment_src.is_path();
 
 		if (fragment_use_shader_source) {
 			auto fragment_shader_vector = info.shaders.fragment_src.as_bytecode();
@@ -749,13 +751,14 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 			fragment_module = createShaderModule(fragment_shader_vector.data(), fragment_shader_vector.size() * sizeof(uint32_t));
 		}
 		else {
-			auto fragment_shader = file::open(file::internal_domain / (std::string(info.shaders.fragment_path) + ".spv"), true);
+			auto fragment_shader = file::open(file::internal_domain / (info.shaders.fragment_src.as_path().string() + ".spv"), true);
 			fragment_shader->read_all();
 
 			fragment_module = createShaderModule(fragment_shader->cast_data<uint32_t>(), fragment_shader->size());
 		}
 
-		name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)fragment_module, info.shaders.fragment_path);
+		if(!fragment_use_shader_source)
+            name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)fragment_module, info.shaders.fragment_src.as_path().string());
 
 		VkPipelineShaderStageCreateInfo fragShaderStageInfo = {};
 		fragShaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
@@ -979,10 +982,7 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 
 	vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->handle);
 
-	if (info.label.empty())
-		pipeline->label = std::string(info.shaders.vertex_path) + std::string(info.shaders.fragment_path);
-	else
-		pipeline->label = info.label;
+    pipeline->label = info.label;
 
 	name_object(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->handle, pipeline->label);
 	name_object(device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipeline->layout, pipeline->label);
@@ -998,19 +998,39 @@ GFXSize GFXVulkan::get_alignment(GFXSize size) {
     return (size + minUboAlignment / 2) & ~int(minUboAlignment - 1);
 }
 
-GFXCommandBuffer* GFXVulkan::acquire_command_buffer() {
-	return new GFXCommandBuffer();
+GFXCommandBuffer* GFXVulkan::acquire_command_buffer(bool for_presentation_use) {
+    GFXVulkanCommandBuffer* cmdbuf = new GFXVulkanCommandBuffer();
+    
+    if(!for_presentation_use) {
+        VkCommandBufferAllocateInfo info = {};
+        info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        info.commandPool = commandPool;
+        info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        info.commandBufferCount = 1;
+        
+        vkAllocateCommandBuffers(device, &info, &cmdbuf->handle);
+    }
+    
+	return cmdbuf;
 }
 
 void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
-	vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+    uint32_t imageIndex = 0;
+    if(identifier != -1) {
+        vkWaitForFences(device, 1, &inFlightFences[currentFrame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
-	uint32_t imageIndex = 0;
-	VkResult result = vkAcquireNextImageKHR(device, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
-	if (result == VK_ERROR_OUT_OF_DATE_KHR)
-		return;
+        VkResult result = vkAcquireNextImageKHR(device, swapchain, std::numeric_limits<uint64_t>::max(), imageAvailableSemaphores[currentFrame], VK_NULL_HANDLE, &imageIndex);
+        if (result == VK_ERROR_OUT_OF_DATE_KHR)
+            return;
+    }
+    
+    VkCommandBuffer cmd = VK_NULL_HANDLE;
 
-	VkCommandBuffer& cmd = commandBuffers[currentFrame];
+    GFXVulkanCommandBuffer* cmdbuf = (GFXVulkanCommandBuffer*)command_buffer;
+    if(cmdbuf->handle != VK_NULL_HANDLE)
+        cmd = cmdbuf->handle;
+    else
+        cmd = commandBuffers[currentFrame];
 
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1240,41 +1260,50 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 
 	vkEndCommandBuffer(cmd);
 
-	// submit
-	VkSubmitInfo submitInfo = {};
-	submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    if(identifier == -1) {
+        VkSubmitInfo submitInfo = {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &cmd;
 
-	VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
-	VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
-	submitInfo.waitSemaphoreCount = 1;
-	submitInfo.pWaitSemaphores = waitSemaphores;
-	submitInfo.pWaitDstStageMask = waitStages;
-	submitInfo.commandBufferCount = 1;
-	submitInfo.pCommandBuffers = &cmd;
-
-	VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
-	submitInfo.signalSemaphoreCount = 1;
-	submitInfo.pSignalSemaphores = signalSemaphores;
-
-	vkResetFences(device, 1, &inFlightFences[currentFrame]);
-
-	if(vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
-		return;
-
-	// present
-	VkPresentInfoKHR presentInfo = {};
-	presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
-
-	presentInfo.waitSemaphoreCount = 1;
-	presentInfo.pWaitSemaphores = signalSemaphores;
-	VkSwapchainKHR swapChains[] = { swapchain };
-	presentInfo.swapchainCount = 1;
-	presentInfo.pSwapchains = swapChains;
-	presentInfo.pImageIndices = &imageIndex;
-
-	vkQueuePresentKHR(presentQueue, &presentInfo);
-
-	currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+        vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+    } else {
+        // submit
+        VkSubmitInfo submitInfo = {};
+        submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        
+        VkSemaphore waitSemaphores[] = { imageAvailableSemaphores[currentFrame] };
+        VkPipelineStageFlags waitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        submitInfo.waitSemaphoreCount = 1;
+        submitInfo.pWaitSemaphores = waitSemaphores;
+        submitInfo.pWaitDstStageMask = waitStages;
+        submitInfo.commandBufferCount = 1;
+        submitInfo.pCommandBuffers = &cmd;
+        
+        VkSemaphore signalSemaphores[] = { renderFinishedSemaphores[currentFrame] };
+        submitInfo.signalSemaphoreCount = 1;
+        submitInfo.pSignalSemaphores = signalSemaphores;
+        
+        vkResetFences(device, 1, &inFlightFences[currentFrame]);
+        
+        if(vkQueueSubmit(graphicsQueue, 1, &submitInfo, inFlightFences[currentFrame]) != VK_SUCCESS)
+            return;
+        
+        // present
+        VkPresentInfoKHR presentInfo = {};
+        presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        
+        presentInfo.waitSemaphoreCount = 1;
+        presentInfo.pWaitSemaphores = signalSemaphores;
+        VkSwapchainKHR swapChains[] = { swapchain };
+        presentInfo.swapchainCount = 1;
+        presentInfo.pSwapchains = swapChains;
+        presentInfo.pImageIndices = &imageIndex;
+        
+        vkQueuePresentKHR(presentQueue, &presentInfo);
+        
+        currentFrame = (currentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
+    }
 }
 
 const char* GFXVulkan::get_name() {

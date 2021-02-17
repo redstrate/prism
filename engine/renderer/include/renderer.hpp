@@ -3,6 +3,7 @@
 #include <string_view>
 #include <vector>
 #include <cmath>
+#include <functional>
 
 #include "pass.hpp"
 #include "matrix.hpp"
@@ -63,7 +64,7 @@ public:
     void render(GFXCommandBuffer* command_buffer, Scene* scene, RenderTarget& target, int index);
 
     void render_screen(GFXCommandBuffer* commandBuffer, ui::Screen* screen, prism::Extent extent, ControllerContinuity& continuity, RenderScreenOptions options = RenderScreenOptions());
-    void render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Object camera_object, Camera& camera, prism::Extent extent, ControllerContinuity& continuity);
+    void render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Object camera_object, Camera& camera, prism::Extent extent, RenderTarget& target, ControllerContinuity& continuity);
     
     void create_mesh_pipeline(Material& material);
     
@@ -121,7 +122,6 @@ public:
 private:
     void createDummyTexture();
     void create_render_target_resources(RenderTarget& target);
-    void createMeshPipeline();
     void createPostPipeline();
     void createFontPipeline();
     void createSkyPipeline();
@@ -134,10 +134,7 @@ private:
     std::vector<std::unique_ptr<RenderTarget>> render_targets;
 
     ui::Screen* current_screen = nullptr;
-
-    // mesh
-    GFXBuffer* sceneBuffer = nullptr;
-
+    
     // sky
     GFXPipeline* skyPipeline = nullptr;
 

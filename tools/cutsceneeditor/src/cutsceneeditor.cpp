@@ -18,8 +18,6 @@ PositionKeyFrame* currentFrame = nullptr;
 
 std::string currentPath;
 
-std::unique_ptr<Renderer> renderer;
-
 void app_main(Engine* engine) {
 	CommonEditor* editor = (CommonEditor*)engine->get_app();
 
@@ -33,13 +31,6 @@ void app_main(Engine* engine) {
 CutsceneEditor::CutsceneEditor() : CommonEditor("CutsceneEditor") {}
 
 void CutsceneEditor::drawUI() {
-    if(!renderer) {
-        renderer = std::make_unique<Renderer>(engine->get_gfx(), false);
-        renderer->viewport_mode = true;
-        
-        renderer->resize_viewport({static_cast<uint32_t>(viewport_width), static_cast<uint32_t>(viewport_height)});
-    }
-        
     createDockArea();
     
     const ImGuiID editor_dockspace = ImGui::GetID("dockspace");
@@ -430,7 +421,7 @@ void CutsceneEditor::drawUI() {
     ImGui::End();
 
     if(ImGui::Begin("Viewport")) {
-        drawViewport(*renderer);
+        drawViewport(engine->get_scene());
     }
     
     ImGui::End();
@@ -440,6 +431,4 @@ void CutsceneEditor::drawUI() {
     
     if(ImGui::IsKeyPressed(ImGui::GetKeyIndex(ImGuiKey_RightArrow)))
         engine->current_cutscene_time += 1.0f;
-    
-    renderer->render(engine->get_scene(), -1);
 }

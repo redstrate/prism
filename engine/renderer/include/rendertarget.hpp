@@ -5,6 +5,7 @@
 
 class GFXTexture;
 class GFXFramebuffer;
+class GFXBuffer;
 
 class RenderTarget {
 public:
@@ -20,7 +21,10 @@ public:
     GFXTexture* offscreenDepthTexture = nullptr;
     
     GFXFramebuffer* offscreenFramebuffer = nullptr;
-        
+    
+    // mesh
+    GFXBuffer* sceneBuffer = nullptr;
+    
     // smaa
     GFXTexture* edge_texture = nullptr;
     GFXTexture* blend_texture = nullptr;

@@ -360,7 +360,7 @@ public:
     // misc operations
     virtual GFXSize get_alignment(const GFXSize size) { return size; }
 
-    virtual GFXCommandBuffer* acquire_command_buffer() { return nullptr; }
+    virtual GFXCommandBuffer* acquire_command_buffer(bool for_presentation_use = false) { return nullptr; }
     
     virtual void submit([[maybe_unused]] GFXCommandBuffer* command_buffer,
                         [[maybe_unused]] const int window = -1) {}

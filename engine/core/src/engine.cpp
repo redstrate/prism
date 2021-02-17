@@ -758,7 +758,7 @@ void Engine::render(const int index) {
         _imgui->render(0);
     }
 
-    GFXCommandBuffer* commandbuffer = _gfx->acquire_command_buffer();
+    GFXCommandBuffer* commandbuffer = _gfx->acquire_command_buffer(true);
 
     _app->render(commandbuffer);
 

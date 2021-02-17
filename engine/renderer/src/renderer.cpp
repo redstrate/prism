@@ -112,7 +112,6 @@ Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     
     offscreenRenderPass = gfx->create_render_pass(renderPassInfo);
     
-    createMeshPipeline();
     createFontPipeline();
     createSkyPipeline();
 }
@@ -251,28 +250,25 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
         commandbuffer->set_render_pass(beginInfo);
         
         const auto& cameras = scene->get_all<Camera>();
-        for(auto& [obj, camera] : cameras) {
-            const int actual_width = render_extent.width / cameras.size();
-            
+        for(auto& [obj, camera] : cameras) {            
             const bool requires_limited_perspective = render_options.enable_depth_of_field;
             if(requires_limited_perspective) {
-                camera.perspective = transform::perspective(radians(camera.fov), static_cast<float>(actual_width) / static_cast<float>(render_extent.height), camera.near, 100.0f);
+                camera.perspective = transform::perspective(radians(camera.fov), static_cast<float>(render_extent.width) / static_cast<float>(render_extent.height), camera.near, 100.0f);
             } else {
-                camera.perspective = transform::infinite_perspective(radians(camera.fov), static_cast<float>(actual_width) / static_cast<float>(render_extent.height), camera.near);
+                camera.perspective = transform::infinite_perspective(radians(camera.fov), static_cast<float>(render_extent.width) / static_cast<float>(render_extent.height), camera.near);
             }
         
             camera.view = inverse(scene->get<Transform>(obj).model);
             
             Viewport viewport = {};
-            viewport.x = (actual_width * 0);
-            viewport.width = actual_width;
+            viewport.width = render_extent.width;
             viewport.height = render_extent.height;
             
             commandbuffer->set_viewport(viewport);
             
             commandbuffer->push_group("render camera");
 
-            render_camera(commandbuffer, *scene, obj, camera, render_extent, continuity);
+            render_camera(commandbuffer, *scene, obj, camera, render_extent, target, continuity);
 
             commandbuffer->pop_group();
         }
@@ -377,7 +373,7 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
     commandbuffer->pop_group();
 }
 
-void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Object camera_object, Camera& camera, prism::Extent extent, ControllerContinuity& continuity) {
+void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Object camera_object, Camera& camera, prism::Extent extent, RenderTarget& target, ControllerContinuity& continuity) {
     // frustum test
     const auto frustum = normalize_frustum(camera_extract_frustum(scene, camera_object));
             
@@ -467,7 +463,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
             
             command_buffer->set_graphics_pipeline(mesh.mesh->bones.empty() ? mesh.materials[material_index]->static_pipeline : mesh.materials[material_index]->skinned_pipeline);
             
-            command_buffer->bind_shader_buffer(sceneBuffer, 0, 1, sizeof(SceneInformation));
+            command_buffer->bind_shader_buffer(target.sceneBuffer, 0, 1, sizeof(SceneInformation));
 
             command_buffer->bind_texture(scene.depthTexture, 2);
             command_buffer->bind_texture(scene.pointLightArray, 3);
@@ -525,7 +521,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
             pass->render_scene(scene, command_buffer);
     }
     
-    gfx->copy_buffer(sceneBuffer, &sceneInfo, 0, sizeof(SceneInformation));
+    gfx->copy_buffer(target.sceneBuffer, &sceneInfo, 0, sizeof(SceneInformation));
 }
 
 void Renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen, prism::Extent extent, ControllerContinuity& continuity, RenderScreenOptions options) {
@@ -809,10 +805,8 @@ void Renderer::create_render_target_resources(RenderTarget& target) {
         
         renderToViewportPipeline = gfx->create_graphics_pipeline(pipelineInfo);
     }
-}
-
-void Renderer::createMeshPipeline() {
-    sceneBuffer = gfx->create_buffer(nullptr, sizeof(SceneInformation), true, GFXBufferUsage::Storage);
+    
+    target.sceneBuffer = gfx->create_buffer(nullptr, sizeof(SceneInformation), true, GFXBufferUsage::Storage);
 }
 
 void Renderer::createPostPipeline() {

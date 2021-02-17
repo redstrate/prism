@@ -956,6 +956,8 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
     
     auto renderer = engine->get_renderer();
     
+    RenderTarget* target = renderer->allocate_render_target({thumbnail_resolution, thumbnail_resolution});
+    
     renderer->shadow_pass->create_scene_resources(scene);
     renderer->scene_capture->create_scene_resources(scene);
     
@@ -1011,7 +1013,7 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
     command_buffer->set_render_pass(begin_info);
     
     Renderer::ControllerContinuity continuity;
-    renderer->render_camera(command_buffer, scene, camera, scene.get<Camera>(camera), begin_info.render_area.extent, continuity);
+    renderer->render_camera(command_buffer, scene, camera, scene.get<Camera>(camera), begin_info.render_area.extent, *target, continuity);
     
     // render post
     begin_info.framebuffer = final_framebuffer;
