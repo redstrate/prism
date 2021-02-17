@@ -220,9 +220,8 @@ void GFXMetal::copy_buffer(GFXBuffer* buffer, void* data, const GFXSize offset, 
 
     const unsigned char * src = reinterpret_cast<const unsigned char*>(data);
     unsigned char * dest = reinterpret_cast<unsigned char *>(metalBuffer->get(currentFrameIndex).contents);
-    memcpy(dest + offset, src, size);
-
-    //[metalBuffer->handle didModifyRange:NSMakeRange(offset, size)];
+    if(dest != nullptr)
+        memcpy(dest + offset, src, size);
 }
 
 void* GFXMetal::get_buffer_contents(GFXBuffer* buffer) {
@@ -699,7 +698,7 @@ GFXPipeline* GFXMetal::create_compute_pipeline(const GFXComputePipelineCreateInf
     return pipeline;
 }
 
-GFXCommandBuffer* GFXMetal::acquire_command_buffer() {
+GFXCommandBuffer* GFXMetal::acquire_command_buffer(bool for_presentation_use) {
     GFXCommandBuffer* cmdbuf = nullptr;
     while(cmdbuf == nullptr) {
         for(const auto [i, buffer_status] : utility::enumerate(free_command_buffers)) {
