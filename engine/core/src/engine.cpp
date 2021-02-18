@@ -414,7 +414,7 @@ void Engine::add_window(void* native_handle, const int identifier, const prism::
     
     _gfx->initialize_view(native_handle, identifier, drawable_extent.width, drawable_extent.height);
 
-    _windows.push_back(std::move(std::make_unique<Window>()));
+    _windows.push_back(std::make_unique<Window>());
     
     Window* window = _windows.back().get();
     window->identifier = identifier;

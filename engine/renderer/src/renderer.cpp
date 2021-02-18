@@ -300,7 +300,7 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
     
     commandbuffer->pop_group();
 
-    if(render_options.enable_depth_of_field)
+    if(render_options.enable_depth_of_field && dofPass != nullptr)
         dofPass->render(commandbuffer, *scene);
     
     beginInfo.framebuffer = nullptr;
@@ -1064,7 +1064,7 @@ ShaderSource Renderer::register_shader(const std::string_view shader_file) {
     
     file::Path shader_path = file::Path(shader_file);
     
-    ShaderStage stage;
+    ShaderStage stage = ShaderStage::Vertex;
     if(shader_path.extension() == ".vert")
         stage = ShaderStage::Vertex;
     else if(shader_path.extension() == ".frag")

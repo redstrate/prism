@@ -27,6 +27,7 @@ xcb_connection_t* connection = nullptr;
 xcb_screen_t* screen = nullptr;
 
 struct WindowConnection {
+    int identifier = 0;
     xcb_connection_t* connection;
     xcb_window_t window;
 };
@@ -67,6 +68,7 @@ static inline xcb_intern_atom_reply_t* intern_atom_helper(xcb_connection_t *conn
 int platform::open_window(const std::string_view title, const prism::Rectangle rect, const WindowFlags flags) {
     auto& win = window_connections.emplace_back();
     win.connection = connection;
+    win.identifier = window_connections.size() - 1;
 
     uint32_t mask;
     uint32_t values[32];
@@ -115,7 +117,7 @@ int platform::open_window(const std::string_view title, const prism::Rectangle r
     engine->add_window((void*)&win, 0, rect.extent);
     app->initialize_render();
 
-    return window_connections.size() - 1;
+    return win.identifier;
 }
 
 void platform::close_window(const int index) {
@@ -362,10 +364,16 @@ int main(int argc, char* argv[]) {
                 {
                     const xcb_configure_notify_event_t *cfgEvent = (const xcb_configure_notify_event_t *)event;
 
+                    int identifier = -1;
+                    for(auto window : window_connections) {
+                        if(window.window == cfgEvent->window)
+                            identifier = window.identifier;
+                    }
+                    
                     window_width = cfgEvent->width;
                     window_height = cfgEvent->height;
                     
-                    engine->resize(0, {cfgEvent->width, cfgEvent->height});
+                    engine->resize(identifier, {cfgEvent->width, cfgEvent->height});
                 }
                 break;
                 case XCB_KEY_PRESS:

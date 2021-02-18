@@ -226,11 +226,13 @@ void GFXVulkan::recreate_view(const int identifier, const uint32_t width, const 
         if(surface->identifier == identifier)
             found_surface = surface;
     }
-
-	found_surface->surfaceWidth = width;
-    found_surface->surfaceHeight = height;
-
-	createSwapchain(found_surface, found_surface->swapchain);
+    
+    if(found_surface != nullptr) {
+        found_surface->surfaceWidth = width;
+        found_surface->surfaceHeight = height;
+        
+        createSwapchain(found_surface, found_surface->swapchain);
+    }
 }
 
 GFXBuffer* GFXVulkan::create_buffer(void *data, const GFXSize size, const bool dynamic_data, const GFXBufferUsage usage) {
@@ -294,7 +296,8 @@ void GFXVulkan::copy_buffer(GFXBuffer* buffer, void* data, GFXSize offset, GFXSi
     VkMappedMemoryRange range = {};
     range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
     range.memory = vulkanBuffer->memory;
-    range.size = VK_WHOLE_SIZE;
+    range.size = size;
+    range.offset = offset;
     vkFlushMappedMemoryRanges(device, 1, &range);
     
     vkUnmapMemory(device, vulkanBuffer->memory);
@@ -1029,8 +1032,11 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
     GFXVulkanCommandBuffer* cmdbuf = (GFXVulkanCommandBuffer*)command_buffer;
     if(cmdbuf->handle != VK_NULL_HANDLE)
         cmd = cmdbuf->handle;
-    else
+    else if(current_surface != nullptr)
         cmd = commandBuffers[current_surface-> currentFrame];
+    
+    if(cmd == nullptr)
+        return;
 
 	VkCommandBufferBeginInfo beginInfo = {};
 	beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -1041,9 +1047,11 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 	VkRenderPass currentRenderPass = VK_NULL_HANDLE;
 	GFXVulkanPipeline* currentPipeline = nullptr;
 	uint64_t lastDescriptorHash = 0;
-	VkIndexType currentIndexType = VK_INDEX_TYPE_UINT32;
 
 	const auto try_bind_descriptor = [cmd, this, &currentPipeline, &lastDescriptorHash]() -> bool {
+        if(currentPipeline == nullptr)
+            return false;
+        
 		if (lastDescriptorHash != getDescriptorHash(currentPipeline)) {
 			if (!currentPipeline->cachedDescriptorSets.count(getDescriptorHash(currentPipeline)))
 				cacheDescriptorState(currentPipeline, currentPipeline->descriptorLayout);
@@ -1060,7 +1068,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 		return true;
 	};
 
-	for (auto command : command_buffer->commands) {
+	for (const auto& command : command_buffer->commands) {
 		switch (command.type) {
         case GFXCommandType::SetRenderPass:
         {
@@ -1100,7 +1108,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                 
                 vkCmdSetScissor(cmd, 0, 1, &scissor);
             }
-            else {
+            else if(current_surface != nullptr) {
                 renderPassInfo.framebuffer = current_surface->swapchainFramebuffers[imageIndex];
                 
                 VkViewport viewport = {};
@@ -1170,8 +1178,6 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 				indexType = VK_INDEX_TYPE_UINT16;
 
             vkCmdBindIndexBuffer(cmd, ((GFXVulkanBuffer*)command.data.set_index_buffer.buffer)->handle, 0, indexType);
-
-			currentIndexType = indexType;
 		}
 			break;
         case GFXCommandType::SetPushConstant:
@@ -1267,7 +1273,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
         submitInfo.pCommandBuffers = &cmd;
 
         vkQueueSubmit(graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
-    } else {
+    } else if(current_surface != nullptr) {
         // submit
         VkSubmitInfo submitInfo = {};
         submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1445,6 +1451,7 @@ void GFXVulkan::createSwapchain(NativeSurface* native_surface, VkSwapchainKHR ol
 #else
     if(native_surface->surface == VK_NULL_HANDLE) {
         struct WindowConnection {
+            int identifier = 0;
             xcb_connection_t* connection;
             xcb_window_t window;
         };

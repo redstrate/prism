@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
 
         return 0;
     } else {
-        ShaderStage stage;
+        ShaderStage stage = ShaderStage::Vertex;
         if(has_extension(source_path, ".vert"))
             stage = ShaderStage::Vertex;
         else if(has_extension(source_path, ".frag"))
