@@ -23,9 +23,6 @@ public:
     
     void render(GFXCommandBuffer* command_buffer, Scene& scene);
     
-    GFXSampler* shadow_sampler = nullptr;
-    GFXSampler* pcf_sampler = nullptr;
-    
 private:
     void render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, const Matrix4x4 light_matrix, const Matrix4x4 model, const Vector3 light_position, const Light::Type type, const CameraFrustum& frustum, const int base_instance);
     

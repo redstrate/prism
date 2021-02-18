@@ -10,6 +10,7 @@ enum class PassTextureType {
 };
 
 class GFXTexture;
+class RenderTarget;
 
 class Pass {
 public:
@@ -17,12 +18,13 @@ public:
     
     virtual void initialize() {}
     
-    virtual void resize([[maybe_unused]] const prism::Extent extent) {}
+    virtual void create_render_target_resources([[maybe_used]] RenderTarget& target) {}
 
 	virtual void render_scene([[maybe_unused]] Scene& scene,
                              [[maybe_unused]] GFXCommandBuffer* commandBuffer) {}
     virtual void render_post([[maybe_unused]] GFXCommandBuffer* commandBuffer,
-                            [[maybe_unused]] int index) {}
+                             [[maybe_unused]] RenderTarget& target,
+                             [[maybe_unused]] int index) {}
     
     virtual GFXTexture* get_requested_texture([[maybe_unused]] PassTextureType type) { return nullptr; }
 };

@@ -10,9 +10,8 @@
 #include <unistd.h>
 #include <X11/Xlib.h>
 #include <xcb/xcb.h>
+#include <xcb/randr.h>
 #include <X11/Xutil.h>
-#include <GL/gl.h>
-#include <GL/glx.h>
 
 @APP_CLASS@* app = nullptr;
 GFX* interface = nullptr;
@@ -22,10 +21,13 @@ Display *dpy = nullptr;
 int mouse_x = -1, mouse_y = -1;
 bool mouse_down[2] = {false, false};
 
+int window_width = -1, window_height = -1;
+
 xcb_connection_t* connection = nullptr;
 xcb_screen_t* screen = nullptr;
 
 struct WindowConnection {
+    int identifier = 0;
     xcb_connection_t* connection;
     xcb_window_t window;
 };
@@ -50,15 +52,23 @@ const char* platform::get_name() {
     return "Linux";
 }
 
+bool platform::supports_feature(const PlatformFeature feature) {
+    if(feature == PlatformFeature::Windowing)
+        return true;
+    
+    return false;
+}
+
 static inline xcb_intern_atom_reply_t* intern_atom_helper(xcb_connection_t *conn, bool only_if_exists, const char *str)
 {
     xcb_intern_atom_cookie_t cookie = xcb_intern_atom(conn, only_if_exists, strlen(str), str);
     return xcb_intern_atom_reply(conn, cookie, NULL);
 }
 
-int platform::open_window(const std::string_view title, const int x, const int y, const int width, const int height, const WindowFlags flags) {
+int platform::open_window(const std::string_view title, const prism::Rectangle rect, const WindowFlags flags) {
     auto& win = window_connections.emplace_back();
     win.connection = connection;
+    win.identifier = window_connections.size() - 1;
 
     uint32_t mask;
     uint32_t values[32];
@@ -79,7 +89,7 @@ int platform::open_window(const std::string_view title, const int x, const int y
     win.window = xcb_generate_id(connection);
     cookie = xcb_create_window(win.connection,
                                XCB_COPY_FROM_PARENT, win.window, screen->root,
-                               x, y, width, height,
+                               rect.offset.x, rect.offset.y, rect.extent.width, rect.extent.height,
                                0,
                                XCB_WINDOW_CLASS_INPUT_OUTPUT,
                                screen->root_visual,
@@ -101,10 +111,13 @@ int platform::open_window(const std::string_view title, const int x, const int y
     xcb_map_window(connection, win.window);
     xcb_flush(connection);
 
-    engine->add_window((void*)&win, 0, width, height);
+    window_width = rect.extent.width;
+    window_height = rect.extent.height;
+    
+    engine->add_window((void*)&win, 0, rect.extent);
     app->initialize_render();
 
-    return window_connections.size() - 1;
+    return win.identifier;
 }
 
 void platform::close_window(const int index) {
@@ -121,30 +134,66 @@ float platform::get_monitor_dpi() {
     return 1.0;
 }
 
-platform::Rect platform::get_monitor_resolution() {
+prism::Rectangle platform::get_monitor_resolution() {
+    // based off of https://stackoverflow.com/a/27141466
+    xcb_flush(connection);
+    
+    xcb_randr_get_screen_resources_cookie_t screenResCookie = {};
+    screenResCookie = xcb_randr_get_screen_resources(connection, screen->root);
+    
+    xcb_randr_get_screen_resources_reply_t* screenResReply = {};
+    screenResReply = xcb_randr_get_screen_resources_reply(connection, screenResCookie, 0);
+    
+    int crtcs_num = xcb_randr_get_screen_resources_crtcs_length(screenResReply);
+    xcb_randr_crtc_t* firstCRTC = xcb_randr_get_screen_resources_crtcs(screenResReply);
+    
+    xcb_randr_get_crtc_info_cookie_t* crtcResCookie = new xcb_randr_get_crtc_info_cookie_t[crtcs_num];
+    for(int i = 0; i < crtcs_num; i++)
+        crtcResCookie[i] = xcb_randr_get_crtc_info(connection, *(firstCRTC+i), 0);
+    
+    xcb_randr_get_crtc_info_reply_t** crtcResReply = new xcb_randr_get_crtc_info_reply_t*[crtcs_num];
+    for(int i = 0; i < crtcs_num; i++)
+        crtcResReply[i] = xcb_randr_get_crtc_info_reply(connection, crtcResCookie[i], 0);
+    
+    for(int i = 0; i < crtcs_num; i++) {
+        // just pick up the first monitor for now
+        if(crtcResReply[i]) {
+            prism::Rectangle rect;
+            rect.extent.width = crtcResReply[i]->width;
+            rect.extent.height = crtcResReply[i]->height;
+            
+            return rect;
+        }
+    }
+    
+    return {};
 }
 
-platform::Rect platform::get_monitor_work_area() {
+prism::Rectangle platform::get_monitor_work_area() {
+    return platform::get_monitor_resolution();
 }
 
-std::tuple<int, int> platform::get_window_position(const int index) {
+prism::Offset platform::get_window_position(const int index) {
 }
 
-std::tuple<int, int> platform::get_window_size(const int index) {
+prism::Extent platform::get_window_size(const int index) {
+    return {window_width, window_height};
 }
 
-std::tuple<int, int> platform::get_window_drawable_size(const int index) {
+prism::Extent platform::get_window_drawable_size(const int index) {
+    return {window_width, window_height};
 }
+
 bool platform::is_window_focused(const int index) {
 }
 
 void platform::set_window_focused(const int index) {
 }
 
-void platform::set_window_position(const int index, const int x, const int y) {
+void platform::set_window_position(const int index, const prism::Offset offset) {
 }
 
-void platform::set_window_size(const int index, const int w, const int h) {
+void platform::set_window_size(const int index, const prism::Extent extent) {
 }
 
 void platform::set_window_title(const int index, const std::string_view title) {
@@ -166,11 +215,11 @@ int platform::get_keycode(const InputButton key) {
     return inputToKeyCode[key];
 }
 
-std::tuple<int, int> platform::get_cursor_position() {
+prism::Offset platform::get_cursor_position() {
     return {mouse_x, mouse_y};
 }
 
-std::tuple<int, int> platform::get_screen_cursor_position() {
+prism::Offset platform::get_screen_cursor_position() {
     return {mouse_x, mouse_y};
 }
 
@@ -278,7 +327,7 @@ int main(int argc, char* argv[]) {
                 {
                     auto ev = (xcb_motion_notify_event_t *)event;
 
-                    engine->process_mouse_move(ev->event_x, ev->event_y);
+                    //engine->process_mouse_move(ev->event_x, ev->event_y);
 
                     mouse_x = ev->event_x;
                     mouse_y = ev->event_y;
@@ -291,7 +340,7 @@ int main(int argc, char* argv[]) {
                     if(press->detail == 3)
                         index = 1;
 
-                    engine->process_mouse(index, press->event_x, press->event_y);
+                    //engine->process_mouse(index, press->event_x, press->event_y);
 
                     mouse_down[index] = true;
 
@@ -306,7 +355,7 @@ int main(int argc, char* argv[]) {
                     if(press->detail == 3)
                         index = 1;
 
-                    engine->process_mouse_released(index);
+                    //engine->process_mouse_released(index);
 
                     mouse_down[index] = false;
                 }
@@ -315,21 +364,30 @@ int main(int argc, char* argv[]) {
                 {
                     const xcb_configure_notify_event_t *cfgEvent = (const xcb_configure_notify_event_t *)event;
 
-                    engine->resize(0, cfgEvent->width, cfgEvent->height);
+                    int identifier = -1;
+                    for(auto window : window_connections) {
+                        if(window.window == cfgEvent->window)
+                            identifier = window.identifier;
+                    }
+                    
+                    window_width = cfgEvent->width;
+                    window_height = cfgEvent->height;
+                    
+                    engine->resize(identifier, {cfgEvent->width, cfgEvent->height});
                 }
                 break;
                 case XCB_KEY_PRESS:
                 {
                     const xcb_key_release_event_t *keyEvent = (const xcb_key_release_event_t *)event;
 
-                    engine->process_key(keyEvent->detail);
+                    //engine->process_key(keyEvent->detail);
                 }
                 break;
                 case XCB_KEY_RELEASE:
                 {
                     const xcb_key_release_event_t *keyEvent = (const xcb_key_release_event_t *)event;
 
-                    engine->process_key_up(keyEvent->detail);
+                    //engine->process_key_up(keyEvent->detail);
                 }
                 break;
             }
@@ -341,9 +399,15 @@ int main(int argc, char* argv[]) {
             break;
 
         engine->update(1.0 / 60.0);
-        engine->begin_frame();
+        engine->begin_frame(1.0 / 60.0);
         engine->render(0);
+        
+        engine->end_frame();
     }
 
   return 0;
+}
+
+PlatformTheme platform::get_theme() {
+    return PlatformTheme::Light;
 }

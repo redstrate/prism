@@ -1,5 +1,7 @@
 #include "materialcompiler.hpp"
 
+#include <cstring>
+
 #include "file.hpp"
 #include "log.hpp"
 #include "engine.hpp"
@@ -34,7 +36,7 @@ ShaderSource get_shader(std::string filename, bool skinned, bool cubemap) {
 
 GFXPipeline* MaterialCompiler::create_static_pipeline(GFXGraphicsPipelineCreateInfo createInfo, bool positions_only, bool cubemap) {
     // take vertex src
-    std::string vertex_path = createInfo.shaders.vertex_path.data();
+    std::string vertex_path = createInfo.shaders.vertex_src.as_path().string();
     vertex_path += ".glsl";
 
     if (positions_only)
@@ -44,7 +46,6 @@ GFXPipeline* MaterialCompiler::create_static_pipeline(GFXGraphicsPipelineCreateI
         createInfo.label += "cubemap ver";
     
     createInfo.shaders.vertex_src = get_shader(vertex_path, false, cubemap);
-    createInfo.shaders.vertex_path = "";
     
     if(positions_only) {
         createInfo.vertex_input.inputs = {
@@ -79,11 +80,10 @@ GFXPipeline* MaterialCompiler::create_skinned_pipeline(GFXGraphicsPipelineCreate
     createInfo.label += " (Skinned)";
     
     // take vertex src
-    std::string vertex_path = createInfo.shaders.vertex_path.data();
+    std::string vertex_path = createInfo.shaders.vertex_src.as_path().string();
     vertex_path += ".glsl";
     
     createInfo.shaders.vertex_src = get_shader(vertex_path, true, false);
-    createInfo.shaders.vertex_path = "";
      
     createInfo.shader_input.bindings.push_back({ 14, GFXBindingType::StorageBuffer });
     
@@ -185,10 +185,8 @@ layout(std430, binding = 1) buffer readonly SceneInformation {\n \
     Probe probes[max_probes];\n \
     int numLights;\n \
 } scene;\n \
-layout (binding = 2) uniform texture2D sun_shadow;\n \
-layout (binding = 4) uniform sampler shadow_sampler;\n \
-layout (binding = 5) uniform samplerShadow pcf_sampler;\n \
-layout (binding = 6) uniform texture2DArray spot_shadow;\n \
+layout (binding = 2) uniform sampler2D sun_shadow;\n \
+layout (binding = 6) uniform sampler2DArray spot_shadow;\n \
 layout(push_constant, binding = 0) uniform PushConstant {\n \
     mat4 model;\n \
 };\n";
@@ -221,7 +219,7 @@ ShaderSource MaterialCompiler::compile_material_fragment(Material& material, boo
     
     if(render_options.enable_point_shadows) {
         src += "#define POINT_SHADOWS_SUPPORTED\n";
-        src += "layout (binding = 3) uniform textureCubeArray point_shadow;\n";
+        src += "layout (binding = 3) uniform samplerCubeArray point_shadow;\n";
     }
 
     src += struct_info;

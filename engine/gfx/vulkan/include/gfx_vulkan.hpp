@@ -15,6 +15,29 @@
 #include "gfx.hpp"
 #include "gfx_vulkan_constants.hpp"
 
+struct NativeSurface {
+    int identifier = -1;
+    
+    void* windowNativeHandle;
+    uint32_t surfaceWidth = -1, surfaceHeight = -1;
+    
+    std::vector<VkSemaphore> imageAvailableSemaphores;
+    std::vector<VkSemaphore> renderFinishedSemaphores;
+    std::vector<VkFence> inFlightFences;
+    size_t currentFrame = 0;
+    
+    VkSurfaceKHR surface = VK_NULL_HANDLE;
+    VkSwapchainKHR swapchain = VK_NULL_HANDLE;
+    VkExtent2D swapchainExtent = {};
+    
+    std::vector<VkImage> swapchainImages;
+    std::vector<VkImageView> swapchainImageViews;
+    
+    VkRenderPass swapchainRenderPass = VK_NULL_HANDLE;
+    
+    std::vector<VkFramebuffer> swapchainFramebuffers;
+};
+
 class GFXVulkanPipeline;
 
 class GFXVulkan : public GFX {
@@ -57,16 +80,16 @@ public:
     // misc operations
 	GFXSize get_alignment(const GFXSize size) override;
 
-	GFXCommandBuffer* acquire_command_buffer() override;
+    GFXCommandBuffer* acquire_command_buffer(bool for_presentation_use = false) override;
 
     void submit(GFXCommandBuffer* command_buffer, const int identifier) override;
 
 private:
 	void createInstance(std::vector<const char*> layers, std::vector<const char*> extensions);
 	void createLogicalDevice(std::vector<const char*> extensions);
-	void createSwapchain(VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE);
+	void createSwapchain(NativeSurface* native_surface, VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE);
 	void createDescriptorPool();
-	void createSyncPrimitives();
+    void createSyncPrimitives(NativeSurface* native_surface);
 
 	// dynamic descriptor sets
 	void resetDescriptorState();
@@ -74,8 +97,8 @@ private:
     uint64_t getDescriptorHash(GFXVulkanPipeline* pipeline);
 
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
-	void transitionImageLayout(VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageLayout oldLayout, VkImageLayout newLayout);
-	void inlineTransitionImageLayout(VkCommandBuffer command_buffer, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageLayout oldLayout, VkImageLayout newLayout);
+    void transitionImageLayout(VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageSubresourceRange range, VkImageLayout oldLayout, VkImageLayout newLayout);
+	void inlineTransitionImageLayout(VkCommandBuffer command_buffer, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageSubresourceRange range, VkImageLayout oldLayout, VkImageLayout newLayout);
 	VkShaderModule createShaderModule(const uint32_t* code, const int length);
 	VkCommandBuffer beginSingleTimeCommands();
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer);
@@ -92,23 +115,7 @@ private:
 
 	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 
-	uint32_t surfaceWidth = -1, surfaceHeight = -1;
-
-	std::vector<VkSemaphore> imageAvailableSemaphores;
-	std::vector<VkSemaphore> renderFinishedSemaphores;
-	std::vector<VkFence> inFlightFences;
-	size_t currentFrame = 0;
-
-	VkSurfaceKHR surface = VK_NULL_HANDLE;
-	VkSwapchainKHR swapchain = VK_NULL_HANDLE;
-	VkExtent2D swapchainExtent = {};
-
-	std::vector<VkImage> swapchainImages;
-	std::vector<VkImageView> swapchainImageViews;
-
-	VkRenderPass swapchainRenderPass = VK_NULL_HANDLE;
-
-	std::vector<VkFramebuffer> swapchainFramebuffers;
+    std::vector<NativeSurface*> native_surfaces;
 
 	std::vector<VkCommandBuffer> commandBuffers;
 

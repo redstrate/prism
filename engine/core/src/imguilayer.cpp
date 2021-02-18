@@ -41,8 +41,8 @@ ImGuiLayer::ImGuiLayer() {
     io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
     io.BackendPlatformName = "Prism";
     
-    //if(platform::supports_feature(PlatformFeature::Windowing))
-    //    io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+    if(platform::supports_feature(PlatformFeature::Windowing))
+        io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
     
     for (auto& [im, pl] : imToPl)
         io.KeyMap[im] = platform::get_keycode(pl);
@@ -196,8 +196,6 @@ void ImGuiLayer::render(int index) {
     if(index == 0) {
         ImGui::EndFrame();
         ImGui::Render();
-        
-        ImGui::UpdatePlatformWindows();
     }
 }
 

@@ -6,8 +6,8 @@ add_platform(
     main.cpp.in
     LINK_LIBRARIES
     X11
-    GLX
     xcb
+    xcb-randr
     Core
     GFXVulkan
     COMPILE_OPTIONS

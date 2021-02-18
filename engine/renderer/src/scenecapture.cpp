@@ -42,6 +42,18 @@ struct SceneInformation {
     int p[3];
 };
 
+struct SkyPushConstant {
+    Matrix4x4 view;
+    Vector4 sun_position_fov;
+    float aspect;
+};
+
+struct FilterPushConstant {
+    Matrix4x4 mvp;
+    float roughness;
+    float buffer[15];
+};
+
 const int mipLevels = 5;
 
 const std::array<Matrix4x4, 6> sceneTransforms = {
@@ -63,6 +75,7 @@ SceneCapture::SceneCapture(GFX* gfx) {
     renderPassInfo.label = "Scene Capture Cube";
     renderPassInfo.attachments.push_back(GFXPixelFormat::R8G8B8A8_UNORM);
     renderPassInfo.attachments.push_back(GFXPixelFormat::DEPTH_32F);
+    renderPassInfo.will_use_in_shader = true;
 
     renderPass = gfx->create_render_pass(renderPassInfo);
     
@@ -71,7 +84,7 @@ SceneCapture::SceneCapture(GFX* gfx) {
     textureInfo.width = scene_cubemap_resolution;
     textureInfo.height = scene_cubemap_resolution;
     textureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
-    textureInfo.usage = GFXTextureUsage::Attachment;
+    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Transfer;
     textureInfo.samplingMode = SamplingMode::ClampToEdge;
     
     offscreenTexture = gfx->create_texture(textureInfo);
@@ -256,8 +269,6 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                                 command_buffer->bind_shader_buffer(sceneBuffer, 0, 1, sizeof(SceneInformation));
                                 command_buffer->bind_texture(scene->depthTexture, 2);
                                 command_buffer->bind_texture(scene->pointLightArray, 3);
-                                command_buffer->bind_sampler(engine->get_renderer()->shadow_pass->shadow_sampler, 4);
-                                command_buffer->bind_sampler(engine->get_renderer()->shadow_pass->pcf_sampler, 5);
                                 command_buffer->bind_texture(scene->spotLightArray, 6);
 
                                 command_buffer->set_push_constant(&pc, sizeof(PushConstant));
@@ -277,11 +288,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 }
                 
                 // render sky
-                struct SkyPushConstant {
-                    Matrix4x4 view;
-                    Vector4 sun_position_fov;
-                    float aspect;
-                } pc;
+                SkyPushConstant pc;
                 
                 pc.view = sceneTransforms[face];
                 pc.aspect = 1.0f;
@@ -297,6 +304,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 
                 command_buffer->draw(0, 4, 0, 1);
                 
+                command_buffer->end_render_pass();
                 command_buffer->copy_texture(offscreenTexture, scene_cubemap_resolution, scene_cubemap_resolution, environmentCube, face, 0, 0);
             };
             
@@ -332,7 +340,8 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 command_buffer->set_push_constant(&mvp, sizeof(Matrix4x4));
                 
                 command_buffer->draw_indexed(cubeMesh->num_indices, 0, 0, 0);
-
+                
+                command_buffer->end_render_pass();
                 command_buffer->copy_texture(irradianceOffscreenTexture, irradiance_cubemap_resolution, irradiance_cubemap_resolution, scene->irradianceCubeArray, face, last_probe, 0);
             };
             
@@ -359,11 +368,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 command_buffer->set_vertex_buffer(cubeMesh->position_buffer, 0, 0);
                 command_buffer->set_index_buffer(cubeMesh->index_buffer, IndexType::UINT32);
                 
-                struct PushConstant {
-                    Matrix4x4 mvp;
-                    float roughness;
-                } pc;
-                
+                FilterPushConstant pc;
                 pc.mvp = projection * sceneTransforms[face];
                 pc.roughness = ((float)mip) / (float)(mipLevels - 1);
 
@@ -373,6 +378,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 
                 command_buffer->draw_indexed(cubeMesh->num_indices, 0, 0, 0);
                 
+                command_buffer->end_render_pass();
                 command_buffer->copy_texture(prefilteredOffscreenTexture, info.render_area.extent.width, info.render_area.extent.height, scene->prefilteredCubeArray, face, last_probe, mip);
             };
             
@@ -393,15 +399,15 @@ void SceneCapture::createSkyResources() {
     pipelineInfo.label = "Sky Scene Capture";
     pipelineInfo.render_pass = renderPass;
     
-    pipelineInfo.shaders.vertex_path = "sky.vert";
-    pipelineInfo.shaders.fragment_path = "sky.frag";
+    pipelineInfo.shaders.vertex_src = file::Path("sky.vert");
+    pipelineInfo.shaders.fragment_src = file::Path("sky.frag");
     
     pipelineInfo.shader_input.bindings = {
         {1, GFXBindingType::PushConstant}
     };
     
     pipelineInfo.shader_input.push_constants = {
-        {(sizeof(Matrix4x4) + sizeof(Vector4) + sizeof(float)), 0}
+        {sizeof(SkyPushConstant), 0}
     };
     
     pipelineInfo.depth.depth_mode = GFXDepthMode::LessOrEqual;
@@ -417,7 +423,7 @@ void SceneCapture::createIrradianceResources() {
     textureInfo.width = irradiance_cubemap_resolution;
     textureInfo.height = irradiance_cubemap_resolution;
     textureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
-    textureInfo.usage = GFXTextureUsage::Attachment;
+    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Transfer;
     textureInfo.samplingMode = SamplingMode::ClampToEdge;
     
     irradianceOffscreenTexture = gfx->create_texture(textureInfo);
@@ -425,6 +431,7 @@ void SceneCapture::createIrradianceResources() {
     GFXRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.label = "Irradiance";
     renderPassInfo.attachments.push_back(GFXPixelFormat::R8G8B8A8_UNORM);
+    renderPassInfo.will_use_in_shader = true;
 
     irradianceRenderPass = gfx->create_render_pass(renderPassInfo);
 
@@ -436,8 +443,8 @@ void SceneCapture::createIrradianceResources() {
 
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Irradiance Convolution";
-    pipelineInfo.shaders.vertex_path = "irradiance.vert";
-    pipelineInfo.shaders.fragment_path = "irradiance.frag";
+    pipelineInfo.shaders.vertex_src = file::Path("irradiance.vert");
+    pipelineInfo.shaders.fragment_src = file::Path("irradiance.frag");
     
     GFXVertexInput input;
     input.stride = sizeof(Vector3);
@@ -471,7 +478,7 @@ void SceneCapture::createPrefilterResources() {
     textureInfo.width = scene_cubemap_resolution;
     textureInfo.height = scene_cubemap_resolution;
     textureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
-    textureInfo.usage = GFXTextureUsage::Attachment;
+    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Transfer;
     textureInfo.samplingMode = SamplingMode::ClampToEdge;
     
     prefilteredOffscreenTexture = gfx->create_texture(textureInfo);
@@ -488,8 +495,8 @@ void SceneCapture::createPrefilterResources() {
     
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Prefilter";
-    pipelineInfo.shaders.vertex_path = "filter.vert";
-    pipelineInfo.shaders.fragment_path = "filter.frag";
+    pipelineInfo.shaders.vertex_src = file::Path("filter.vert");
+    pipelineInfo.shaders.fragment_src = file::Path("filter.frag");
     
     pipelineInfo.shaders.fragment_constants = {size_constant};
     
@@ -504,7 +511,7 @@ void SceneCapture::createPrefilterResources() {
     pipelineInfo.vertex_input.attributes.push_back(positionAttribute);
     
     pipelineInfo.shader_input.push_constants = {
-        {sizeof(Matrix4x4) + sizeof(float), 0}
+        {sizeof(FilterPushConstant), 0}
     };
     
     pipelineInfo.shader_input.bindings = {

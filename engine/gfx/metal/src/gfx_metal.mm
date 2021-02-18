@@ -220,9 +220,8 @@ void GFXMetal::copy_buffer(GFXBuffer* buffer, void* data, const GFXSize offset, 
 
     const unsigned char * src = reinterpret_cast<const unsigned char*>(data);
     unsigned char * dest = reinterpret_cast<unsigned char *>(metalBuffer->get(currentFrameIndex).contents);
-    memcpy(dest + offset, src, size);
-
-    //[metalBuffer->handle didModifyRange:NSMakeRange(offset, size)];
+    if(dest != nullptr)
+        memcpy(dest + offset, src, size);
 }
 
 void* GFXMetal::get_buffer_contents(GFXBuffer* buffer) {
@@ -443,17 +442,17 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
     
     MTLRenderPipelineDescriptor *pipelineDescriptor = [MTLRenderPipelineDescriptor new];
     
-    const bool has_vertex_stage = !info.shaders.vertex_path.empty() || !info.shaders.vertex_src.empty();
-    const bool has_fragment_stage = !info.shaders.fragment_path.empty() || !info.shaders.fragment_src.empty();
+    const bool has_vertex_stage = !info.shaders.vertex_src.empty();
+    const bool has_fragment_stage = !info.shaders.fragment_src.empty();
     
     if(has_vertex_stage) {
         id<MTLLibrary> vertexLibrary;
         {
             std::string vertex_src;
-            if(info.shaders.vertex_path.empty()) {
+            if(info.shaders.vertex_src.is_string()) {
                 vertex_src = info.shaders.vertex_src.as_string();
             } else {
-                const auto vertex_path = utility::format("{}.msl", info.shaders.vertex_path);
+                const auto vertex_path = utility::format("{}.msl", info.shaders.vertex_src.as_path().string());
                 
                 auto file = file::open(file::internal_domain / vertex_path);
                 if(file != std::nullopt) {
@@ -471,8 +470,8 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
             
             id<MTLFunction> vertexFunc = [vertexLibrary newFunctionWithName:@"main0" constantValues:vertex_constants error:nil];
                         
-            if(debug_enabled)
-                vertexFunc.label = [NSString stringWithFormat:@"%s", info.shaders.vertex_path.data()];
+            if(debug_enabled && info.shaders.vertex_src.is_path())
+                vertexFunc.label = [NSString stringWithFormat:@"%s", info.shaders.vertex_src.as_path().string().data()];
             
             pipelineDescriptor.vertexFunction = vertexFunc;
         }
@@ -482,10 +481,10 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
         id<MTLLibrary> fragmentLibrary;
         {
             std::string fragment_src;
-            if(info.shaders.fragment_path.empty()) {
+            if(info.shaders.fragment_src.is_string()) {
                 fragment_src = info.shaders.fragment_src.as_string();
             } else {
-                const auto fragment_path = utility::format("{}.msl", info.shaders.fragment_path);
+                const auto fragment_path = utility::format("{}.msl", info.shaders.fragment_src.as_path().string());
                 
                 auto file = file::open(file::internal_domain / fragment_path);
                 if(file != std::nullopt) {
@@ -504,8 +503,8 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
         
         id<MTLFunction> fragmentFunc = [fragmentLibrary newFunctionWithName:@"main0" constantValues:fragment_constants error:nil];
         
-        if(debug_enabled)
-            fragmentFunc.label = [NSString stringWithFormat:@"%s", info.shaders.fragment_path.data()];
+        if(debug_enabled && info.shaders.fragment_src.is_path())
+            fragmentFunc.label = [NSString stringWithFormat:@"%s", info.shaders.fragment_src.as_path().string().data()];
         
         pipelineDescriptor.fragmentFunction = fragmentFunc;
     }
@@ -699,7 +698,7 @@ GFXPipeline* GFXMetal::create_compute_pipeline(const GFXComputePipelineCreateInf
     return pipeline;
 }
 
-GFXCommandBuffer* GFXMetal::acquire_command_buffer() {
+GFXCommandBuffer* GFXMetal::acquire_command_buffer(bool for_presentation_use) {
     GFXCommandBuffer* cmdbuf = nullptr;
     while(cmdbuf == nullptr) {
         for(const auto [i, buffer_status] : utility::enumerate(free_command_buffers)) {

@@ -7,6 +7,8 @@ set(SRC
 
 add_library(ShaderCompiler STATIC ${SRC})
 target_link_libraries(ShaderCompiler
+    PUBLIC
+    Platform
     PRIVATE
     Utility
     Log

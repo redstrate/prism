@@ -6,6 +6,8 @@
 #include <string_view>
 #include <optional>
 
+#include "file.hpp"
+
 /// The shader stage that the shader is written in.
 enum class ShaderStage {
     Vertex,
@@ -41,8 +43,14 @@ public:
     ShaderSource(const ShaderSource& rhs) : source (rhs.source) {}
     ShaderSource(const std::string source_string) : source(source_string) {}
     ShaderSource(const std::vector<uint32_t> source_bytecode) : source(source_bytecode) {}
-        
-    std::variant<std::monostate, std::string, std::vector<uint32_t>> source;
+    ShaderSource(const file::Path shader_path) : source(shader_path) {}
+
+    std::variant<std::monostate, file::Path, std::string, std::vector<uint32_t>> source;
+    
+    /// Returns a view of the shader source as a path.
+    file::Path as_path() const {
+        return std::get<file::Path>(source);
+    }
     
     /// Returns a view of the shader source as plaintext.
     std::string_view as_string() const {
@@ -56,6 +64,14 @@ public:
 
     bool empty() const {
         return std::holds_alternative<std::monostate>(source);
+    }
+    
+    bool is_path() const {
+        return std::holds_alternative<file::Path>(source);
+    }
+    
+    bool is_string() const {
+        return std::holds_alternative<std::string>(source);
     }
 };
 

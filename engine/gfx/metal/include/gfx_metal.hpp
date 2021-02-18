@@ -44,7 +44,7 @@ public:
     GFXPipeline* create_graphics_pipeline(const GFXGraphicsPipelineCreateInfo& info) override;
     GFXPipeline* create_compute_pipeline(const GFXComputePipelineCreateInfo& info) override;
 
-    GFXCommandBuffer* acquire_command_buffer() override;
+    GFXCommandBuffer* acquire_command_buffer(bool for_presentation_use = false) override;
     
     void submit(GFXCommandBuffer* command_buffer, const int window = -1) override;
         

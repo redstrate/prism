@@ -9,6 +9,7 @@ add_subdirectory(log)
 add_subdirectory(asset)
 add_subdirectory(shadercompiler)
 add_subdirectory(vr)
+add_subdirectory(platform)
 
 if(NOT ENABLE_IOS AND NOT ENABLE_TVOS)
     add_subdirectory(audio)

@@ -41,6 +41,7 @@ enum class GFXTextureUsage : int {
     Sampled = 1,
     Attachment = 2,
     ShaderWrite = 3,
+    Transfer = 4
 };
 
 inline GFXTextureUsage operator|(const GFXTextureUsage a, const GFXTextureUsage b) {
@@ -156,8 +157,6 @@ struct GFXGraphicsPipelineCreateInfo {
     std::string label; // only used for debug
     
     struct Shaders {
-        std::string_view vertex_path, fragment_path;
-
         ShaderSource vertex_src, fragment_src;
         
         GFXShaderConstants vertex_constants, fragment_constants;
@@ -228,6 +227,8 @@ struct GFXRenderPassCreateInfo {
     std::string label;
 
     std::vector<GFXPixelFormat> attachments;
+    
+    bool will_use_in_shader = false;
 };
 
 enum class GFXBorderColor {
@@ -359,7 +360,7 @@ public:
     // misc operations
     virtual GFXSize get_alignment(const GFXSize size) { return size; }
 
-    virtual GFXCommandBuffer* acquire_command_buffer() { return nullptr; }
+    virtual GFXCommandBuffer* acquire_command_buffer(bool for_presentation_use = false) { return nullptr; }
     
     virtual void submit([[maybe_unused]] GFXCommandBuffer* command_buffer,
                         [[maybe_unused]] const int window = -1) {}

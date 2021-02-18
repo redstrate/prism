@@ -615,6 +615,8 @@ int main(int argc, char* argv[]) {
                 if(window != nullptr)
                     [window->delegate render];
             }
+
+            engine->end_frame();
             
             scrollX = 0.0f;
             scrollY = 0.0f;

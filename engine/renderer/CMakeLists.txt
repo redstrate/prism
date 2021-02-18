@@ -2,7 +2,6 @@ set(SRC
     include/renderer.hpp
     include/font.hpp
     include/pass.hpp
-    include/gaussianhelper.hpp
     include/shadowpass.hpp
     include/imguipass.hpp
     include/smaapass.hpp
@@ -11,9 +10,9 @@ set(SRC
     include/dofpass.hpp
     include/frustum.hpp
     include/render_options.hpp
+    include/rendertarget.hpp
 
     src/renderer.cpp
-    src/gaussianhelper.cpp
     src/shadowpass.cpp
     src/imguipass.cpp
     src/smaapass.cpp

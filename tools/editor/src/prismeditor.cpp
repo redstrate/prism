@@ -122,10 +122,7 @@ struct OpenAssetRequest {
 std::vector<OpenAssetRequest> open_requests;
 
 void PrismEditor::setup_editor(Editor* editor) {
-    editor->renderer = std::make_unique<Renderer>(engine->get_gfx(), false);
-    editor->renderer->viewport_mode = true;
-    editor->debug_pass = editor->renderer->addPass<DebugPass>();
-    editor->renderer->resize_viewport({static_cast<uint32_t>(viewport_width), static_cast<uint32_t>(viewport_height)});
+
 }
 
 void PrismEditor::open_asset(const file::Path path) {
@@ -180,8 +177,8 @@ void PrismEditor::open_asset(const file::Path path) {
 }
 
 void PrismEditor::renderEditor(GFXCommandBuffer* command_buffer) {
-    for (auto& editor : editors) {
-        editor->renderer->render(command_buffer, editor->get_scene(), -1);
+    for(auto [id, render_target] : viewport_render_targets) {
+        engine->get_renderer()->render(command_buffer, render_target.scene, *render_target.target, -1);
     }
 }
 
@@ -317,10 +314,10 @@ void PrismEditor::drawUI() {
         
         ImGui::DockSpace(editor_dockspace, ImVec2(0.0f, 0.0f), ImGuiDockNodeFlags_None);
         
-        if(should_draw && editor->renderer != nullptr) {
-            debugPass = editor->debug_pass;
+        if(should_draw) {
+            /*debugPass = editor->debug_pass;
             if(debugPass != nullptr)
-                debugPass->selected_object = selected_object;
+                debugPass->selected_object = selected_object;*/
             
             engine->set_current_scene(editor->get_scene());
             set_undo_stack(&editor->undo_stack);

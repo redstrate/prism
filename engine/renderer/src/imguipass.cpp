@@ -19,85 +19,89 @@ void ImGuiPass::initialize() {
     create_font_texture();
 }
 
-void ImGuiPass::resize(const prism::Extent extent) {
-    GFXGraphicsPipelineCreateInfo createInfo;
-    createInfo.label = "ImGui";
-    createInfo.shaders.vertex_path = "imgui.vert";
-    createInfo.shaders.fragment_path = "imgui.frag";
+void ImGuiPass::create_render_target_resources(RenderTarget& target) {
+    if(pipeline == nullptr) {
+        GFXGraphicsPipelineCreateInfo createInfo;
+        createInfo.label = "ImGui";
+        createInfo.shaders.vertex_src = file::Path("imgui.vert");
+        createInfo.shaders.fragment_src = file::Path("imgui.frag");
 
-    GFXVertexInput vertexInput = {};
-    vertexInput.stride = sizeof(ImDrawVert);
+        GFXVertexInput vertexInput = {};
+        vertexInput.stride = sizeof(ImDrawVert);
 
-    createInfo.vertex_input.inputs.push_back(vertexInput);
+        createInfo.vertex_input.inputs.push_back(vertexInput);
 
-    GFXVertexAttribute positionAttribute = {};
-    positionAttribute.format = GFXVertexFormat::FLOAT2;
-    positionAttribute.offset = offsetof(ImDrawVert, pos);
+        GFXVertexAttribute positionAttribute = {};
+        positionAttribute.format = GFXVertexFormat::FLOAT2;
+        positionAttribute.offset = offsetof(ImDrawVert, pos);
 
-    createInfo.vertex_input.attributes.push_back(positionAttribute);
+        createInfo.vertex_input.attributes.push_back(positionAttribute);
 
-    GFXVertexAttribute uvAttribute = {};
-    uvAttribute.location = 1;
-    uvAttribute.format = GFXVertexFormat::FLOAT2;
-    uvAttribute.offset = offsetof(ImDrawVert, uv);
+        GFXVertexAttribute uvAttribute = {};
+        uvAttribute.location = 1;
+        uvAttribute.format = GFXVertexFormat::FLOAT2;
+        uvAttribute.offset = offsetof(ImDrawVert, uv);
 
-    createInfo.vertex_input.attributes.push_back(uvAttribute);
+        createInfo.vertex_input.attributes.push_back(uvAttribute);
 
-    GFXVertexAttribute colAttribute = {};
-    colAttribute.location = 2;
-    colAttribute.format = GFXVertexFormat::UNORM4;
-    colAttribute.offset = offsetof(ImDrawVert, col);
+        GFXVertexAttribute colAttribute = {};
+        colAttribute.location = 2;
+        colAttribute.format = GFXVertexFormat::UNORM4;
+        colAttribute.offset = offsetof(ImDrawVert, col);
 
-    createInfo.vertex_input.attributes.push_back(colAttribute);
+        createInfo.vertex_input.attributes.push_back(colAttribute);
 
-    createInfo.blending.enable_blending = true;
-    createInfo.blending.src_rgb = GFXBlendFactor::SrcAlpha;
-    createInfo.blending.src_alpha= GFXBlendFactor::SrcAlpha;
-    createInfo.blending.dst_rgb = GFXBlendFactor::OneMinusSrcAlpha;
-    createInfo.blending.dst_alpha = GFXBlendFactor::OneMinusSrcAlpha;
+        createInfo.blending.enable_blending = true;
+        createInfo.blending.src_rgb = GFXBlendFactor::SrcAlpha;
+        createInfo.blending.src_alpha= GFXBlendFactor::SrcAlpha;
+        createInfo.blending.dst_rgb = GFXBlendFactor::OneMinusSrcAlpha;
+        createInfo.blending.dst_alpha = GFXBlendFactor::OneMinusSrcAlpha;
 
-    createInfo.shader_input.push_constants = {
-        {sizeof(Matrix4x4), 0}
-    };
+        createInfo.shader_input.push_constants = {
+            {sizeof(Matrix4x4), 0}
+        };
 
-    createInfo.shader_input.bindings = {
-        {1, GFXBindingType::PushConstant},
-        {2, GFXBindingType::Texture}
-    };
+        createInfo.shader_input.bindings = {
+            {1, GFXBindingType::PushConstant},
+            {2, GFXBindingType::Texture}
+        };
 
-    pipeline = engine->get_gfx()->create_graphics_pipeline(createInfo);
+        pipeline = engine->get_gfx()->create_graphics_pipeline(createInfo);
+    }
 }
 
-void ImGuiPass::render_post(GFXCommandBuffer* command_buffer, const int index) {
+void ImGuiPass::render_post(GFXCommandBuffer* command_buffer, RenderTarget& target, const int index) {
     ImDrawData* draw_data = nullptr;
     if(index == 0) {
         draw_data = ImGui::GetDrawData();
     } else {
         auto& io = ImGui::GetPlatformIO();
         for(int i = 1; i < io.Viewports.size(); i++) {
-            if((io.Viewports[i]->Flags & ImGuiViewportFlags_Minimized) == 0)
-                if(*(int*)io.Viewports[i]->PlatformHandle == index)
+            if((io.Viewports[i]->Flags & ImGuiViewportFlags_Minimized) == 0) {
+                auto platform_handle = (int*)io.Viewports[i]->PlatformHandle;
+                if(platform_handle != nullptr && *platform_handle == index)
                     draw_data = io.Viewports[i]->DrawData;
+            }
         }
     }
-
-    Expects(draw_data != nullptr);
     
-    if(draw_data->TotalIdxCount == 0 || draw_data->TotalVtxCount == 0)
+    if(draw_data == nullptr)
         return;
     
     const int framebuffer_width = static_cast<int>(draw_data->DisplaySize.x * draw_data->FramebufferScale.x);
     const int framebuffer_height = static_cast<int>(draw_data->DisplaySize.y * draw_data->FramebufferScale.y);
     
-    Expects(framebuffer_width > 0);
-    Expects(framebuffer_height > 0);
-    
-    update_buffers(*draw_data);
+    if (framebuffer_width <= 0 || framebuffer_height <= 0)
+        return;
 
     command_buffer->set_graphics_pipeline(pipeline);
 
-    command_buffer->set_vertex_buffer(vertex_buffer, 0, 0);
-    command_buffer->set_index_buffer(index_buffer, IndexType::UINT16);
+    if(draw_data->TotalVtxCount > 0) {
+        update_buffers(target, *draw_data);
+        
+        command_buffer->set_vertex_buffer(target.vertex_buffer[target.current_frame], 0, 0);
+        command_buffer->set_index_buffer(target.index_buffer[target.current_frame], IndexType::UINT16);
+    }
 
     const Matrix4x4 projection = transform::orthographic(draw_data->DisplayPos.x,
                                                 draw_data->DisplayPos.x + draw_data->DisplaySize.x,
@@ -141,6 +145,8 @@ void ImGuiPass::render_post(GFXCommandBuffer* command_buffer, const int index) {
         index_offset += cmd_list->IdxBuffer.Size;
         vertex_offset += cmd_list->VtxBuffer.Size;
     }
+    
+    target.current_frame = (target.current_frame + 1) % RT_MAX_FRAMES_IN_FLIGHT;
 }
 
 void ImGuiPass::load_font(const std::string_view filename) {
@@ -184,21 +190,21 @@ void ImGuiPass::create_font_texture() {
     io.Fonts->TexID = reinterpret_cast<void*>(font_texture);
 }
 
-void ImGuiPass::update_buffers(const ImDrawData& draw_data) {
+void ImGuiPass::update_buffers(RenderTarget& target, const ImDrawData& draw_data) {
     const int new_vertex_size = draw_data.TotalVtxCount * sizeof(ImDrawVert);
     const int new_index_size = draw_data.TotalIdxCount * sizeof(ImDrawIdx);
     
     Expects(new_vertex_size > 0);
     Expects(new_index_size > 0);
     
-    if(vertex_buffer == nullptr || current_vertex_size < new_vertex_size) {
-        vertex_buffer = engine->get_gfx()->create_buffer(nullptr, new_vertex_size, true, GFXBufferUsage::Vertex);
-        current_vertex_size = new_vertex_size;
+    if(target.vertex_buffer[target.current_frame] == nullptr || target.current_vertex_size[target.current_frame] < new_vertex_size) {
+        target.vertex_buffer[target.current_frame] = engine->get_gfx()->create_buffer(nullptr, new_vertex_size, true, GFXBufferUsage::Vertex);
+        target.current_vertex_size[target.current_frame] = new_vertex_size;
     }
     
-    if(index_buffer == nullptr || current_index_size < new_index_size) {
-        index_buffer = engine->get_gfx()->create_buffer(nullptr, new_index_size, true, GFXBufferUsage::Index);
-        current_index_size = new_index_size;
+    if(target.index_buffer[target.current_frame] == nullptr || target.current_index_size[target.current_frame] < new_index_size) {
+        target.index_buffer[target.current_frame] = engine->get_gfx()->create_buffer(nullptr, new_index_size, true, GFXBufferUsage::Index);
+        target.current_index_size[target.current_frame] = new_index_size;
     }
     
     int vertex_offset = 0;
@@ -206,8 +212,8 @@ void ImGuiPass::update_buffers(const ImDrawData& draw_data) {
     for(int i = 0; i < draw_data.CmdListsCount; i++) {
         const ImDrawList* cmd_list = draw_data.CmdLists[i];
         
-        engine->get_gfx()->copy_buffer(vertex_buffer, cmd_list->VtxBuffer.Data, vertex_offset, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-        engine->get_gfx()->copy_buffer(index_buffer, cmd_list->IdxBuffer.Data, index_offset, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+        engine->get_gfx()->copy_buffer(target.vertex_buffer[target.current_frame], cmd_list->VtxBuffer.Data, vertex_offset, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+        engine->get_gfx()->copy_buffer(target.index_buffer[target.current_frame], cmd_list->IdxBuffer.Data, index_offset, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
         
         vertex_offset += cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
         index_offset += cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);

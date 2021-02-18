@@ -60,7 +60,8 @@ enum class GFXCommandType {
     PushGroup,
     PopGroup,
     InsertLabel,
-    Dispatch
+    Dispatch,
+    EndRenderPass
 };
 
 struct GFXDrawCommand {
@@ -358,6 +359,13 @@ public:
         command.data.dispatch.group_count_x = group_count_x;
         command.data.dispatch.group_count_y = group_count_y;
         command.data.dispatch.group_count_z = group_count_z;
+        
+        commands.push_back(command);
+    }
+    
+    void end_render_pass() {
+        GFXDrawCommand command;
+        command.type = GFXCommandType::EndRenderPass;
         
         commands.push_back(command);
     }

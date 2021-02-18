@@ -19,6 +19,7 @@ class App;
 class Scene;
 class Input;
 class Renderer;
+class RenderTarget;
 class Physics;
 class ImGuiLayer;
 struct Timer;
@@ -75,6 +76,8 @@ public:
      @param index The index of the window to begin rendering for.
      */
     void render(const int index);
+    
+    void end_frame();
 
     /// Pause updating.
     void pause();
@@ -115,7 +118,7 @@ public:
      @param index Index of the window. Default is 0.
      @return Instance of the renderer. Will not be null.
      */
-    Renderer* get_renderer(const int index = 0);
+    Renderer* get_renderer();
     
     /** Get the physics system.
      @return Instance of the physics system. Will not be null.
@@ -316,7 +319,7 @@ public:
     /// If physics should upate. This is a control indepentent of the pause state.
     bool update_physics = true;
 
-#if defined(PLATFORM_TVOS) || defined(PLATFORM_IOS) || defined(PLATFORM_WINDOWS)
+#if defined(PLATFORM_TVOS) || defined(PLATFORM_IOS) || defined(PLATFORM_WINDOWS) || defined(PLATFORM_LINUX)
     bool debug_enabled = true;
 #else
     bool debug_enabled = false;
@@ -340,15 +343,15 @@ private:
         prism::Extent extent;
         bool quitRequested = false;
         
-        std::unique_ptr<Renderer> renderer;
+        RenderTarget* render_target;
     };
 
-    std::vector<Window> _windows;
+    std::vector<std::unique_ptr<Window>> _windows;
 
     Window* get_window(const int identifier) {
         for(auto& window : _windows) {
-            if(window.identifier == identifier)
-                return &window;
+            if(window->identifier == identifier)
+                return window.get();
         }
         
         return nullptr;
@@ -368,6 +371,7 @@ private:
 
     std::unique_ptr<Input> _input;
     std::unique_ptr<Physics> _physics;
+    std::unique_ptr<Renderer> _renderer;
 
     std::vector<Timer*> _timers, _timersToRemove;
 

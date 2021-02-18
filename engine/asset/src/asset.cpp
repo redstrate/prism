@@ -107,12 +107,8 @@ std::unique_ptr<Mesh> load_mesh(const file::Path path) {
             
             Vector3 scl;
             file->read(&scl);
-            
-            int finalBoneIndex = 0;
-            
-            if(boneMapping.count(bone)) {
-                finalBoneIndex = boneMapping[bone];
-            } else {
+                        
+            if(!boneMapping.count(bone)) {
                 Bone b;
                 b.index = mesh->bones.size();
                 b.name = bone;
@@ -127,7 +123,6 @@ std::unique_ptr<Mesh> load_mesh(const file::Path path) {
                 mesh->bones.push_back(b);
                 
                 boneMapping[bone] = b.index;
-                finalBoneIndex = b.index;
             }
         }
         

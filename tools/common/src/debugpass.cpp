@@ -21,8 +21,8 @@ void DebugPass::initialize() {
 
     {
         GFXGraphicsPipelineCreateInfo createInfo;
-        createInfo.shaders.vertex_path = "debug.vert";
-        createInfo.shaders.fragment_path = "debug.frag";
+        createInfo.shaders.vertex_src = file::Path("debug.vert");
+        createInfo.shaders.fragment_src = file::Path("debug.frag");
 
         GFXVertexInput vertexInput = {};
         vertexInput.stride = sizeof(Vector3);
@@ -42,7 +42,7 @@ void DebugPass::initialize() {
             {1, GFXBindingType::PushConstant}
         };
 
-        createInfo.render_pass = engine->get_renderer()->getOffscreenRenderPass();
+        createInfo.render_pass = engine->get_renderer()->offscreenRenderPass;
         createInfo.rasterization.polygon_type = GFXPolygonType::Line;
 
         primitive_pipeline = engine->get_gfx()->create_graphics_pipeline(createInfo);
@@ -69,8 +69,8 @@ void DebugPass::initialize() {
         // pipeline
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
 
-        pipelineInfo.shaders.vertex_path = "color.vert";
-        pipelineInfo.shaders.fragment_path = "color.frag";
+        pipelineInfo.shaders.vertex_src = file::Path("color.vert");
+        pipelineInfo.shaders.fragment_src = file::Path("color.frag");
 
         GFXVertexInput input;
         input.stride = sizeof(Vector3);
@@ -102,15 +102,16 @@ void DebugPass::initialize() {
         GFXRenderPassCreateInfo renderPassInfo = {};
         renderPassInfo.label = "Sobel";
         renderPassInfo.attachments.push_back(GFXPixelFormat::R8_UNORM);
-
+        renderPassInfo.will_use_in_shader = true;
+        
         sobelRenderPass = engine->get_gfx()->create_render_pass(renderPassInfo);
 
         // pipeline
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.label = "Sobel";
 
-        pipelineInfo.shaders.vertex_path = "color.vert";
-        pipelineInfo.shaders.fragment_path = "color.frag";
+        pipelineInfo.shaders.vertex_src = file::Path("color.vert");
+        pipelineInfo.shaders.fragment_src = file::Path("color.frag");
 
         GFXVertexInput input;
         input.stride = sizeof(Vector3);
@@ -141,8 +142,8 @@ void DebugPass::initialize() {
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.label = "Billboard";
         
-        pipelineInfo.shaders.vertex_path = "billboard.vert";
-        pipelineInfo.shaders.fragment_path = "billboard.frag";
+        pipelineInfo.shaders.vertex_src = file::Path("billboard.vert");
+        pipelineInfo.shaders.fragment_src = file::Path("billboard.frag");
         
         pipelineInfo.shader_input.bindings = {
             {1, GFXBindingType::PushConstant},
@@ -158,7 +159,7 @@ void DebugPass::initialize() {
         
         pipelineInfo.blending.enable_blending = true;
         
-        pipelineInfo.render_pass = engine->get_renderer()->getOffscreenRenderPass();
+        pipelineInfo.render_pass = engine->get_renderer()->offscreenRenderPass;
         
         billboard_pipeline = engine->get_gfx()->create_graphics_pipeline(pipelineInfo);
         
@@ -169,8 +170,8 @@ void DebugPass::initialize() {
     }
 }
 
-void DebugPass::resize(const prism::Extent extent) {
-    this->extent = extent;
+void DebugPass::create_render_target_resources(RenderTarget& target) {
+    this->extent = target.extent;
     
     createOffscreenResources();
 }

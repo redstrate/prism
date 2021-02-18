@@ -94,11 +94,11 @@ bool Engine::is_paused() const {
 }
 
 void Engine::quit() {
-    _windows[0].quitRequested = true;
+    _windows[0]->quitRequested = true;
 }
 
 bool Engine::is_quitting() const {
-    return _windows[0].quitRequested;
+    return _windows[0]->quitRequested;
 }
 
 void Engine::prepare_quit() {
@@ -117,8 +117,8 @@ Input* Engine::get_input() {
 	return _input.get();
 }
 
-Renderer* Engine::get_renderer(const int index) {
-    return _windows[index].renderer.get();
+Renderer* Engine::get_renderer() {
+    return _renderer.get();
 }
 
 Physics* Engine::get_physics() {
@@ -203,7 +203,7 @@ ui::Screen* Engine::load_screen(const file::Path path) {
 void Engine::set_screen(ui::Screen* screen) {
     _current_screen = screen;
     
-    screen->extent = _windows[0].extent;
+    screen->extent = _windows[0]->extent;
     screen->calculate_sizes();
     
     get_renderer()->set_screen(screen);
@@ -358,7 +358,7 @@ void Engine::save_cutscene(const std::string_view path) {
         j["shots"].push_back(s);
     }
 
-    std::ofstream out(path);
+    std::ofstream out(path.data());
     out << j;
 }
 
@@ -416,16 +416,20 @@ void Engine::add_window(void* native_handle, const int identifier, const prism::
     Expects(native_handle != nullptr);
     Expects(identifier >= 0);
     
+    if(identifier == 0) {
+        _renderer = std::make_unique<Renderer>(_gfx);
+    }
+    
     const auto drawable_extent = platform::get_window_drawable_size(identifier);
     
     _gfx->initialize_view(native_handle, identifier, drawable_extent.width, drawable_extent.height);
 
-    Window& window = _windows.emplace_back();
-    window.identifier = identifier;
-    window.extent = extent;
-    window.renderer = std::make_unique<Renderer>(_gfx);
-
-    window.renderer->resize(drawable_extent);
+    _windows.push_back(std::make_unique<Window>());
+    
+    Window* window = _windows.back().get();
+    window->identifier = identifier;
+    window->extent = extent;
+    window->render_target = _renderer->allocate_render_target(drawable_extent);
 
     render_ready = true;
 }
@@ -433,8 +437,8 @@ void Engine::add_window(void* native_handle, const int identifier, const prism::
 void Engine::remove_window(const int identifier) {
     Expects(identifier >= 0);
 
-    utility::erase_if(_windows, [identifier](Window& w) {
-        return w.identifier == identifier;
+    utility::erase_if(_windows, [identifier](std::unique_ptr<Window>& w) {
+        return w->identifier == identifier;
     });
 }
 
@@ -450,7 +454,7 @@ void Engine::resize(const int identifier, const prism::Extent extent) {
     const auto drawable_extent = platform::get_window_drawable_size(identifier);
 
     _gfx->recreate_view(identifier, drawable_extent.width, drawable_extent.height);
-    window->renderer->resize(drawable_extent);
+    _renderer->resize_render_target(*window->render_target, drawable_extent);
 
     if(identifier == 0) {
         if(_current_screen != nullptr) {
@@ -476,9 +480,6 @@ void Engine::process_key_up(const unsigned int keyCode) {
 }
 
 void Engine::process_mouse_down(const int button, const prism::Offset offset) {
-    Expects(offset.x >= 0);
-    Expects(offset.y >= 0);
-    
 	if(_current_screen != nullptr && button == 0)
         _current_screen->process_mouse(offset.x, offset.y);
 }
@@ -669,6 +670,10 @@ void Engine::begin_frame(const float delta_time) {
         _app->begin_frame();
 }
 
+void Engine::end_frame() {
+    ImGui::UpdatePlatformWindows();
+}
+
 int frame_delay = 0;
 const int frame_delay_between_resolution_change = 60;
 
@@ -760,21 +765,21 @@ void Engine::render(const int index) {
     if(window == nullptr)
         return;
     
+    GFXCommandBuffer* commandbuffer = _gfx->acquire_command_buffer(true);
+    
     if(index == 0) {
         if(_current_screen != nullptr && _current_screen->view_changed) {
-            _windows[0].renderer->update_screen();
+            _renderer->update_screen();
             _current_screen->view_changed = false;
         }
         
         _imgui->render(0);
+        
+        _app->render(commandbuffer);
     }
 
-    GFXCommandBuffer* commandbuffer = _gfx->acquire_command_buffer();
-
-    _app->render(commandbuffer);
-
-    if(window->renderer != nullptr)
-        window->renderer->render(commandbuffer, _current_scene, index);
+    if(_renderer != nullptr)
+        _renderer->render(commandbuffer, _current_scene, *window->render_target, index);
 
     _gfx->submit(commandbuffer, index);
 }

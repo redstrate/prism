@@ -92,7 +92,7 @@ void PrefabEditor::draw(CommonEditor* editor) {
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
         if(begin("Viewport"))
-            editor->drawViewport(*renderer);
+            editor->drawViewport(scene);
 
         ImGui::End();
 

@@ -30,13 +30,6 @@ ShadowPass::ShadowPass(GFX* gfx) {
     create_render_passes();
     create_pipelines();
     create_offscreen_resources();
-    
-    GFXSamplerCreateInfo sampler_info = {};
-    sampler_info.samplingMode = SamplingMode::ClampToBorder;
-    sampler_info.border_color = GFXBorderColor::OpaqueWhite;
-    
-    shadow_sampler = gfx->create_sampler(sampler_info);
-    pcf_sampler = gfx->create_sampler(sampler_info); // unused atm
 }
 
 void ShadowPass::create_scene_resources(Scene& scene) {
@@ -245,6 +238,7 @@ void ShadowPass::render_spot(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         if(light.enable_shadows)
             render_meshes(command_buffer, scene, realMVP, Matrix4x4(), scene.get<Transform>(light_object).get_world_position(), Light::Type::Spot, frustum, 0);
         
+        command_buffer->end_render_pass();
         command_buffer->copy_texture(offscreen_depth, render_options.shadow_resolution, render_options.shadow_resolution, scene.spotLightArray, 0, last_spot_light, 0);
         
         scene.spot_light_dirty[last_spot_light] = false;
@@ -286,6 +280,7 @@ void ShadowPass::render_point(GFXCommandBuffer* command_buffer, Scene& scene, Ob
             
             render_meshes(command_buffer, scene, projection * shadowTransforms[face], model, lightPos, Light::Type::Point, frustum, last_point_light);
             
+            command_buffer->end_render_pass();
             command_buffer->copy_texture(offscreen_color_texture, render_options.shadow_resolution, render_options.shadow_resolution, scene.pointLightArray, face, last_point_light, 0);
         }
         
@@ -302,6 +297,7 @@ void ShadowPass::create_render_passes() {
     GFXRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.label = "Shadow";
     renderPassInfo.attachments.push_back(GFXPixelFormat::DEPTH_32F);
+    renderPassInfo.will_use_in_shader = true;
     
     render_pass = gfx->create_render_pass(renderPassInfo);
     
@@ -319,7 +315,7 @@ void ShadowPass::create_pipelines() {
 
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.shaders.vertex_constants = {point_light_max_constant};
-    pipelineInfo.shaders.vertex_path = "shadow.vert";
+    pipelineInfo.shaders.vertex_src = file::Path("shadow.vert");
 
     pipelineInfo.shaders.fragment_constants = { point_light_max_constant };
     //pipelineInfo.shaders.fragment_path = "shadow.frag";
@@ -364,7 +360,7 @@ void ShadowPass::create_pipelines() {
     {
         pipelineInfo.label = "Point Shadow";
 
-        pipelineInfo.shaders.fragment_path = "omnishadow.frag";
+        pipelineInfo.shaders.fragment_src = file::Path("omnishadow.frag");
         
         auto [static_pipeline, skinned_pipeline] = material_compiler.create_pipeline_permutations(pipelineInfo, true);
         

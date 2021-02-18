@@ -11,8 +11,6 @@ set(SRC
     include/object.hpp
     include/debug.hpp
     include/components.hpp
-    include/platform.hpp
-    include/file.hpp
     include/imgui_utility.hpp
     include/console.hpp
 
@@ -50,6 +48,7 @@ target_link_libraries(Core PUBLIC
     Renderer
     magic_enum
     imgui
+    Platform
     ${EXTRA_LIBRARIES}
     BulletDynamics
     BulletCollision

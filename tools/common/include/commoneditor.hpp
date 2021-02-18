@@ -129,7 +129,7 @@ public:
     virtual void asset_selected([[maybe_unused]] std::filesystem::path path, [[maybe_unused]] AssetType type) {}
 
     void createDockArea();
-    void drawViewport(Renderer& renderer);
+    void drawViewport(Scene* scene);
     void drawAssets();
 
 	// options
@@ -298,6 +298,14 @@ public:
     DebugPass* debugPass = nullptr;
 
     int viewport_width = 1, viewport_height = 1;
+    
+protected:
+    struct ViewportRenderTarget {
+        Scene* scene = nullptr;
+        RenderTarget* target = nullptr;
+    };
+    
+    std::unordered_map<ImGuiID, ViewportRenderTarget> viewport_render_targets;
     
 private:
     void load_options();
