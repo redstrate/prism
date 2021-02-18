@@ -103,7 +103,7 @@ if(ENABLE_OPENXR)
 	FetchContent_Declare(
 	  openxr
 	  GIT_REPOSITORY https://github.com/KhronosGroup/OpenXR-SDK.git
-	  GIT_TAG release-1.0.12
+	  GIT_TAG release-1.0.14
 	)
 
 	FetchContent_MakeAvailable(openxr)
