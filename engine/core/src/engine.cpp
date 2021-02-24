@@ -414,9 +414,9 @@ void Engine::add_window(void* native_handle, const int identifier, const prism::
     
     _gfx->initialize_view(native_handle, identifier, drawable_extent.width, drawable_extent.height);
 
-    _windows.push_back(std::make_unique<Window>());
+    Window* window = new Window();
+    _windows.push_back(window);
     
-    Window* window = _windows.back().get();
     window->identifier = identifier;
     window->extent = extent;
     window->render_target = _renderer->allocate_render_target(drawable_extent);
@@ -427,7 +427,7 @@ void Engine::add_window(void* native_handle, const int identifier, const prism::
 void Engine::remove_window(const int identifier) {
     Expects(identifier >= 0);
 
-    utility::erase_if(_windows, [identifier](std::unique_ptr<Window>& w) {
+    utility::erase_if(_windows, [identifier](Window*& w) {
         return w->identifier == identifier;
     });
 }

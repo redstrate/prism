@@ -112,11 +112,7 @@ public:
     bool reloading_shader = false;
     
     std::vector<RenderTarget*> get_all_render_targets() const {
-        std::vector<RenderTarget*> targets;
-        for(auto& target : render_targets)
-            targets.push_back(target.get());
-        
-        return targets;
+        return render_targets;
     }
     
 private:
@@ -131,7 +127,7 @@ private:
 
     GFX* gfx = nullptr;
     
-    std::vector<std::unique_ptr<RenderTarget>> render_targets;
+    std::vector<RenderTarget*> render_targets;
 
     ui::Screen* current_screen = nullptr;
     

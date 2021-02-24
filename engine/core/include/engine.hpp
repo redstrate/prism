@@ -343,15 +343,15 @@ private:
         prism::Extent extent;
         bool quitRequested = false;
         
-        RenderTarget* render_target;
+        RenderTarget* render_target = nullptr;
     };
 
-    std::vector<std::unique_ptr<Window>> _windows;
+    std::vector<Window*> _windows;
 
     Window* get_window(const int identifier) {
         for(auto& window : _windows) {
             if(window->identifier == identifier)
-                return window.get();
+                return window;
         }
         
         return nullptr;

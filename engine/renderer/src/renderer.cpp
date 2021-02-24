@@ -119,13 +119,13 @@ Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
 Renderer::~Renderer() {}
 
 RenderTarget* Renderer::allocate_render_target(const prism::Extent extent) {
-    auto target = std::make_unique<RenderTarget>();
+    auto target = new RenderTarget();
     
     resize_render_target(*target, extent);
     
-    render_targets.push_back(std::move(target));
+    render_targets.push_back(target);
     
-    return render_targets.back().get();
+    return target;
 }
 
 void Renderer::resize_render_target(RenderTarget& target, const prism::Extent extent) {

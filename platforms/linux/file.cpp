@@ -7,5 +7,5 @@ void file::set_domain_path(const file::Domain domain, const file::Path path) {
 }
 
 file::Path file::get_writeable_directory() {
-    return "";
+    return "~";
 }
