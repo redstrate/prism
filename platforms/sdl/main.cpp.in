@@ -1,0 +1,243 @@
+#include <@APP_INCLUDE@>
+#include <engine.hpp>
+
+#include "gfx_vulkan.hpp"
+#include "platform.hpp"
+
+#include <SDL2/SDL.h>
+#include <SDL2/SDL_vulkan.h>
+
+@APP_CLASS@* app = nullptr;
+GFX* interface = nullptr;
+
+struct Window {
+    int identifier = 0;
+    SDL_Window* window = nullptr;
+};
+
+std::vector<Window> windows;
+
+static std::map<InputButton, int> inputToKeyCode = { {
+    {InputButton::A, 38},
+    {InputButton::W, 25},
+    {InputButton::S, 39},
+    {InputButton::D, 40},
+    {InputButton::Q, 24}
+}};
+
+/*
+ * Platform functions"
+ */
+
+const char* platform::get_name() {
+    return "Linux (SDL)";
+}
+
+bool platform::supports_feature(const PlatformFeature feature) {
+    if(feature == PlatformFeature::Windowing)
+        return true;
+
+    return false;
+}
+
+int platform::open_window(const std::string_view title, const prism::Rectangle rect, const WindowFlags flags) {
+    auto& win = windows.emplace_back();
+    win.identifier = windows.size() - 1;
+
+    win.window = SDL_CreateWindow(title.data(), rect.offset.x, rect.offset.y, rect.extent.width, rect.extent.height, SDL_WINDOW_VULKAN);
+
+    engine->add_window((void*)&win, 0, rect.extent);
+    app->initialize_render();
+
+    return win.identifier;
+}
+
+void platform::close_window(const int index) {
+}
+
+void platform::force_quit() {
+}
+
+float platform::get_window_dpi(const int index) {
+    return 1.0;
+}
+
+float platform::get_monitor_dpi() {
+    return 1.0;
+}
+
+prism::Rectangle platform::get_monitor_resolution() {
+    return {};
+}
+
+prism::Rectangle platform::get_monitor_work_area() {
+    return platform::get_monitor_resolution();
+}
+
+Window* get_window(const int index) {
+    for(auto& window : windows) {
+        if(window.identifier == index)
+            return &window;
+    }
+
+    return nullptr;
+}
+
+prism::Offset platform::get_window_position(const int index) {
+}
+
+prism::Extent platform::get_window_size(const int index) {
+    auto window = get_window(index);
+
+    int width, height;
+    SDL_GetWindowSize(window->window, &width, &height);
+
+    return {(uint32_t)width, (uint32_t)height};
+}
+
+prism::Extent platform::get_window_drawable_size(const int index) {
+    auto window = get_window(index);
+
+    int width, height;
+    SDL_GetWindowSize(window->window, &width, &height);
+
+    return {(uint32_t)width, (uint32_t)height};
+}
+
+bool platform::is_window_focused(const int index) {
+}
+
+void platform::set_window_focused(const int index) {
+}
+
+void platform::set_window_position(const int index, const prism::Offset offset) {
+}
+
+void platform::set_window_size(const int index, const prism::Extent extent) {
+}
+
+void platform::set_window_title(const int index, const std::string_view title) {
+    auto window = get_window(index);
+
+    SDL_SetWindowTitle(window->window, title.data());
+}
+
+bool platform::get_key_down(const InputButton key) {
+    return false;
+}
+
+int platform::get_keycode(const InputButton key) {
+    return inputToKeyCode[key];
+}
+
+prism::Offset platform::get_cursor_position() {
+    return {0, 0};
+}
+
+prism::Offset platform::get_screen_cursor_position() {
+    return {0, 0};
+}
+
+bool platform::get_mouse_button_down(const int button) {
+    return false;
+}
+
+std::tuple<float, float> platform::get_wheel_delta() {
+}
+
+std::tuple<float, float> platform::get_right_stick_position() {
+}
+
+std::tuple<float, float> platform::get_left_stick_position() {
+}
+
+void platform::capture_mouse(const bool capture) {
+}
+
+void platform::open_dialog(const bool existing, std::function<void(std::string)> returnFunction, bool openDirectory) {
+}
+
+void platform::save_dialog(std::function<void(std::string)> returnFunction) {
+}
+
+char* platform::translate_keycode(const unsigned int keycode) {
+    return "";
+}
+
+int stdout_copy;
+int stderr_copy;
+
+void platform::mute_output() {
+
+}
+
+void platform::unmute_output() {
+
+}
+
+int main(int argc, char* argv[]) {
+    SDL_Init(SDL_INIT_VIDEO);
+
+    engine = new Engine(argc, argv);
+
+    app = new @APP_CLASS@();
+    engine->set_app(app);
+
+    GFXCreateInfo info = {};
+
+    interface = new GFXVulkan();
+    if(interface->initialize(info)) {
+        engine->set_gfx(interface);
+    } else {
+        return -1;
+    }
+
+    app_main(engine);
+
+    while(1) {
+         SDL_Event event = {};
+         while(SDL_PollEvent(&event)) {
+
+         }
+
+         if(engine->is_quitting())
+             break;
+
+         engine->update(1.0 / 60.0);
+         engine->begin_frame(1.0 / 60.0);
+         engine->render(0);
+
+         engine->end_frame();
+     }
+
+  return 0;
+}
+
+PlatformTheme platform::get_theme() {
+    return PlatformTheme::Light;
+}
+
+void* platform::create_native_surface(int index, void* instance) {
+    auto window = get_window(index);
+
+    VkSurfaceKHR surface;
+
+    SDL_Vulkan_CreateSurface(window->window, (VkInstance)instance, &surface);
+
+    return surface;
+}
+
+std::vector<const char*> platform::get_native_surface_extension() {
+    // dummy window
+    auto dummy = SDL_CreateWindow("", 0, 0, 1, 1, SDL_WINDOW_VULKAN);
+
+    unsigned int count = 0;
+    SDL_Vulkan_GetInstanceExtensions(dummy, &count, nullptr);
+
+    std::vector<const char*> extensions(count);
+    SDL_Vulkan_GetInstanceExtensions(dummy, &count, extensions.data());
+
+    SDL_DestroyWindow(dummy);
+
+    return extensions;
+}

@@ -84,6 +84,10 @@ namespace platform {
      */
     int open_window(const std::string_view title, const prism::Rectangle rect, const WindowFlags flags);
 
+    // for vulkan usage
+    void* create_native_surface(int index, void* instance);
+    std::vector<const char*> get_native_surface_extension();
+
     /** Closes a window.
      @param index The window to close.
      */

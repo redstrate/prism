@@ -3,7 +3,7 @@ if(ENABLE_WINDOWS)
 endif()
 
 if(ENABLE_LINUX)
-	add_subdirectory(linux)
+	add_subdirectory(sdl)
 endif()
 
 if(ENABLE_MACOS)

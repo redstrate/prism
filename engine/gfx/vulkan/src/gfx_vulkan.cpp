@@ -18,6 +18,12 @@
 #include "utility.hpp"
 #include "gfx_vulkan_commandbuffer.hpp"
 
+#ifdef PLATFORM_LINUX
+#include <SDL2/SDL.h>
+#include <platform.hpp>
+
+#endif
+
 VkFormat toVkFormat(GFXPixelFormat format) {
 	switch (format) {
     case GFXPixelFormat::R_32F:
@@ -180,8 +186,6 @@ VkResult name_object(VkDevice device, VkObjectType type, uint64_t object, std::s
 bool GFXVulkan::initialize(const GFXCreateInfo& info) {
 #ifdef PLATFORM_WINDOWS
     const char* surface_name = "VK_KHR_win32_surface";
-#else
-    const char* surface_name = VK_KHR_XCB_SURFACE_EXTENSION_NAME;
 #endif
 
 	uint32_t extensionPropertyCount = 0;
@@ -190,11 +194,14 @@ bool GFXVulkan::initialize(const GFXCreateInfo& info) {
 	std::vector<VkExtensionProperties> extensionProperties(extensionPropertyCount);
 	vkEnumerateInstanceExtensionProperties(nullptr, &extensionPropertyCount, extensionProperties.data());
 
-	std::vector<const char*> enabledExtensions = { "VK_KHR_surface", surface_name };
+	std::vector<const char*> enabledExtensions = {};
 	for (auto prop : extensionProperties) {
 		if (!strcmp(prop.extensionName, "VK_EXT_debug_utils"))
 			enabledExtensions.push_back("VK_EXT_debug_utils");
 	}
+
+	auto required_extensions = platform::get_native_surface_extension();
+	enabledExtensions.insert(enabledExtensions.end(), required_extensions.begin(), required_extensions.end());
 
 	createInstance({}, enabledExtensions);
 	createLogicalDevice({ VK_KHR_SWAPCHAIN_EXTENSION_NAME });
@@ -1450,20 +1457,7 @@ void GFXVulkan::createSwapchain(NativeSurface* native_surface, VkSwapchainKHR ol
 	}
 #else
     if(native_surface->surface == VK_NULL_HANDLE) {
-        struct WindowConnection {
-            int identifier = 0;
-            xcb_connection_t* connection;
-            xcb_window_t window;
-        };
-
-        WindowConnection* wincon = reinterpret_cast<WindowConnection*>(native_surface->windowNativeHandle);
-
-        VkXcbSurfaceCreateInfoKHR createInfo = {};
-        createInfo.sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR;
-        createInfo.window = wincon->window;
-        createInfo.connection = wincon->connection;
-
-        vkCreateXcbSurfaceKHR(instance, &createInfo, nullptr, &native_surface->surface);
+        native_surface->surface = (VkSurfaceKHR)platform::create_native_surface(native_surface->identifier, (void*)instance);
     }
 #endif
 
