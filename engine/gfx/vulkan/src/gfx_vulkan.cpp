@@ -18,9 +18,10 @@
 #include "utility.hpp"
 #include "gfx_vulkan_commandbuffer.hpp"
 
+#include <platform.hpp>
+
 #ifdef PLATFORM_LINUX
 #include <SDL2/SDL.h>
-#include <platform.hpp>
 
 #endif
 

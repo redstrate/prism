@@ -32,6 +32,14 @@ const char* platform::get_name() {
 	return "Windows";
 }
 
+bool platform::supports_feature(const PlatformFeature feature) {
+    return false;
+}
+
+std::vector<const char*> platform::get_native_surface_extension() {
+    return {"VK_KHR_surface", "VK_KHR_win32_surface"};
+}
+
 bool platform::get_key_down(const InputButton key) {
 	if (inputToKeyCode.count(key)) {
 		return (GetKeyState(inputToKeyCode[key]) & 0x8000) != 0;
