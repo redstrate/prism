@@ -171,6 +171,11 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
 }
 
 VkResult name_object(VkDevice device, VkObjectType type, uint64_t object, std::string_view name) {
+    if(object == 0x0) {
+        console::error(System::GFX, "Failed to name object {}", name);
+        return VK_ERROR_DEVICE_LOST;
+    }
+
     VkDebugUtilsObjectNameInfoEXT info = {};
     info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_OBJECT_NAME_INFO_EXT;
     info.objectType = type;
@@ -1636,8 +1641,8 @@ void GFXVulkan::createSwapchain(NativeSurface* native_surface, VkSwapchainKHR ol
 
 void GFXVulkan::createDescriptorPool() {
 	const std::array<VkDescriptorPoolSize, 2> poolSizes = { {
-		{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 100},
-		{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 100}
+		{VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, 5000},
+		{VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, 5000}
 	}};
 
 	VkDescriptorPoolCreateInfo poolInfo = {};
@@ -1645,7 +1650,7 @@ void GFXVulkan::createDescriptorPool() {
 	poolInfo.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 	poolInfo.poolSizeCount = static_cast<uint32_t>(poolSizes.size());
 	poolInfo.pPoolSizes = poolSizes.data();
-	poolInfo.maxSets = 100;
+	poolInfo.maxSets = 5000;
 
 	vkCreateDescriptorPool(device, &poolInfo, nullptr, &descriptorPool);
 }
@@ -1683,6 +1688,8 @@ void GFXVulkan::resetDescriptorState() {
 void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSetLayout layout) {
 	uint64_t hash = getDescriptorHash(pipeline);
 
+	console::debug(System::GFX, "Caching descriptor hash {}", std::to_string(hash));
+
 	vkDeviceWaitIdle(device);
 
 	// create set object
@@ -1694,7 +1701,13 @@ void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSe
 	allocInfo.descriptorSetCount = 1;
 	allocInfo.pSetLayouts = &layout;
 
-	vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet);
+	VkResult error = vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet);
+	if(error == VK_ERROR_OUT_OF_POOL_MEMORY) {
+	    console::error(System::GFX, "ERROR: COULD NOT CACHE BECAUSE OUT OF DESCRIPTOR SETS.");
+	}
+
+    if(error != VK_SUCCESS)
+        return;
 
 	name_object(device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)descriptorSet, pipeline->label);
 
