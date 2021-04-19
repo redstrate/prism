@@ -102,7 +102,7 @@ AssetType get_asset_type() {
 
 constexpr int thumbnail_resolution = 256;
 
-class CommonEditor : public App {
+class CommonEditor : public prism::app {
 public:
 	CommonEditor(std::string id);
 

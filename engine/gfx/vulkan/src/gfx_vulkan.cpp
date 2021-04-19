@@ -1354,7 +1354,7 @@ void GFXVulkan::createInstance(std::vector<const char*> layers, std::vector<cons
 
 	VkApplicationInfo appInfo = {};
 	appInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-	appInfo.pApplicationName = "Prism Engine App";
+	appInfo.pApplicationName = "Prism Engine app";
 	appInfo.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
 	appInfo.pEngineName = "Prism Engine";
 	appInfo.engineVersion = VK_MAKE_VERSION(1, 0, 0);

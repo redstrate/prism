@@ -23,6 +23,8 @@
 #include "shadowpass.hpp"
 #include "scenecapture.hpp"
 
+using prism::Engine;
+
 Engine::Engine(const int argc, char* argv[]) {
     console::info(System::Core, "Prism Engine loading...");
     
@@ -47,13 +49,13 @@ Engine::Engine(const int argc, char* argv[]) {
 
 Engine::~Engine() {}
 
-void Engine::set_app(App* app) {
+void Engine::set_app(app* app) {
     Expects(app != nullptr);
     
     _app = app;
 }
 
-App* Engine::get_app() const {
+prism::app* Engine::get_app() const {
     return _app;
 }
 

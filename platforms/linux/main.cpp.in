@@ -294,7 +294,7 @@ int main(int argc, char* argv[]) {
         xcb_screen_next(&iter);
     screen = iter.data;
 
-    engine = new Engine(argc, argv);
+    engine = new prism::Engine(argc, argv);
 
     app = new @APP_CLASS@();
     engine->set_app(app);

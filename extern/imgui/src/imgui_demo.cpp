@@ -55,19 +55,19 @@ Index of this file:
 // - sub section: ShowDemoWindowMisc()
 // [SECTION] About Window / ShowAboutWindow()
 // [SECTION] Style Editor / ShowStyleEditor()
-// [SECTION] Example App: Main Menu Bar / ShowExampleAppMainMenuBar()
-// [SECTION] Example App: Debug Console / ShowExampleAppConsole()
-// [SECTION] Example App: Debug Log / ShowExampleAppLog()
-// [SECTION] Example App: Simple Layout / ShowExampleAppLayout()
-// [SECTION] Example App: Property Editor / ShowExampleAppPropertyEditor()
-// [SECTION] Example App: Long Text / ShowExampleAppLongText()
-// [SECTION] Example App: Auto Resize / ShowExampleAppAutoResize()
-// [SECTION] Example App: Constrained Resize / ShowExampleAppConstrainedResize()
-// [SECTION] Example App: Simple Overlay / ShowExampleAppSimpleOverlay()
-// [SECTION] Example App: Manipulating Window Titles / ShowExampleAppWindowTitles()
-// [SECTION] Example App: Custom Rendering using ImDrawList API / ShowExampleAppCustomRendering()
-// [SECTION] Example App: Docking, DockSpace / ShowExampleAppDockSpace()
-// [SECTION] Example App: Documents Handling / ShowExampleAppDocuments()
+// [SECTION] Example app: Main Menu Bar / ShowExampleAppMainMenuBar()
+// [SECTION] Example app: Debug Console / ShowExampleAppConsole()
+// [SECTION] Example app: Debug Log / ShowExampleAppLog()
+// [SECTION] Example app: Simple Layout / ShowExampleAppLayout()
+// [SECTION] Example app: Property Editor / ShowExampleAppPropertyEditor()
+// [SECTION] Example app: Long Text / ShowExampleAppLongText()
+// [SECTION] Example app: Auto Resize / ShowExampleAppAutoResize()
+// [SECTION] Example app: Constrained Resize / ShowExampleAppConstrainedResize()
+// [SECTION] Example app: Simple Overlay / ShowExampleAppSimpleOverlay()
+// [SECTION] Example app: Manipulating Window Titles / ShowExampleAppWindowTitles()
+// [SECTION] Example app: Custom Rendering using ImDrawList API / ShowExampleAppCustomRendering()
+// [SECTION] Example app: Docking, DockSpace / ShowExampleAppDockSpace()
+// [SECTION] Example app: Documents Handling / ShowExampleAppDocuments()
 
 */
 
@@ -6100,7 +6100,7 @@ void ImGui::ShowStyleEditor(ImGuiStyle* ref)
 }
 
 //-----------------------------------------------------------------------------
-// [SECTION] Example App: Main Menu Bar / ShowExampleAppMainMenuBar()
+// [SECTION] Example app: Main Menu Bar / ShowExampleAppMainMenuBar()
 //-----------------------------------------------------------------------------
 // - ShowExampleAppMainMenuBar()
 // - ShowExampleMenuFile()
@@ -6212,7 +6212,7 @@ static void ShowExampleMenuFile()
 }
 
 //-----------------------------------------------------------------------------
-// [SECTION] Example App: Debug Console / ShowExampleAppConsole()
+// [SECTION] Example app: Debug Console / ShowExampleAppConsole()
 //-----------------------------------------------------------------------------
 
 // Demonstrate creating a simple console window, with scrolling, filtering, completion and history.
@@ -6570,7 +6570,7 @@ static void ShowExampleAppConsole(bool* p_open)
 }
 
 //-----------------------------------------------------------------------------
-// [SECTION] Example App: Debug Log / ShowExampleAppLog()
+// [SECTION] Example app: Debug Log / ShowExampleAppLog()
 //-----------------------------------------------------------------------------
 
 // Usage:
@@ -6728,7 +6728,7 @@ static void ShowExampleAppLog(bool* p_open)
 }
 
 //-----------------------------------------------------------------------------
-// [SECTION] Example App: Simple Layout / ShowExampleAppLayout()
+// [SECTION] Example app: Simple Layout / ShowExampleAppLayout()
 //-----------------------------------------------------------------------------
 
 // Demonstrate create a window with multiple child windows.
@@ -6793,7 +6793,7 @@ static void ShowExampleAppLayout(bool* p_open)
 }
 
 //-----------------------------------------------------------------------------
-// [SECTION] Example App: Property Editor / ShowExampleAppPropertyEditor()
+// [SECTION] Example app: Property Editor / ShowExampleAppPropertyEditor()
 //-----------------------------------------------------------------------------
 
 static void ShowPlaceholderObject(const char* prefix, int uid)
@@ -6875,7 +6875,7 @@ static void ShowExampleAppPropertyEditor(bool* p_open)
 }
 
 //-----------------------------------------------------------------------------
-// [SECTION] Example App: Long Text / ShowExampleAppLongText()
+// [SECTION] Example app: Long Text / ShowExampleAppLongText()
 //-----------------------------------------------------------------------------
 
 // Demonstrate/test rendering huge amount of text, and the incidence of clipping.
@@ -6937,7 +6937,7 @@ static void ShowExampleAppLongText(bool* p_open)
 }
 
 //-----------------------------------------------------------------------------
-// [SECTION] Example App: Auto Resize / ShowExampleAppAutoResize()
+// [SECTION] Example app: Auto Resize / ShowExampleAppAutoResize()
 //-----------------------------------------------------------------------------
 
 // Demonstrate creating a window which gets auto-resized according to its content.
@@ -6961,7 +6961,7 @@ static void ShowExampleAppAutoResize(bool* p_open)
 }
 
 //-----------------------------------------------------------------------------
-// [SECTION] Example App: Constrained Resize / ShowExampleAppConstrainedResize()
+// [SECTION] Example app: Constrained Resize / ShowExampleAppConstrainedResize()
 //-----------------------------------------------------------------------------
 
 // Demonstrate creating a window with custom resize constraints.
@@ -7016,7 +7016,7 @@ static void ShowExampleAppConstrainedResize(bool* p_open)
 }
 
 //-----------------------------------------------------------------------------
-// [SECTION] Example App: Simple Overlay / ShowExampleAppSimpleOverlay()
+// [SECTION] Example app: Simple Overlay / ShowExampleAppSimpleOverlay()
 //-----------------------------------------------------------------------------
 
 // Demonstrate creating a simple static window with no decoration
@@ -7063,7 +7063,7 @@ static void ShowExampleAppSimpleOverlay(bool* p_open)
 }
 
 //-----------------------------------------------------------------------------
-// [SECTION] Example App: Manipulating Window Titles / ShowExampleAppWindowTitles()
+// [SECTION] Example app: Manipulating Window Titles / ShowExampleAppWindowTitles()
 //-----------------------------------------------------------------------------
 
 // Demonstrate using "##" and "###" in identifiers to manipulate ID generation.
@@ -7095,7 +7095,7 @@ static void ShowExampleAppWindowTitles(bool*)
 }
 
 //-----------------------------------------------------------------------------
-// [SECTION] Example App: Custom Rendering using ImDrawList API / ShowExampleAppCustomRendering()
+// [SECTION] Example app: Custom Rendering using ImDrawList API / ShowExampleAppCustomRendering()
 //-----------------------------------------------------------------------------
 
 // Demonstrate using the low-level ImDrawList to draw custom shapes.
@@ -7337,7 +7337,7 @@ static void ShowExampleAppCustomRendering(bool* p_open)
 }
 
 //-----------------------------------------------------------------------------
-// [SECTION] Example App: Docking, DockSpace / ShowExampleAppDockSpace()
+// [SECTION] Example app: Docking, DockSpace / ShowExampleAppDockSpace()
 //-----------------------------------------------------------------------------
 
 // Demonstrate using DockSpace() to create an explicit docking node within an existing window.
@@ -7453,7 +7453,7 @@ void ShowExampleAppDockSpace(bool* p_open)
 }
 
 //-----------------------------------------------------------------------------
-// [SECTION] Example App: Documents Handling / ShowExampleAppDocuments()
+// [SECTION] Example app: Documents Handling / ShowExampleAppDocuments()
 //-----------------------------------------------------------------------------
 
 // Simplified structure to mimic a Document model

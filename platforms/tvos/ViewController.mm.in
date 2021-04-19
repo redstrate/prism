@@ -98,7 +98,7 @@ int drawable_width, drawable_height;
     drawable_width = [view frame].size.width * [view contentScaleFactor];
     drawable_height = [view frame].size.height * [view contentScaleFactor];
     
-    engine = new Engine(0, nullptr);
+    engine = new prism::Engine(0, nullptr);
     
     app = new @APP_CLASS@();
     engine->set_app(app);

@@ -2,7 +2,7 @@
 
 #include "app.hpp"
 
-class ExampleApp : public App {
+class ExampleApp : public app {
 public:
    
 };

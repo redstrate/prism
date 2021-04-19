@@ -144,7 +144,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, PWSTR pCmdLine, int nCmdShow
 	instance = hInstance;
 	cmdShow = nCmdShow;
 
-	engine = new Engine(0, nullptr);
+	engine = new prism::Engine(0, nullptr);
     
     ginterface = new GFXVulkan();
     if(ginterface->initialize(GFXCreateInfo())) {    
