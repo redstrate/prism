@@ -41,22 +41,22 @@ engine::engine(const int argc, char* argv[]) {
     for(int i = 0; i < argc; i++)
         command_line_arguments.push_back(argv[i]);
 
-	_input = std::make_unique<Input>();
-    _physics = std::make_unique<Physics>();
-    _imgui = std::make_unique<ImGuiLayer>();
+    input = std::make_unique<Input>();
+    physics = std::make_unique<Physics>();
+    imgui = std::make_unique<ImGuiLayer>();
     assetm = std::make_unique<AssetManager>();
 }
 
 engine::~engine() {}
 
-void engine::set_app(app* app) {
+void engine::set_app(prism::app* app) {
     Expects(app != nullptr);
-    
-    _app = app;
+
+    this->app = app;
 }
 
 prism::app* engine::get_app() const {
-    return _app;
+    return app;
 }
 
 void engine::load_localization(const std::string_view path) {
@@ -67,54 +67,54 @@ void engine::load_localization(const std::string_view path) {
         nlohmann::json j;
         file->read_as_stream() >> j;
 
-        _strings = j["strings"].get<std::map<std::string, std::string>>();
+        strings = j["strings"].get<std::map<std::string, std::string>>();
     }
 }
 
 void engine::pause() {
-    _paused = true;
+    paused = true;
     push_event("engine_pause");
 }
 
 void engine::unpause() {
-    _paused = false;
+    paused = false;
     push_event("engine_unpause");
 }
 
 bool engine::is_paused() const {
-    return _paused;
+    return paused;
 }
 
 void engine::quit() {
-    _windows[0]->quitRequested = true;
+    windows[0]->quit_requested = true;
 }
 
 bool engine::is_quitting() const {
-    return _windows[0]->quitRequested;
+    return windows[0]->quit_requested;
 }
 
 void engine::prepare_quit() {
-    _app->prepare_quit();
+    app->prepare_quit();
 }
 
 void engine::set_gfx(GFX* gfx) {
-    _gfx = gfx;
+    this->gfx = gfx;
 }
 
 GFX* engine::get_gfx() {
-    return _gfx;
+    return gfx;
 }
 
 Input* engine::get_input() {
-	return _input.get();
+	return input.get();
 }
 
 Renderer* engine::get_renderer() {
-    return _renderer.get();
+    return renderer.get();
 }
 
 Physics* engine::get_physics() {
-    return _physics.get();
+    return physics.get();
 }
 
 void engine::create_empty_scene() {
@@ -122,8 +122,8 @@ void engine::create_empty_scene() {
     
     setup_scene(*scene);
     
-    _scenes.push_back(std::move(scene));
-    _current_scene = _scenes.back().get();
+    scenes.push_back(std::move(scene));
+    current_scene = scenes.back().get();
 }
 
 Scene* engine::load_scene(const file::Path path) {
@@ -165,11 +165,11 @@ Scene* engine::load_scene(const file::Path path) {
     
     setup_scene(*scene);
     
-    _scenes.push_back(std::move(scene));
-    _current_scene = _scenes.back().get();
-    _path_to_scene[path.string()] = _scenes.back().get();
+    scenes.push_back(std::move(scene));
+    current_scene = scenes.back().get();
+    path_to_scene[path.string()] = scenes.back().get();
     
-    return _scenes.back().get();
+    return scenes.back().get();
 }
 
 void engine::save_scene(const std::string_view path) {
@@ -177,8 +177,8 @@ void engine::save_scene(const std::string_view path) {
     
     nlohmann::json j;
 
-    for(auto& obj : _current_scene->get_objects()) {
-        if(!_current_scene->get(obj).editor_object)
+    for(auto& obj : current_scene->get_objects()) {
+        if(!current_scene->get(obj).editor_object)
             j["objects"].push_back(save_object(obj));
     }
 
@@ -193,16 +193,16 @@ ui::Screen* engine::load_screen(const file::Path path) {
 }
 
 void engine::set_screen(ui::Screen* screen) {
-    _current_screen = screen;
+    current_screen = screen;
     
-    screen->extent = _windows[0]->extent;
+    screen->extent = windows[0]->extent;
     screen->calculate_sizes();
     
     get_renderer()->set_screen(screen);
 }
 
 ui::Screen* engine::get_screen() const {
-    return _current_screen;
+    return current_screen;
 }
 
 AnimationChannel engine::load_animation(nlohmann::json a) {
@@ -300,8 +300,8 @@ void engine::load_cutscene(const file::Path path) {
             shot.channels.push_back(load_animation(animation));
         }
 
-        if(_path_to_scene.count(s["scene"])) {
-            shot.scene = _path_to_scene[s["scene"]];
+        if(path_to_scene.count(s["scene"])) {
+            shot.scene = path_to_scene[s["scene"]];
 
             // try to find main camera
             auto [obj, cam] = shot.scene->get_all<Camera>()[0];
@@ -324,8 +324,8 @@ void engine::load_cutscene(const file::Path path) {
                     anim.target = cameraObj;
             }
 
-            _path_to_scene[s["scene"]] = _current_scene;
-            shot.scene = _current_scene;
+            path_to_scene[s["scene"]] = current_scene;
+            shot.scene = current_scene;
         }
 
         cutscene->shots.push_back(shot);
@@ -342,7 +342,7 @@ void engine::save_cutscene(const std::string_view path) {
         s["begin"] = shot.begin;
         s["end"] = shot.length;
 
-        for(auto& [path, scene] : _path_to_scene) {
+        for(auto& [path, scene] : path_to_scene) {
             if(shot.scene == scene)
                 s["scene"] = path;
         }
@@ -395,8 +395,8 @@ void engine::save_prefab(const Object root, const std::string_view path) {
     
     nlohmann::json j;
 
-    for(auto& obj : _current_scene->get_objects()) {
-        if(!_current_scene->get(obj).editor_object)
+    for(auto& obj : current_scene->get_objects()) {
+        if(!current_scene->get(obj).editor_object)
             j["objects"].push_back(save_object(obj));
     }
 
@@ -409,19 +409,19 @@ void engine::add_window(void* native_handle, const int identifier, const prism::
     Expects(identifier >= 0);
     
     if(identifier == 0) {
-        _renderer = std::make_unique<Renderer>(_gfx);
+        renderer = std::make_unique<Renderer>(gfx);
     }
     
     const auto drawable_extent = platform::get_window_drawable_size(identifier);
     
-    _gfx->initialize_view(native_handle, identifier, drawable_extent.width, drawable_extent.height);
+    gfx->initialize_view(native_handle, identifier, drawable_extent.width, drawable_extent.height);
 
     Window* window = new Window();
-    _windows.push_back(window);
+    windows.push_back(window);
     
     window->identifier = identifier;
     window->extent = extent;
-    window->render_target = _renderer->allocate_render_target(drawable_extent);
+    window->render_target = renderer->allocate_render_target(drawable_extent);
 
     render_ready = true;
 }
@@ -429,7 +429,7 @@ void engine::add_window(void* native_handle, const int identifier, const prism::
 void engine::remove_window(const int identifier) {
     Expects(identifier >= 0);
 
-    utility::erase_if(_windows, [identifier](Window*& w) {
+    utility::erase_if(windows, [identifier](Window*& w) {
         return w->identifier == identifier;
     });
 }
@@ -445,13 +445,13 @@ void engine::resize(const int identifier, const prism::Extent extent) {
     
     const auto drawable_extent = platform::get_window_drawable_size(identifier);
 
-    _gfx->recreate_view(identifier, drawable_extent.width, drawable_extent.height);
-    _renderer->resize_render_target(*window->render_target, drawable_extent);
+    gfx->recreate_view(identifier, drawable_extent.width, drawable_extent.height);
+    renderer->resize_render_target(*window->render_target, drawable_extent);
 
     if(identifier == 0) {
-        if(_current_screen != nullptr) {
-            _current_screen->extent = extent;
-            _current_screen->calculate_sizes();
+        if(current_screen != nullptr) {
+            current_screen->extent = extent;
+            current_screen->calculate_sizes();
         }
     }
 }
@@ -459,7 +459,7 @@ void engine::resize(const int identifier, const prism::Extent extent) {
 void engine::process_key_down(const unsigned int keyCode) {
     Expects(keyCode >= 0);
     
-    _imgui->process_key_down(keyCode);
+    imgui->process_key_down(keyCode);
 
     if(keyCode == platform::get_keycode(debug_button) && !ImGui::GetIO().WantTextInput)
         debug_enabled = !debug_enabled;
@@ -468,31 +468,31 @@ void engine::process_key_down(const unsigned int keyCode) {
 void engine::process_key_up(const unsigned int keyCode) {
     Expects(keyCode >= 0);
     
-    _imgui->process_key_up(keyCode);
+    imgui->process_key_up(keyCode);
 }
 
 void engine::process_mouse_down(const int button, const prism::Offset offset) {
-	if(_current_screen != nullptr && button == 0)
-        _current_screen->process_mouse(offset.x, offset.y);
+	if(current_screen != nullptr && button == 0)
+        current_screen->process_mouse(offset.x, offset.y);
 }
 
 void engine::push_event(const std::string_view name, const std::string_view data) {
     Expects(!name.empty());
     
-	if(_current_screen != nullptr)
-        _current_screen->process_event(name.data(), data.data());
+	if(current_screen != nullptr)
+        current_screen->process_event(name.data(), data.data());
 }
 
 bool engine::has_localization(const std::string_view id) const {
     Expects(!id.empty());
     
-    return _strings.count(id.data());
+    return strings.count(id.data());
 }
 
 std::string engine::localize(const std::string id) {
     Expects(!id.empty());
     
-    return _strings[id];
+    return strings[id];
 }
 
 void engine::calculate_bone(Mesh& mesh, const Mesh::Part& part, Bone& bone, const Bone* parent_bone) {
@@ -552,7 +552,7 @@ void engine::calculate_object(Scene& scene, Object object, const Object parent_o
                         mesh.temp_bone_data[i] = mesh.mesh->bones[i].final_transform;
                 }
 
-                _gfx->copy_buffer(part.bone_batrix_buffer, mesh.temp_bone_data.data(), 0, mesh.temp_bone_data.size() * sizeof(Matrix4x4));
+                gfx->copy_buffer(part.bone_batrix_buffer, mesh.temp_bone_data.data(), 0, mesh.temp_bone_data.size() * sizeof(Matrix4x4));
             }
         }
     }
@@ -638,28 +638,28 @@ void engine::update_animation_channel(Scene& scene, const AnimationChannel& chan
 void engine::update_cutscene(const float time) {
     Shot* currentShot = get_shot(time);
     if(currentShot != nullptr) {
-        _current_scene = currentShot->scene;
+        current_scene = currentShot->scene;
 
         for(auto& channel : currentShot->channels)
-            update_animation_channel(*_current_scene, channel, time);
+            update_animation_channel(*current_scene, channel, time);
     } else {
-        _current_scene = nullptr;
+        current_scene = nullptr;
     }
 }
 
 void engine::update_animation(const Animation& anim, const float time) {
     for(const auto& channel : anim.channels)
-        update_animation_channel(*_current_scene, channel, time);
+        update_animation_channel(*current_scene, channel, time);
 }
 
 void engine::begin_frame(const float delta_time) {
-    _imgui->begin_frame(delta_time);
+    imgui->begin_frame(delta_time);
     
     if(debug_enabled)
         draw_debug_ui();
 
-    if(_app != nullptr)
-        _app->begin_frame();
+    if(app != nullptr)
+        app->begin_frame();
 }
 
 void engine::end_frame() {
@@ -690,8 +690,8 @@ void engine::update(const float delta_time) {
         }
     }
     
-    for(auto& timer : _timers) {
-        if(!_paused || (_paused && timer->continue_during_pause))
+    for(auto& timer : timers) {
+        if(!paused || (paused && timer->continue_during_pause))
             timer->current_time += delta_time;
 
         if(timer->current_time >= timer->duration) {
@@ -700,35 +700,35 @@ void engine::update(const float delta_time) {
             timer->current_time = 0.0f;
 
             if(timer->remove_on_trigger)
-                _timersToRemove.push_back(timer);
+                timers_to_remove.push_back(timer);
         }
     }
 
-    for(auto& timer : _timersToRemove)
-        utility::erase(_timers, timer);
+    for(auto& timer : timers_to_remove)
+        utility::erase(timers, timer);
 
-    _timersToRemove.clear();
+    timers_to_remove.clear();
 
-    _input->update();
+    input->update();
 
-    _app->update(delta_time);
+    app->update(delta_time);
     
-    if(_current_scene != nullptr) {
-        if(update_physics && !_paused)
-            _physics->update(delta_time);
+    if(current_scene != nullptr) {
+        if(update_physics && !paused)
+            physics->update(delta_time);
         
-        if(cutscene != nullptr && play_cutscene && !_paused) {
+        if(cutscene != nullptr && play_cutscene && !paused) {
             update_cutscene(current_cutscene_time);
             
             current_cutscene_time += delta_time;
         }
         
-        for(auto& target : _animation_targets) {
+        for(auto& target : animation_targets) {
             if((target.current_time * target.animation.ticks_per_second) > target.animation.duration) {
                 if(target.looping) {
                     target.current_time = 0.0f;
                 } else {
-                    utility::erase(_animation_targets, target);
+                    utility::erase(animation_targets, target);
                 }
             } else {
                 update_animation(target.animation, target.current_time * target.animation.ticks_per_second);
@@ -737,7 +737,7 @@ void engine::update(const float delta_time) {
             }
         }
     
-        update_scene(*_current_scene);
+        update_scene(*current_scene);
     }
     
     assetm->perform_cleanup();
@@ -757,46 +757,46 @@ void engine::render(const int index) {
     if(window == nullptr)
         return;
     
-    GFXCommandBuffer* commandbuffer = _gfx->acquire_command_buffer(true);
+    GFXCommandBuffer* commandbuffer = gfx->acquire_command_buffer(true);
     
     if(index == 0) {
-        if(_current_screen != nullptr && _current_screen->view_changed) {
-            _renderer->update_screen();
-            _current_screen->view_changed = false;
+        if(current_screen != nullptr && current_screen->view_changed) {
+            renderer->update_screen();
+            current_screen->view_changed = false;
         }
         
-        _imgui->render(0);
+        imgui->render(0);
         
-        _app->render(commandbuffer);
+        app->render(commandbuffer);
     }
 
-    if(_renderer != nullptr)
-        _renderer->render(commandbuffer, _app->wants_no_scene_rendering() ? nullptr : _current_scene, *window->render_target, index);
+    if(renderer != nullptr)
+        renderer->render(commandbuffer, app->wants_no_scene_rendering() ? nullptr : current_scene, *window->render_target, index);
 
-    _gfx->submit(commandbuffer, index);
+    gfx->submit(commandbuffer, index);
 }
 
 void engine::add_timer(Timer& timer) {
-    _timers.push_back(&timer);
+    timers.push_back(&timer);
 }
 
 Scene* engine::get_scene() {
-    return _current_scene;
+    return current_scene;
 }
 
 Scene* engine::get_scene(const std::string_view name) {
     Expects(!name.empty());
     
-    return _path_to_scene[name.data()];
+    return path_to_scene[name.data()];
 }
 
 void engine::set_current_scene(Scene* scene) {
-    _current_scene = scene;
+    current_scene = scene;
 }
 
 std::string_view engine::get_scene_path() const {
-    for(auto& [path, scene] : _path_to_scene) {
-        if(scene == this->_current_scene)
+    for(auto& [path, scene] : path_to_scene) {
+        if(scene == this->current_scene)
             return path;
     }
 
@@ -806,13 +806,13 @@ std::string_view engine::get_scene_path() const {
 void engine::on_remove(Object object) {
     Expects(object != NullObject);
 
-    _physics->remove_object(object);
+    physics->remove_object(object);
 }
 
 void engine::play_animation(Animation animation, Object object, bool looping) {
     Expects(object != NullObject);
     
-    if(!_current_scene->has<Renderable>(object))
+    if(!current_scene->has<Renderable>(object))
         return;
     
     AnimationTarget target;
@@ -821,31 +821,31 @@ void engine::play_animation(Animation animation, Object object, bool looping) {
     target.looping = looping;
 
     for(auto& channel : target.animation.channels) {
-        for(auto& bone : _current_scene->get<Renderable>(object).mesh->bones) {
+        for(auto& bone : current_scene->get<Renderable>(object).mesh->bones) {
             if(channel.id == bone.name)
                 channel.bone = &bone;
         }
     }
 
-    _animation_targets.push_back(target);
+    animation_targets.push_back(target);
 }
 
 void engine::set_animation_speed_modifier(Object target, float modifier) {
-    for(auto& animation : _animation_targets) {
+    for(auto& animation : animation_targets) {
         if(animation.target == target)
             animation.animation_speed_modifier = modifier;
     }
 }
 
 void engine::stop_animation(Object target) {
-    for(auto& animation : _animation_targets) {
+    for(auto& animation : animation_targets) {
         if(animation.target == target)
-            utility::erase(_animation_targets, animation);
+            utility::erase(animation_targets, animation);
     }
 }
 
 void engine::setup_scene(Scene& scene) {
-    _physics->reset();
+    physics->reset();
 
     scene.on_remove = [this](Object obj) {
         on_remove(obj);

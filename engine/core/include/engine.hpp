@@ -332,26 +332,26 @@ namespace prism {
 
         void on_remove(Object object);
 
-        bool _paused = false;
+        bool paused = false;
 
-        ui::Screen* _current_screen = nullptr;
+        ui::Screen* current_screen = nullptr;
 
-        Scene* _current_scene = nullptr;
-        std::vector<std::unique_ptr<Scene>> _scenes;
-        std::map<std::string, Scene*> _path_to_scene;
+        Scene* current_scene = nullptr;
+        std::vector<std::unique_ptr<Scene>> scenes;
+        std::map<std::string, Scene*> path_to_scene;
 
         struct Window {
             int identifier = -1;
             prism::Extent extent;
-            bool quitRequested = false;
+            bool quit_requested = false;
 
             RenderTarget* render_target = nullptr;
         };
 
-        std::vector<Window*> _windows;
+        std::vector<Window*> windows;
 
         Window* get_window(const int identifier) {
-            for(auto& window : _windows) {
+            for(auto& window : windows) {
                 if(window->identifier == identifier)
                     return window;
             }
@@ -368,20 +368,20 @@ namespace prism {
 
         void update_animation_channel(Scene& scene, const AnimationChannel& channel, float time);
 
-        app* _app = nullptr;
-        GFX* _gfx = nullptr;
+        app* app = nullptr;
+        GFX* gfx = nullptr;
 
-        std::unique_ptr<Input> _input;
-        std::unique_ptr<Physics> _physics;
-        std::unique_ptr<Renderer> _renderer;
+        std::unique_ptr<Input> input;
+        std::unique_ptr<Physics> physics;
+        std::unique_ptr<Renderer> renderer;
 
-        std::vector<Timer*> _timers, _timersToRemove;
+        std::vector<Timer*> timers, timers_to_remove;
 
-        std::map<std::string, std::string> _strings;
+        std::map<std::string, std::string> strings;
 
-        std::vector<AnimationTarget> _animation_targets;
+        std::vector<AnimationTarget> animation_targets;
 
-        std::unique_ptr<ImGuiLayer> _imgui;
+        std::unique_ptr<ImGuiLayer> imgui;
 
         const InputButton debug_button = InputButton::Q;
     };
