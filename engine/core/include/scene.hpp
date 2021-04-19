@@ -236,6 +236,8 @@ public:
     bool sun_light_dirty = false;
     std::array<bool, max_point_shadows> point_light_dirty;
     std::array<bool, max_spot_shadows> spot_light_dirty;
+
+    int shadow_refresh_timer = 5;
     
     // environment
     std::array<bool, max_environment_probes> environment_dirty;

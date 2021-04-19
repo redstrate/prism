@@ -87,6 +87,11 @@ void ShadowPass::create_scene_resources(Scene& scene) {
 void ShadowPass::render(GFXCommandBuffer* command_buffer, Scene& scene) {
     last_spot_light = 0;
     last_point_light = 0;
+
+    if(scene.shadow_refresh_timer > 0) {
+        scene.shadow_refresh_timer--;
+        return;
+    }
     
     auto lights = scene.get_all<Light>();
     for(auto [obj, light] : lights) {
