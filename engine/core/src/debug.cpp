@@ -34,7 +34,7 @@ void draw_asset() {
     for(auto& [path, block] : assetm->reference_blocks) {
         ImGui::PushID(&block);
         
-        ImGui::Text("- %s has %llu reference(s)", path.c_str(), block->references);
+        ImGui::Text("- %s has %llu reference(s)", path.string().c_str(), block->references);
         
         ImGui::PushStyleColor(ImGuiCol_Button, (ImVec4)ImColor(200, 0, 0));
         
