@@ -101,8 +101,8 @@ Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     
     if(enable_imgui)
         addPass<ImGuiPass>();
-    
-    createBRDF();
+
+    generateBRDF();
     
     GFXRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.label = "Offscreen";
@@ -111,12 +111,12 @@ Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     renderPassInfo.will_use_in_shader = true;
     
     offscreenRenderPass = gfx->create_render_pass(renderPassInfo);
-    
-    createFontPipeline();
+
+    createFontTexture();
     createSkyPipeline();
 }
 
-Renderer::~Renderer() {}
+Renderer::~Renderer() = default;
 
 RenderTarget* Renderer::allocate_render_target(const prism::Extent extent) {
     auto target = new RenderTarget();
@@ -133,7 +133,7 @@ void Renderer::resize_render_target(RenderTarget& target, const prism::Extent ex
         
     create_render_target_resources(target);
     smaaPass->create_render_target_resources(target);
-    createPostPipeline();
+    createPostPipelines();
     
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Text";
@@ -168,8 +168,8 @@ void Renderer::resize_render_target(RenderTarget& target, const prism::Extent ex
         
         worldTextPipeline = gfx->create_graphics_pipeline(pipelineInfo);
     }
-    
-    createUIPipeline();
+
+    createUIPipelines();
 
     for(auto& pass : passes)
         pass->create_render_target_resources(target);
@@ -192,7 +192,7 @@ void Renderer::set_screen(ui::Screen* screen) {
 void Renderer::init_screen(ui::Screen* screen) {
     Expects(screen != nullptr);
 
-    std::array<GylphMetric, numGlyphs> metrics;
+    std::array<GylphMetric, numGlyphs> metrics = {};
     for(int i = 0; i < numGlyphs; i++) {
         GylphMetric& metric = metrics[i];
         metric.x0_y0 = utility::pack_u32(font.sizes[fontSize][i].x0, font.sizes[fontSize][i].y0);
@@ -232,8 +232,8 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
         commandbuffer->set_render_pass(beginInfo);
         
         Viewport viewport = {};
-        viewport.width = render_extent.width;
-        viewport.height = render_extent.height;
+        viewport.width = static_cast<float>(render_extent.width);
+        viewport.height = static_cast<float>(render_extent.height);
         
         commandbuffer->set_viewport(viewport);
         
@@ -271,17 +271,22 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
         for(auto& [obj, camera] : cameras) {            
             const bool requires_limited_perspective = render_options.enable_depth_of_field;
             if(requires_limited_perspective) {
-                camera.perspective = transform::perspective(radians(camera.fov), static_cast<float>(render_extent.width) / static_cast<float>(render_extent.height), camera.near, 100.0f);
+                camera.perspective = transform::perspective(radians(camera.fov),
+                                                            static_cast<float>(render_extent.width) / static_cast<float>(render_extent.height),
+                                                            camera.near,
+                                                            100.0f);
             } else {
-                camera.perspective = transform::infinite_perspective(radians(camera.fov), static_cast<float>(render_extent.width) / static_cast<float>(render_extent.height), camera.near);
+                camera.perspective = transform::infinite_perspective(radians(camera.fov),
+                                                                     static_cast<float>(render_extent.width) / static_cast<float>(render_extent.height),
+                                                                     camera.near);
             }
         
             camera.view = inverse(scene->get<Transform>(obj).model);
             
             Viewport viewport = {};
-            viewport.width = render_extent.width;
-            viewport.height = render_extent.height;
-            
+            viewport.width = static_cast<float>(render_extent.width);
+            viewport.height = static_cast<float>(render_extent.height);
+
             commandbuffer->set_viewport(viewport);
             
             commandbuffer->push_group("render camera");
@@ -309,8 +314,8 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
     commandbuffer->set_render_pass(beginInfo);
     
     Viewport viewport = {};
-    viewport.width = render_extent.width;
-    viewport.height = render_extent.height;
+    viewport.width = static_cast<float>(render_extent.width);
+    viewport.height = static_cast<float>(render_extent.height);
     
     commandbuffer->set_viewport(viewport);
     
@@ -323,16 +328,22 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
     
     const float lum_range = render_options.max_luminance - render_options.min_luminance;
     
-    Vector4 params = Vector4(render_options.min_luminance, 1.0f / lum_range, render_extent.width, render_extent.height);
+    Vector4 params = Vector4(render_options.min_luminance,
+                             1.0f / lum_range,
+                             static_cast<float>(render_extent.width),
+                             static_cast<float>(render_extent.height));
     
     commandbuffer->set_push_constant(&params, sizeof(Vector4));
     
-    commandbuffer->dispatch(static_cast<uint32_t>(std::ceil(render_extent.width / 16.0f)),
-                            static_cast<uint32_t>(std::ceil(render_extent.height / 16.0f)), 1);
+    commandbuffer->dispatch(static_cast<uint32_t>(std::ceil(static_cast<float>(render_extent.width) / 16.0f)),
+                            static_cast<uint32_t>(std::ceil(static_cast<float>(render_extent.height) / 16.0f)), 1);
     
     commandbuffer->set_compute_pipeline(histogram_average_pipeline);
     
-    params = Vector4(render_options.min_luminance, lum_range, std::clamp(1.0f - std::exp(-(1.0f / 60.0f) * 1.1f), 0.0f, 1.0f), render_extent.width * render_extent.height);
+    params = Vector4(render_options.min_luminance,
+                     lum_range,
+                     std::clamp(1.0f - std::exp(-(1.0f / 60.0f) * 1.1f), 0.0f, 1.0f),
+                     static_cast<float>(render_extent.width * render_extent.height));
     
     commandbuffer->set_push_constant(&params, sizeof(Vector4));
     
@@ -368,11 +379,11 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
     if(render_options.enable_depth_of_field)
         pc.options.w = 2;
     
-    pc.transform_ops.x = (int)render_options.display_color_space;
-    pc.transform_ops.y = (int)render_options.tonemapping;
+    pc.transform_ops.x = static_cast<float>(render_options.display_color_space);
+    pc.transform_ops.y = static_cast<float>(render_options.tonemapping);
     
     const auto [width, height] = render_extent;
-    pc.viewport = Vector4(1.0f / static_cast<float>(width), 1.0f / static_cast<float>(height), width, height);
+    pc.viewport = Vector4(1.0f / static_cast<float>(width), 1.0f / static_cast<float>(height), static_cast<float>(width), static_cast<float>(height));
     
     commandbuffer->set_push_constant(&pc, sizeof(PostPushConstants));
     
@@ -404,9 +415,9 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
     sceneInfo.camPos.w = 2.0f * camera.near * std::tan(camera.fov * 0.5f) * (static_cast<float>(extent.width) / static_cast<float>(extent.height));
     sceneInfo.vp =  camera.perspective * camera.view;
     
-    for(const auto [obj, light] : scene.get_all<Light>()) {
+    for(const auto& [obj, light] : scene.get_all<Light>()) {
         SceneLight sl;
-        sl.positionType = Vector4(scene.get<Transform>(obj).get_world_position(), (int)light.type);
+        sl.positionType = Vector4(scene.get<Transform>(obj).get_world_position(), static_cast<float>(light.type));
         
         Vector3 front = Vector3(0.0f, 0.0f, 1.0f) * scene.get<Transform>(obj).rotation;
         
@@ -421,7 +432,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         sceneInfo.spotLightSpaces[i] = scene.spotLightSpaces[i];
     
     int last_probe = 0;
-    for(const auto [obj, probe] : scene.get_all<EnvironmentProbe>()) {
+    for(const auto& [obj, probe] : scene.get_all<EnvironmentProbe>()) {
         SceneProbe p;
         p.position = Vector4(scene.get<Transform>(obj).position, probe.is_sized ? 1.0f : 2.0f);
         p.size = Vector4(probe.size, probe.intensity);
@@ -433,7 +444,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
     std::map<Material*, int> material_indices;
     
     const auto& meshes = scene.get_all<Renderable>();
-    for(const auto [obj, mesh] : meshes) {
+    for(const auto& [obj, mesh] : meshes) {
         if(!mesh.mesh)
             continue;
         
@@ -547,7 +558,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
 void Renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen, prism::Extent extent, ControllerContinuity& continuity, RenderScreenOptions options) {
     std::array<GlyphInstance, maxInstances> instances;
     std::vector<ElementInstance> elementInstances;
-    std::array<StringInstance, 50> stringInstances;
+    std::array<StringInstance, 50> stringInstances = {};
 
     int stringLen = 0;
     int numElements = 0;
@@ -674,7 +685,7 @@ void Renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen
     continuity.elementOffset += numElements;
 }
 
-void Renderer::create_mesh_pipeline(Material& material) {
+void Renderer::create_mesh_pipeline(Material& material) const {
     GFXShaderConstant materials_constant = {};
     materials_constant.type = GFXShaderConstant::Type::Integer;
     materials_constant.value = max_scene_materials;
@@ -829,7 +840,7 @@ void Renderer::create_render_target_resources(RenderTarget& target) {
     target.sceneBuffer = gfx->create_buffer(nullptr, sizeof(SceneInformation), true, GFXBufferUsage::Storage);
 }
 
-void Renderer::createPostPipeline() {
+void Renderer::createPostPipelines() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Post";
     
@@ -868,7 +879,7 @@ void Renderer::createPostPipeline() {
     renderToViewportPipeline = gfx->create_graphics_pipeline(pipelineInfo);
 }
 
-void Renderer::createFontPipeline() {
+void Renderer::createFontTexture() {
     auto file = file::open(file::app_domain / "font.fp", true);
     if(file == std::nullopt) {
         console::error(System::Renderer, "Failed to load font file!");
@@ -923,7 +934,7 @@ void Renderer::createSkyPipeline() {
     });
 }
 
-void Renderer::createUIPipeline() {
+void Renderer::createUIPipelines() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "UI";
 
@@ -955,7 +966,7 @@ void Renderer::createUIPipeline() {
     worldGeneralPipeline = gfx->create_graphics_pipeline(pipelineInfo);
 }
 
-void Renderer::createBRDF() {
+void Renderer::generateBRDF() {
     GFXRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.label = "BRDF Gen";
     renderPassInfo.attachments.push_back(GFXPixelFormat::R8G8_SFLOAT);
@@ -1081,7 +1092,7 @@ ShaderSource Renderer::register_shader(const std::string_view shader_file) {
     }
 }
 
-void Renderer::associate_shader_reload(const std::string_view shader_file, const std::function<void()> reload_function) {
+void Renderer::associate_shader_reload(const std::string_view shader_file, const std::function<void()>& reload_function) {
     if(reloading_shader)
         return;
     

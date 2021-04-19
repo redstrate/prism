@@ -46,11 +46,11 @@ class Material;
 
 class Renderer {
 public:
-    Renderer(GFX* gfx, const bool enable_imgui = true);
+    explicit Renderer(GFX* gfx, bool enable_imgui = true);
     ~Renderer();
-    
-    RenderTarget* allocate_render_target(const prism::Extent extent);
-    void resize_render_target(RenderTarget& target, const prism::Extent extent);
+
+    RenderTarget* allocate_render_target(prism::Extent extent);
+    void resize_render_target(RenderTarget& target, prism::Extent extent);
     void recreate_all_render_targets();
     
     void set_screen(ui::Screen* screen);
@@ -66,7 +66,7 @@ public:
     void render_screen(GFXCommandBuffer* commandBuffer, ui::Screen* screen, prism::Extent extent, ControllerContinuity& continuity, RenderScreenOptions options = RenderScreenOptions());
     void render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Object camera_object, Camera& camera, prism::Extent extent, RenderTarget& target, ControllerContinuity& continuity);
     
-    void create_mesh_pipeline(Material& material);
+    void create_mesh_pipeline(Material& material) const;
     
     // passes
     template<class T, typename... Args>
@@ -97,9 +97,9 @@ public:
     GFXPipeline* renderToUnormTexturePipeline = nullptr;
     GFXRenderPass* viewportRenderPass = nullptr;
     
-    ShaderSource register_shader(const std::string_view shader_file);
-    void associate_shader_reload(const std::string_view shader_file, const std::function<void()> reload_function);
-    void reload_shader(const std::string_view shader_file, const std::string_view shader_source);
+    ShaderSource register_shader(std::string_view shader_file);
+    void associate_shader_reload(std::string_view shader_file, const std::function<void()>& reload_function);
+    void reload_shader(std::string_view shader_file, std::string_view shader_source);
     
     struct RegisteredShader {
         std::string filename;
@@ -111,18 +111,18 @@ public:
     
     bool reloading_shader = false;
     
-    std::vector<RenderTarget*> get_all_render_targets() const {
+    [[nodiscard]] std::vector<RenderTarget*> get_all_render_targets() const {
         return render_targets;
     }
     
 private:
     void createDummyTexture();
     void create_render_target_resources(RenderTarget& target);
-    void createPostPipeline();
-    void createFontPipeline();
+    void createPostPipelines();
+    void createFontTexture();
     void createSkyPipeline();
-    void createUIPipeline();
-    void createBRDF();
+    void createUIPipelines();
+    void generateBRDF();
     void create_histogram_resources();
 
     GFX* gfx = nullptr;
