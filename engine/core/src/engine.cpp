@@ -1,6 +1,7 @@
 #include "engine.hpp"
 
 #include <nlohmann/json.hpp>
+#include <utility>
 #include <imgui.h>
 
 #include "scene.hpp"
@@ -28,7 +29,7 @@ using prism::engine;
 engine::engine(const int argc, char* argv[]) {
     console::info(System::Core, "Prism Engine loading...");
     
-    console::register_command("test_cmd", console::ArgumentFormat(0), [](const console::Arguments) {
+    console::register_command("test_cmd", console::ArgumentFormat(0), [](const console::Arguments&) {
         console::info(System::Core, "Test cmd!");
     });
     
@@ -39,7 +40,7 @@ engine::engine(const int argc, char* argv[]) {
     });
         
     for(int i = 0; i < argc; i++)
-        command_line_arguments.push_back(argv[i]);
+        command_line_arguments.emplace_back(argv[i]);
 
     input = std::make_unique<Input>();
     physics = std::make_unique<Physics>();
@@ -47,12 +48,12 @@ engine::engine(const int argc, char* argv[]) {
     assetm = std::make_unique<AssetManager>();
 }
 
-engine::~engine() {}
+engine::~engine() = default;
 
-void engine::set_app(prism::app* app) {
-    Expects(app != nullptr);
+void engine::set_app(prism::app* p_app) {
+    Expects(p_app != nullptr);
 
-    this->app = app;
+    this->app = p_app;
 }
 
 prism::app* engine::get_app() const {
@@ -97,8 +98,10 @@ void engine::prepare_quit() {
     app->prepare_quit();
 }
 
-void engine::set_gfx(GFX* gfx) {
-    this->gfx = gfx;
+void engine::set_gfx(GFX* p_gfx) {
+    Expects(p_gfx != nullptr);
+
+    this->gfx = p_gfx;
 }
 
 GFX* engine::get_gfx() {
@@ -126,7 +129,7 @@ void engine::create_empty_scene() {
     current_scene = scenes.back().get();
 }
 
-Scene* engine::load_scene(const file::Path path) {
+Scene* engine::load_scene(const file::Path& path) {
     Expects(!path.empty());
 
     auto file = file::open(path);
@@ -153,7 +156,7 @@ Scene* engine::load_scene(const file::Path path) {
             transform.rotation = obj["rotation"];
             transform.scale = obj["scale"];
         } else {
-            auto o = load_object(*scene.get(), obj);
+            auto o = load_object(*scene, obj);
 
             if(obj.contains("parent"))
                 parentQueue[o] = obj["parent"];
@@ -186,7 +189,7 @@ void engine::save_scene(const std::string_view path) {
     out << j;
 }
 
-ui::Screen* engine::load_screen(const file::Path path) {
+ui::Screen* engine::load_screen(const file::Path& path) {
     Expects(!path.empty());
 
     return new ui::Screen(path);
@@ -219,7 +222,7 @@ AnimationChannel engine::load_animation(nlohmann::json a) {
     return animation;
 }
 
-Animation engine::load_animation(const file::Path path) {
+Animation engine::load_animation(const file::Path& path) {
     Expects(!path.empty());
 
     auto file = file::open(path, true);
@@ -277,7 +280,7 @@ Animation engine::load_animation(const file::Path path) {
     return anim;
 }
 
-void engine::load_cutscene(const file::Path path) {
+void engine::load_cutscene(const file::Path& path) {
     Expects(!path.empty());
 
     cutscene = std::make_unique<Cutscene>();
@@ -354,7 +357,7 @@ void engine::save_cutscene(const std::string_view path) {
     out << j;
 }
 
-Object engine::add_prefab(Scene& scene, const file::Path path, const std::string_view override_name) {
+Object engine::add_prefab(Scene& scene, const file::Path& path, const std::string_view override_name) {
     Expects(!path.empty());
     
     auto file = file::open(path);
@@ -416,7 +419,7 @@ void engine::add_window(void* native_handle, const int identifier, const prism::
     
     gfx->initialize_view(native_handle, identifier, drawable_extent.width, drawable_extent.height);
 
-    Window* window = new Window();
+    auto* window = new Window();
     windows.push_back(window);
     
     window->identifier = identifier;
@@ -489,7 +492,7 @@ bool engine::has_localization(const std::string_view id) const {
     return strings.count(id.data());
 }
 
-std::string engine::localize(const std::string id) {
+std::string engine::localize(const std::string& id) {
     Expects(!id.empty());
     
     return strings[id];
@@ -561,7 +564,7 @@ void engine::calculate_object(Scene& scene, Object object, const Object parent_o
         calculate_object(scene, child, object);
 }
 
-Shot* engine::get_shot(const float time) {
+Shot* engine::get_shot(const float time) const {
     for(auto& shot : cutscene->shots) {
         if(time >= shot.begin && time <= (shot.begin + shot.length))
             return &shot;
@@ -816,7 +819,7 @@ void engine::play_animation(Animation animation, Object object, bool looping) {
         return;
     
     AnimationTarget target;
-    target.animation = animation;
+    target.animation = std::move(animation);
     target.target = object;
     target.looping = looping;
 

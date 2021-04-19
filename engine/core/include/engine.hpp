@@ -54,10 +54,10 @@ namespace prism {
         /// Command line arguments, can be empty.
         std::vector<std::string_view> command_line_arguments;
 
-        /** Sets the app object.
-         @param app The app object to set. Must not be null.
+        /** Sets the p_app object.
+         @param p_app The p_app object to set. Must not be null.
          */
-        void set_app(app* app);
+        void set_app(app* p_app);
 
         /** Gets the current app object
          @return The current app object. Can be null.
@@ -102,9 +102,9 @@ namespace prism {
         [[nodiscard]] bool is_quitting() const;
 
         /** Set the GFX api to use.
-         @param gfx The GFX object to use. Must not be null.
+         @param p_gfx The GFX object to use. Must not be null.
          */
-        void set_gfx(GFX* gfx);
+        void set_gfx(GFX* p_gfx);
 
         /** Get the current GFX api.
          @return The current GFX api. Can be null.
@@ -134,7 +134,7 @@ namespace prism {
          @param path The scene file path.
          @return Returns a instance of the scene is successful, and nullptr on failure.
          */
-        Scene* load_scene(file::Path path);
+        Scene* load_scene(const file::Path& path);
 
         /** Save the current scene to disk.
          @param path The absolute file path.
@@ -145,7 +145,7 @@ namespace prism {
          @param path The screen file path.
          @return Returns a instance of the screen if successful, and nullptr on failure.
          */
-        ui::Screen* load_screen(file::Path path);
+        ui::Screen* load_screen(const file::Path& path);
 
         /** Set the current screen.
          @param screen The screen object to set as current. Can be null.
@@ -162,7 +162,7 @@ namespace prism {
          @param path The prefab file path.
          @param override_name If not empty, the root object's new name. Defaulted to a empty string.
          */
-        Object add_prefab(Scene& scene, file::Path path, std::string_view override_name = "");
+        Object add_prefab(Scene& scene, const file::Path& path, std::string_view override_name = "");
 
         /** Save a tree of objects as a prefab to disk.
          @param root The parent object to save as a prefab.
@@ -180,12 +180,12 @@ namespace prism {
          @param path The animation file path.
          @return An animation.
          */
-        Animation load_animation(file::Path path);
+        Animation load_animation(const file::Path& path);
 
         /** Load a cutscene from disk. This changes the current cutscene.
          @param path The cutscene file path.
          */
-        void load_cutscene(file::Path path);
+        void load_cutscene(const file::Path& path);
 
         /** Saves the current cutscene to disk.
          @param path The absolute file path.
@@ -254,7 +254,7 @@ namespace prism {
          @return A localized string if the key is found, or an empty string if not found.
          @note Having no localization loaded will always return a empty string.
          */
-        std::string localize(std::string id);
+        std::string localize(const std::string& id);
 
         /** Adds a timer to the list of timers.
          @param timer The timer to add.
@@ -362,7 +362,7 @@ namespace prism {
         void calculate_bone(Mesh& mesh, const Mesh::Part& part, Bone& bone, const Bone* parent_bone = nullptr);
         void calculate_object(Scene& scene, Object object, Object parent_object = NullObject);
 
-        Shot* get_shot(float time);
+        Shot* get_shot(float time) const;
         void update_animation(const Animation& anim, float time);
         void update_cutscene(float time);
 
