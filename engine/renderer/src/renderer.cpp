@@ -1075,9 +1075,9 @@ ShaderSource Renderer::register_shader(const std::string_view shader_file) {
     if(found_shader_source.empty()) {
         auto file = file::open(base_shader_path / shader_path.replace_extension(shader_path.extension().string() + ".glsl"));
         
-        return shader_compiler.compile(ShaderLanguage::GLSL, stage, file->read_as_string(), ShaderLanguage::MSL).value();
+        return shader_compiler.compile(ShaderLanguage::GLSL, stage, file->read_as_string(), gfx->accepted_shader_language()).value();
     } else {
-        return shader_compiler.compile(ShaderLanguage::GLSL, stage, found_shader_source, ShaderLanguage::MSL).value();
+        return shader_compiler.compile(ShaderLanguage::GLSL, stage, found_shader_source, gfx->accepted_shader_language()).value();
     }
 }
 
