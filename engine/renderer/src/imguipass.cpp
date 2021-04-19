@@ -145,8 +145,6 @@ void ImGuiPass::render_post(GFXCommandBuffer* command_buffer, RenderTarget& targ
         index_offset += cmd_list->IdxBuffer.Size;
         vertex_offset += cmd_list->VtxBuffer.Size;
     }
-    
-    target.current_frame = (target.current_frame + 1) % RT_MAX_FRAMES_IN_FLIGHT;
 }
 
 void ImGuiPass::load_font(const std::string_view filename) {

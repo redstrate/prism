@@ -389,6 +389,8 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
         pass->render_post(commandbuffer, target, index);
     
     commandbuffer->pop_group();
+
+    target.current_frame = (target.current_frame + 1) % RT_MAX_FRAMES_IN_FLIGHT;
 }
 
 void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Object camera_object, Camera& camera, prism::Extent extent, RenderTarget& target, ControllerContinuity& continuity) {
