@@ -26,6 +26,8 @@ public:
     virtual void update([[maybe_unused]] const float delta_time) {}
 
     virtual void render([[maybe_unused]] GFXCommandBuffer* command_buffer) {}
+
+    virtual bool wants_no_scene_rendering() { return false; }
 };
 
 /// This is an app's equivalent main(). You can check command line arguments through Engine::comand_line_arguments.

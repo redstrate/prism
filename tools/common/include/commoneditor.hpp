@@ -128,6 +128,8 @@ public:
     virtual void object_selected([[maybe_unused]] Object object) {}
     virtual void asset_selected([[maybe_unused]] std::filesystem::path path, [[maybe_unused]] AssetType type) {}
 
+    bool wants_no_scene_rendering() override { return true; }
+
     void createDockArea();
     void drawViewport(Scene* scene);
     void drawAssets();

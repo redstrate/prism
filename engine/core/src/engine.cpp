@@ -769,7 +769,7 @@ void Engine::render(const int index) {
     }
 
     if(_renderer != nullptr)
-        _renderer->render(commandbuffer, _current_scene, *window->render_target, index);
+        _renderer->render(commandbuffer, _app->wants_no_scene_rendering() ? nullptr : _current_scene, *window->render_target, index);
 
     _gfx->submit(commandbuffer, index);
 }
