@@ -36,7 +36,7 @@ namespace prism {
     };
 
     /// The glue between app and systems such as the Renderer.
-    class Engine {
+    class engine {
     public:
         /**
          Constructs an Engine with command line arguments. Can be accessed later from command_line_arguments.
@@ -44,12 +44,12 @@ namespace prism {
         @param argc Numer of arguments. Can be null.
         @param argv Array of strings containing arguments. Can be null.
          */
-        Engine(int argc, char* argv[]);
+        engine(int argc, char* argv[]);
 
-        Engine(const Engine& other) = delete;
-        Engine(Engine&& other) = delete;
+        engine(const engine& other) = delete;
+        engine(engine&& other) = delete;
 
-        ~Engine();
+        ~engine();
 
         /// Command line arguments, can be empty.
         std::vector<std::string_view> command_line_arguments;
@@ -391,4 +391,4 @@ namespace prism {
     }
 }
 
-inline prism::Engine* engine = nullptr;
+inline prism::engine* engine = nullptr;

@@ -3,7 +3,7 @@
 class GFXCommandBuffer;
 
 namespace prism {
-    class Engine;
+    class engine;
 
     /// The base class for any Prism application.
     class app {
@@ -34,4 +34,4 @@ namespace prism {
 }
 
 /// This is an app's equivalent of main(). You can check command line arguments through Engine::command_line_arguments.
-void app_main(prism::Engine* engine);
+void app_main(prism::engine* engine);

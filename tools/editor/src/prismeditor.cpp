@@ -24,7 +24,7 @@ std::string get_filename(const std::string path) {
 
 std::vector<Editor*> editors;
 
-void app_main(prism::Engine* engine) {
+void app_main(prism::engine* engine) {
 	CommonEditor* editor = (CommonEditor*)engine->get_app();
 
 	platform::open_window("Prism Editor",
