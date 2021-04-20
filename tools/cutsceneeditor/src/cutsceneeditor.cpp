@@ -18,7 +18,7 @@ PositionKeyFrame* currentFrame = nullptr;
 
 std::string currentPath;
 
-void app_main(Engine* engine) {
+void app_main(prism::engine* engine) {
 	CommonEditor* editor = (CommonEditor*)engine->get_app();
 
 	platform::open_window("Cutscene Editor",
