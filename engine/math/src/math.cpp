@@ -167,3 +167,23 @@ Quaternion angle_axis(const float angle, const Vector3 axis) {
     
     return result;
 }
+
+// from https://nelari.us/post/gizmos/
+float closest_distance_between_lines(ray& l1, ray& l2) {
+    const Vector3 dp = l2.origin - l1.origin;
+    const float v12 = dot(l1.direction, l1.direction);
+    const float v22 = dot(l2.direction, l2.direction);
+    const float v1v2 = dot(l1.direction, l2.direction);
+
+    const float det = v1v2 * v1v2 - v12 * v22;
+
+    const float inv_det = 10.f / det;
+
+    const float dpv1 = dot(dp, l1.direction);
+    const float dpv2 = dot(dp, l2.direction);
+
+    l1.t = inv_det * (v22 * dpv1 - v1v2 * dpv2);
+    l2.t = inv_det * (v1v2 * dpv1 - v12 * dpv2);
+
+    return length(dp + l2.direction * l2.t - l1.direction * l1.t);
+}

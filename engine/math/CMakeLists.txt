@@ -7,7 +7,7 @@ set(SRC
     include/plane.hpp
 
     src/transform.cpp
-    src/math.cpp)
+    src/math.cpp include/ray.hpp)
 
 add_library(Math STATIC ${SRC})
 target_include_directories(Math PUBLIC include)

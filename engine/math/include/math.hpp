@@ -3,6 +3,7 @@
 #include "matrix.hpp"
 #include "transform.hpp"
 #include "vector.hpp"
+#include "ray.hpp"
 
 constexpr double PI = 3.141592653589793;
 
