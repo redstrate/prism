@@ -9,12 +9,15 @@ class GFXFramebuffer;
 class GFXPipeline;
 class GFXRenderPass;
 class GFXTexture;
-class Renderer;
 class RenderTarget;
+
+namespace prism {
+    class renderer;
+}
 
 class SMAAPass {
 public:
-    SMAAPass(GFX* gfx, Renderer* renderer);
+    SMAAPass(GFX* gfx, prism::renderer* renderer);
     
     void create_render_target_resources(RenderTarget& target);
     
@@ -24,8 +27,8 @@ private:
     void create_textures();
     void create_render_pass();
     void create_pipelines();
-    
-    Renderer* renderer = nullptr;
+
+    prism::renderer* renderer = nullptr;
     
     GFXTexture* area_image = nullptr;
     GFXTexture* search_image = nullptr;

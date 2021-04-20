@@ -8,7 +8,7 @@
 
 AssetPtr<Texture> aperture_texture;
 
-DoFPass::DoFPass(GFX* gfx, Renderer* renderer) : renderer(renderer) {
+DoFPass::DoFPass(GFX* gfx, prism::renderer* renderer) : renderer(renderer) {
     aperture_texture = assetm->get<Texture>(file::app_domain / "textures/aperture.png");
     
     GFXRenderPassCreateInfo renderPassInfo = {};

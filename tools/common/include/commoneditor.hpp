@@ -183,7 +183,7 @@ public:
                 
                 return texture;
             } else {
-                return engine->get_renderer()->dummyTexture;
+                return engine->get_renderer()->dummy_texture;
             }
         }
     }
@@ -196,9 +196,9 @@ public:
             
             // store as dummy texture, as to stop infinite reload because of failure (e.g. out of date model)
             if(asset == nullptr) {
-                asset_thumbnails[path.string()] = engine->get_renderer()->dummyTexture;
+                asset_thumbnails[path.string()] = engine->get_renderer()->dummy_texture;
 
-                return engine->get_renderer()->dummyTexture;
+                return engine->get_renderer()->dummy_texture;
             }
                         
             if(can_load_asset<Material>(path)) {
@@ -214,7 +214,7 @@ public:
                 
                 return get_asset_thumbnail(ptr);
             } else {
-                return engine->get_renderer()->dummyTexture;
+                return engine->get_renderer()->dummy_texture;
             }
         }
     }

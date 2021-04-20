@@ -9,7 +9,6 @@
 #include "scene.hpp"
 #include "font.hpp"
 #include "vector.hpp"
-#include "engine.hpp"
 #include "imguipass.hpp"
 #include "gfx.hpp"
 #include "log.hpp"
@@ -24,6 +23,8 @@
 #include "shadercompiler.hpp"
 #include "asset.hpp"
 #include "debug.hpp"
+
+using prism::renderer;
 
 struct ElementInstance {
     Vector4 color;
@@ -87,7 +88,7 @@ struct SkyPushConstant {
     float aspect;
 };
 
-Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
+renderer::renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     Expects(gfx != nullptr);
     
     shader_compiler.set_include_path(file::get_domain_path(file::Domain::Internal).string());
@@ -109,21 +110,21 @@ Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     renderPassInfo.attachments.push_back(GFXPixelFormat::RGBA_32F);
     renderPassInfo.attachments.push_back(GFXPixelFormat::DEPTH_32F);
     renderPassInfo.will_use_in_shader = true;
-    
-    offscreenRenderPass = gfx->create_render_pass(renderPassInfo);
+
+    offscreen_render_pass = gfx->create_render_pass(renderPassInfo);
 
     renderPassInfo.label = "Offscreen (UNORM)";
     renderPassInfo.attachments = {GFXPixelFormat::R8G8B8A8_UNORM};
 
-    unormRenderPass = gfx->create_render_pass(renderPassInfo);
+    unorm_render_pass = gfx->create_render_pass(renderPassInfo);
 
     create_font_texture();
     create_sky_pipeline();
 }
 
-Renderer::~Renderer() = default;
+renderer::~renderer() = default;
 
-RenderTarget* Renderer::allocate_render_target(const prism::Extent extent) {
+RenderTarget* renderer::allocate_render_target(const prism::Extent extent) {
     auto target = new RenderTarget();
     
     resize_render_target(*target, extent);
@@ -133,7 +134,7 @@ RenderTarget* Renderer::allocate_render_target(const prism::Extent extent) {
     return target;
 }
 
-void Renderer::resize_render_target(RenderTarget& target, const prism::Extent extent) {
+void renderer::resize_render_target(RenderTarget& target, const prism::Extent extent) {
     target.extent = extent;
         
     create_render_target_resources(target);
@@ -167,7 +168,7 @@ void Renderer::resize_render_target(RenderTarget& target, const prism::Extent ex
     text_pipeline = gfx->create_graphics_pipeline(pipelineInfo);
     
     if(world_text_pipeline == nullptr) {
-        pipelineInfo.render_pass = offscreenRenderPass;
+        pipelineInfo.render_pass = offscreen_render_pass;
         pipelineInfo.label = "Text World";
         pipelineInfo.depth.depth_mode = GFXDepthMode::LessOrEqual;
 
@@ -180,11 +181,11 @@ void Renderer::resize_render_target(RenderTarget& target, const prism::Extent ex
         pass->create_render_target_resources(target);
 }
 
-void Renderer::recreate_all_render_targets() {
+void renderer::recreate_all_render_targets() {
     
 }
 
-void Renderer::set_screen(ui::Screen* screen) {
+void renderer::set_screen(ui::Screen* screen) {
     Expects(screen != nullptr);
     
     current_screen = screen;
@@ -194,7 +195,7 @@ void Renderer::set_screen(ui::Screen* screen) {
 	update_screen();
 }
 
-void Renderer::init_screen(ui::Screen* screen) {
+void renderer::init_screen(ui::Screen* screen) {
     Expects(screen != nullptr);
 
     std::array<GylphMetric, numGlyphs> metrics = {};
@@ -217,7 +218,7 @@ void Renderer::init_screen(ui::Screen* screen) {
     screen->instance_buffer = gfx->create_buffer(nullptr, sizeof(StringInstance) * 50, true, GFXBufferUsage::Storage);
 }
 
-void Renderer::update_screen() {
+void renderer::update_screen() {
 	if(current_screen != nullptr) {
 		for(auto& element : current_screen->elements) {
 			if(!element.background.image.empty())
@@ -226,7 +227,7 @@ void Renderer::update_screen() {
 	}
 }
 
-void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarget& target, int index) {
+void renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarget& target, int index) {
     const auto extent = target.extent;
     const auto render_extent = target.get_render_extent();
         
@@ -252,10 +253,10 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
     
     GFXRenderPassBeginInfo beginInfo = {};
     beginInfo.framebuffer = target.offscreenFramebuffer;
-    beginInfo.render_pass = offscreenRenderPass;
+    beginInfo.render_pass = offscreen_render_pass;
     beginInfo.render_area.extent = render_extent;
 
-    ControllerContinuity continuity;
+    controller_continuity continuity;
 
     if(scene != nullptr) {
         commandbuffer->push_group("Shadow Rendering");
@@ -368,14 +369,14 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
     if(auto texture = get_requested_texture(PassTextureType::SelectionSobel))
         commandbuffer->bind_texture(texture, 5);
     else
-        commandbuffer->bind_texture(dummyTexture, 5);
+        commandbuffer->bind_texture(dummy_texture, 5);
     
     commandbuffer->bind_texture(average_luminance_texture, 6);
     
     if(render_options.enable_depth_of_field)
         commandbuffer->bind_texture(dof_pass->far_field, 7);
     else
-        commandbuffer->bind_texture(dummyTexture, 7);
+        commandbuffer->bind_texture(dummy_texture, 7);
 
     PostPushConstants pc;
     pc.options.x = render_options.enable_aa;
@@ -409,7 +410,7 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
     target.current_frame = (target.current_frame + 1) % RT_MAX_FRAMES_IN_FLIGHT;
 }
 
-void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Object camera_object, Camera& camera, prism::Extent extent, RenderTarget& target, ControllerContinuity& continuity) {
+void renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Object camera_object, Camera& camera, prism::Extent extent, RenderTarget& target, controller_continuity& continuity) {
     // frustum test
     const auto frustum = normalize_frustum(camera_extract_frustum(scene, camera_object));
             
@@ -514,7 +515,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
             command_buffer->set_push_constant(&pc, sizeof(PushConstant));
             
             for(const auto& [index, texture] : mesh.materials[material_index]->bound_textures) {
-                GFXTexture* texture_to_bind = dummyTexture;
+                GFXTexture* texture_to_bind = dummy_texture;
                 if(texture)
                     texture_to_bind = texture->handle;
                 
@@ -530,7 +531,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         if(!screen.screen)
             continue;
         
-        RenderScreenOptions options = {};
+        render_screen_options options = {};
         options.render_world = true;
         options.mvp = camera.perspective * camera.view * scene.get<Transform>(obj).model;
         
@@ -560,7 +561,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
     gfx->copy_buffer(target.sceneBuffer, &sceneInfo, 0, sizeof(SceneInformation));
 }
 
-void Renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen, prism::Extent extent, ControllerContinuity& continuity, RenderScreenOptions options) {
+void renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen, prism::Extent extent, controller_continuity& continuity, render_screen_options options) {
     std::array<GlyphInstance, maxInstances> instances;
     std::vector<ElementInstance> elementInstances;
     std::array<StringInstance, 50> stringInstances = {};
@@ -658,7 +659,7 @@ void Renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen
             commandbuffer->bind_texture(element.background.texture->handle, 2);
         }
         else {
-            commandbuffer->bind_texture(dummyTexture, 2);
+            commandbuffer->bind_texture(dummy_texture, 2);
         }
 
         commandbuffer->set_push_constant(&pc, sizeof(UIPushConstant));
@@ -690,7 +691,7 @@ void Renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen
     continuity.elementOffset += numElements;
 }
 
-void Renderer::create_mesh_pipeline(Material& material) const {
+void renderer::create_mesh_pipeline(Material& material) const {
     GFXShaderConstant materials_constant = {};
     materials_constant.type = GFXShaderConstant::Type::Integer;
     materials_constant.value = max_scene_materials;
@@ -733,7 +734,7 @@ void Renderer::create_mesh_pipeline(Material& material) const {
         {9, GFXBindingType::Texture}
     };
     
-    pipelineInfo.render_pass = offscreenRenderPass;
+    pipelineInfo.render_pass = offscreen_render_pass;
     pipelineInfo.depth.depth_mode = GFXDepthMode::Less;
     pipelineInfo.rasterization.culling_mode = GFXCullingMode::Backface;
     pipelineInfo.blending.src_rgb = GFXBlendFactor::SrcAlpha;
@@ -763,7 +764,7 @@ void Renderer::create_mesh_pipeline(Material& material) const {
     material.capture_pipeline = material_compiler.create_static_pipeline(pipelineInfo, false, true);
 }
 
-void Renderer::create_dummy_texture() {
+void renderer::create_dummy_texture() {
     GFXTextureCreateInfo createInfo = {};
     createInfo.label = "Dummy";
     createInfo.width = 1;
@@ -771,14 +772,14 @@ void Renderer::create_dummy_texture() {
     createInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
     createInfo.usage = GFXTextureUsage::Sampled;
 
-    dummyTexture = gfx->create_texture(createInfo);
+    dummy_texture = gfx->create_texture(createInfo);
 
     uint8_t tex[4] = {0, 0, 0, 0};
 
-    gfx->copy_texture(dummyTexture, tex, sizeof(tex));
+    gfx->copy_texture(dummy_texture, tex, sizeof(tex));
 }
 
-void Renderer::create_render_target_resources(RenderTarget& target) {
+void renderer::create_render_target_resources(RenderTarget& target) {
     const auto extent = target.get_render_extent();
     
     GFXTextureCreateInfo textureInfo = {};
@@ -797,7 +798,7 @@ void Renderer::create_render_target_resources(RenderTarget& target) {
     target.offscreenDepthTexture = gfx->create_texture(textureInfo);
 
     GFXFramebufferCreateInfo framebufferInfo = {};
-	framebufferInfo.render_pass = offscreenRenderPass;
+	framebufferInfo.render_pass = offscreen_render_pass;
     framebufferInfo.attachments.push_back(target.offscreenColorTexture);
     framebufferInfo.attachments.push_back(target.offscreenDepthTexture);
 
@@ -830,7 +831,7 @@ void Renderer::create_render_target_resources(RenderTarget& target) {
     target.sceneBuffer = gfx->create_buffer(nullptr, sizeof(SceneInformation), true, GFXBufferUsage::Storage);
 }
 
-void Renderer::create_post_pipelines() {
+void renderer::create_post_pipelines() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Post";
     
@@ -854,7 +855,7 @@ void Renderer::create_post_pipelines() {
     post_pipeline = gfx->create_graphics_pipeline(pipelineInfo);
 }
 
-void Renderer::create_font_texture() {
+void renderer::create_font_texture() {
     auto file = file::open(file::app_domain / "font.fp", true);
     if(file == std::nullopt) {
         prism::log::error(System::Renderer, "Failed to load font file!");
@@ -880,10 +881,10 @@ void Renderer::create_font_texture() {
     gfx->copy_texture(font_texture, bitmap.data(), font.width * font.height);
 }
 
-void Renderer::create_sky_pipeline() {
+void renderer::create_sky_pipeline() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Sky";
-    pipelineInfo.render_pass = offscreenRenderPass;
+    pipelineInfo.render_pass = offscreen_render_pass;
 
     pipelineInfo.shaders.vertex_src = register_shader("sky.vert");
     pipelineInfo.shaders.fragment_src = register_shader("sky.frag");
@@ -909,7 +910,7 @@ void Renderer::create_sky_pipeline() {
     });
 }
 
-void Renderer::create_ui_pipelines() {
+void renderer::create_ui_pipelines() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "UI";
 
@@ -935,13 +936,13 @@ void Renderer::create_ui_pipelines() {
     general_pipeline = gfx->create_graphics_pipeline(pipelineInfo);
 
     pipelineInfo.label = "UI World";
-    pipelineInfo.render_pass = offscreenRenderPass;
+    pipelineInfo.render_pass = offscreen_render_pass;
     pipelineInfo.depth.depth_mode = GFXDepthMode::LessOrEqual;
 
     world_general_pipeline = gfx->create_graphics_pipeline(pipelineInfo);
 }
 
-void Renderer::generate_brdf() {
+void renderer::generate_brdf() {
     GFXRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.label = "BRDF Gen";
     renderPassInfo.attachments.push_back(GFXPixelFormat::R8G8_SFLOAT);
@@ -997,7 +998,7 @@ void Renderer::generate_brdf() {
     gfx->submit(command_buffer);
 }
 
-void Renderer::create_histogram_resources() {
+void renderer::create_histogram_resources() {
     GFXComputePipelineCreateInfo create_info = {};
     create_info.shaders.compute_path = "histogram.comp";
     create_info.workgroup_size_x = 16;
@@ -1027,7 +1028,7 @@ void Renderer::create_histogram_resources() {
     average_luminance_texture = gfx->create_texture(texture_info);
 }
 
-ShaderSource Renderer::register_shader(const std::string_view shader_file) {
+ShaderSource renderer::register_shader(const std::string_view shader_file) {
     if(!reloading_shader) {
         RegisteredShader shader;
         shader.filename = shader_file;
@@ -1067,7 +1068,7 @@ ShaderSource Renderer::register_shader(const std::string_view shader_file) {
     }
 }
 
-void Renderer::associate_shader_reload(const std::string_view shader_file, const std::function<void()>& reload_function) {
+void renderer::associate_shader_reload(const std::string_view shader_file, const std::function<void()>& reload_function) {
     if(reloading_shader)
         return;
     
@@ -1077,7 +1078,7 @@ void Renderer::associate_shader_reload(const std::string_view shader_file, const
     }
 }
 
-void Renderer::reload_shader(const std::string_view shader_file, const std::string_view shader_source) {
+void renderer::reload_shader(const std::string_view shader_file, const std::string_view shader_source) {
     for(auto& shader : registered_shaders) {
         if(shader.filename == shader_file) {
             shader.injected_shader_source = shader_source;

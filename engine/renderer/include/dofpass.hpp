@@ -7,11 +7,14 @@ class GFXPipeline;
 class GFXRenderPass;
 class GFXTexture;
 class Scene;
-class Renderer;
+
+namespace prism {
+    class renderer;
+}
 
 class DoFPass {
 public:
-    DoFPass(GFX* gfx, Renderer* renderer);
+    DoFPass(GFX* gfx, prism::renderer* renderer);
         
     void render(GFXCommandBuffer* command_buffer, Scene& scene);
     
@@ -24,7 +27,7 @@ public:
     GFXRenderPass* renderpass = nullptr;
     
 private:
-    Renderer* renderer = nullptr;
+    prism::renderer* renderer = nullptr;
     
     GFXPipeline* pipeline = nullptr;
 };

@@ -16,7 +16,6 @@ namespace ui {
 }
 
 class Scene;
-class Renderer;
 class RenderTarget;
 class Physics;
 struct Timer;
@@ -25,6 +24,7 @@ namespace prism {
     class app;
     class imgui_backend;
     class input_system;
+    class renderer;
 
     struct AnimationTarget {
         float current_time = 0.0f;
@@ -120,7 +120,7 @@ namespace prism {
          @param index Index of the window. Default is 0.
          @return Instance of the renderer. Will not be null.
          */
-        Renderer* get_renderer();
+        renderer* get_renderer();
 
         /** Get the physics system.
          @return Instance of the physics system. Will not be null.
@@ -373,7 +373,7 @@ namespace prism {
 
         std::unique_ptr<input_system> input;
         std::unique_ptr<Physics> physics;
-        std::unique_ptr<Renderer> renderer;
+        std::unique_ptr<renderer> renderer;
 
         std::vector<Timer*> timers, timers_to_remove;
 

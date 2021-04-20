@@ -114,7 +114,7 @@ prism::input_system* engine::get_input() {
 	return input.get();
 }
 
-Renderer* engine::get_renderer() {
+prism::renderer* engine::get_renderer() {
     return renderer.get();
 }
 
@@ -414,7 +414,7 @@ void engine::add_window(void* native_handle, const int identifier, const prism::
     Expects(identifier >= 0);
     
     if(identifier == 0) {
-        renderer = std::make_unique<Renderer>(gfx);
+        renderer = std::make_unique<prism::renderer>(gfx);
     }
     
     const auto drawable_extent = platform::get_window_drawable_size(identifier);

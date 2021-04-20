@@ -274,7 +274,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                                 command_buffer->set_push_constant(&pc, sizeof(PushConstant));
                                 
                                 for(auto& [index, texture] : mesh.materials[material_index]->bound_textures) {
-                                    GFXTexture* texture_to_bind = engine->get_renderer()->dummyTexture;
+                                    GFXTexture* texture_to_bind = engine->get_renderer()->dummy_texture;
                                     if(texture)
                                         texture_to_bind = texture->handle;
                                     

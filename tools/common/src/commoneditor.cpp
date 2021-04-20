@@ -860,7 +860,7 @@ GFXTexture* CommonEditor::get_texture_preview(Texture& texture) {
     
     GFXFramebufferCreateInfo framebuffer_create_info = {};
     framebuffer_create_info.attachments = {final_texture};
-    framebuffer_create_info.render_pass = engine->get_renderer()->unormRenderPass;
+    framebuffer_create_info.render_pass = engine->get_renderer()->unorm_render_pass;
     
     auto final_framebuffer = gfx->create_framebuffer(framebuffer_create_info);
     
@@ -871,7 +871,7 @@ GFXTexture* CommonEditor::get_texture_preview(Texture& texture) {
     GFXRenderPassBeginInfo begin_info = {};
     begin_info.render_area.extent = {thumbnail_resolution, thumbnail_resolution};
     begin_info.framebuffer = final_framebuffer;
-    begin_info.render_pass = renderer->unormRenderPass;
+    begin_info.render_pass = renderer->unorm_render_pass;
     
     command_buffer->set_render_pass(begin_info);
     
@@ -881,12 +881,12 @@ GFXTexture* CommonEditor::get_texture_preview(Texture& texture) {
     
     command_buffer->set_viewport(viewport);
     
-    command_buffer->set_graphics_pipeline(renderer->renderToUnormTexturePipeline);
+    command_buffer->set_graphics_pipeline(renderer->render_to_unorm_texture_pipeline);
     
     command_buffer->bind_texture(texture.handle, 1);
-    command_buffer->bind_texture(renderer->dummyTexture, 2);
-    command_buffer->bind_texture(renderer->dummyTexture, 3);
-    command_buffer->bind_texture(renderer->dummyTexture, 4);
+    command_buffer->bind_texture(renderer->dummy_texture, 2);
+    command_buffer->bind_texture(renderer->dummy_texture, 3);
+    command_buffer->bind_texture(renderer->dummy_texture, 4);
     
     struct PostPushConstants {
         Vector4 viewport;
@@ -963,13 +963,13 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
     
     GFXFramebufferCreateInfo framebuffer_create_info = {};
     framebuffer_create_info.attachments = {offscreen_color_texture, offscreen_depth_texture};
-    framebuffer_create_info.render_pass = renderer->offscreenRenderPass;
+    framebuffer_create_info.render_pass = renderer->offscreen_render_pass;
     
     auto offscreen_framebuffer = gfx->create_framebuffer(framebuffer_create_info);
     
     framebuffer_create_info = {};
     framebuffer_create_info.attachments = {final_texture};
-    framebuffer_create_info.render_pass = renderer->unormRenderPass;
+    framebuffer_create_info.render_pass = renderer->unorm_render_pass;
     
     auto final_framebuffer = gfx->create_framebuffer(framebuffer_create_info);
     
@@ -982,17 +982,17 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
     
     GFXRenderPassBeginInfo begin_info = {};
     begin_info.framebuffer = offscreen_framebuffer;
-    begin_info.render_pass = renderer->offscreenRenderPass;
+    begin_info.render_pass = renderer->offscreen_render_pass;
     begin_info.render_area.extent = {thumbnail_resolution, thumbnail_resolution};
     
     command_buffer->set_render_pass(begin_info);
     
-    Renderer::ControllerContinuity continuity;
+    prism::renderer::controller_continuity continuity;
     renderer->render_camera(command_buffer, scene, camera, scene.get<Camera>(camera), begin_info.render_area.extent, *target, continuity);
     
     // render post
     begin_info.framebuffer = final_framebuffer;
-    begin_info.render_pass = renderer->unormRenderPass;
+    begin_info.render_pass = renderer->unorm_render_pass;
     
     command_buffer->set_render_pass(begin_info);
     
@@ -1002,12 +1002,12 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
     
     command_buffer->set_viewport(viewport);
     
-    command_buffer->set_graphics_pipeline(renderer->renderToUnormTexturePipeline);
+    command_buffer->set_graphics_pipeline(renderer->render_to_unorm_texture_pipeline);
     
     command_buffer->bind_texture(offscreen_color_texture, 1);
-    command_buffer->bind_texture(renderer->dummyTexture, 2);
-    command_buffer->bind_texture(renderer->dummyTexture, 3);
-    command_buffer->bind_texture(renderer->dummyTexture, 4);
+    command_buffer->bind_texture(renderer->dummy_texture, 2);
+    command_buffer->bind_texture(renderer->dummy_texture, 3);
+    command_buffer->bind_texture(renderer->dummy_texture, 4);
     
     struct PostPushConstants {
         Vector4 viewport;

@@ -9,7 +9,7 @@
 #include <AreaTex.h>
 #include <SearchTex.h>
 
-SMAAPass::SMAAPass(GFX* gfx, Renderer* renderer) : renderer(renderer) {
+SMAAPass::SMAAPass(GFX* gfx, prism::renderer* renderer) : renderer(renderer) {
     Expects(gfx != nullptr);
     Expects(renderer != nullptr);
     

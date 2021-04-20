@@ -42,7 +42,7 @@ void DebugPass::initialize() {
             {1, GFXBindingType::PushConstant}
         };
 
-        createInfo.render_pass = engine->get_renderer()->offscreenRenderPass;
+        createInfo.render_pass = engine->get_renderer()->offscreen_render_pass;
         createInfo.rasterization.polygon_type = GFXPolygonType::Line;
 
         primitive_pipeline = engine->get_gfx()->create_graphics_pipeline(createInfo);
@@ -159,7 +159,7 @@ void DebugPass::initialize() {
         
         pipelineInfo.blending.enable_blending = true;
         
-        pipelineInfo.render_pass = engine->get_renderer()->offscreenRenderPass;
+        pipelineInfo.render_pass = engine->get_renderer()->offscreen_render_pass;
         
         billboard_pipeline = engine->get_gfx()->create_graphics_pipeline(pipelineInfo);
         
