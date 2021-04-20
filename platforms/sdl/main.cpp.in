@@ -41,11 +41,27 @@ Window* get_window_by_sdl_id(const Uint32 id) {
 }
 
 static std::map<InputButton, int> inputToKeyCode = { {
-    {InputButton::A, 38},
-    {InputButton::W, 25},
-    {InputButton::S, 39},
-    {InputButton::D, 40},
-    {InputButton::Q, 24}
+    {InputButton::C, SDL_SCANCODE_C},
+    {InputButton::V, SDL_SCANCODE_V},
+    {InputButton::X, SDL_SCANCODE_X},
+    {InputButton::Y, SDL_SCANCODE_Y},
+    {InputButton::Z, SDL_SCANCODE_Z},
+    {InputButton::Backspace, SDL_SCANCODE_BACKSPACE},
+    {InputButton::Enter, SDL_SCANCODE_RETURN},
+    {InputButton::W, SDL_SCANCODE_W},
+    {InputButton::A, SDL_SCANCODE_A},
+    {InputButton::S, SDL_SCANCODE_S},
+    {InputButton::D, SDL_SCANCODE_D},
+    {InputButton::Q, SDL_SCANCODE_Q},
+    {InputButton::Shift, SDL_SCANCODE_LSHIFT},
+    {InputButton::Alt, SDL_SCANCODE_LALT},
+    {InputButton::Super, SDL_SCANCODE_APPLICATION},
+    {InputButton::Escape, SDL_SCANCODE_ESCAPE},
+    {InputButton::Tab, SDL_SCANCODE_TAB},
+    {InputButton::Ctrl, SDL_SCANCODE_LCTRL},
+    {InputButton::Space, SDL_SCANCODE_SPACE},
+    {InputButton::LeftArrow, SDL_SCANCODE_LEFT},
+    {InputButton::RightArrow, SDL_SCANCODE_RIGHT}
 }};
 
 /*
@@ -53,7 +69,7 @@ static std::map<InputButton, int> inputToKeyCode = { {
  */
 
 const char* platform::get_name() {
-    return "Linux (SDL)";
+    return SDL_GetPlatform();
 }
 
 bool platform::supports_feature(const PlatformFeature feature) {
@@ -92,6 +108,7 @@ void platform::close_window(const int index) {
 }
 
 void platform::force_quit() {
+    SDL_Quit();
 }
 
 float platform::get_window_dpi(const int index) {
@@ -141,12 +158,13 @@ prism::Extent platform::get_window_drawable_size(const int index) {
 }
 
 bool platform::is_window_focused(const int index) {
-    return false;
+    auto window = get_window(index);
+    return (SDL_GetWindowFlags(window->window) & SDL_WINDOW_INPUT_FOCUS) != 0;
 }
 
 void platform::set_window_focused(const int index) {
     auto window = get_window(index);
-    SDL_SetWindowInputFocus(window->window);
+    SDL_RaiseWindow(window->window);
 }
 
 void platform::set_window_position(const int index, const prism::Offset offset) {
@@ -168,7 +186,9 @@ void platform::set_window_title(const int index, const std::string_view title) {
 }
 
 bool platform::get_key_down(const InputButton key) {
-    return false;
+    const Uint8 *state = SDL_GetKeyboardState(NULL);
+
+    return state[inputToKeyCode[key]] && state[SDL_SCANCODE_DOWN];
 }
 
 int platform::get_keycode(const InputButton key) {
@@ -193,8 +213,10 @@ bool platform::get_mouse_button_down(const int button) {
     return SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT + button);
 }
 
+float mouse_wheel_x, mouse_wheel_y;
+
 std::tuple<float, float> platform::get_wheel_delta() {
-    return {0.0f, 0.0f};
+    return {mouse_wheel_x, mouse_wheel_y};
 }
 
 std::tuple<float, float> platform::get_right_stick_position() {
@@ -206,6 +228,7 @@ std::tuple<float, float> platform::get_left_stick_position() {
 }
 
 void platform::capture_mouse(const bool capture) {
+    SDL_CaptureMouse((SDL_bool)capture);
 }
 
 void platform::open_dialog(const bool existing, std::function<void(std::string)> returnFunction, bool openDirectory) {
@@ -215,19 +238,12 @@ void platform::save_dialog(std::function<void(std::string)> returnFunction) {
 }
 
 char* platform::translate_keycode(const unsigned int keycode) {
-    return "";
+    return const_cast<char*>(SDL_GetKeyName(keycode));
 }
 
-int stdout_copy;
-int stderr_copy;
+void platform::mute_output() {}
 
-void platform::mute_output() {
-
-}
-
-void platform::unmute_output() {
-
-}
+void platform::unmute_output() {}
 
 int main(int argc, char* argv[]) {
     SDL_Init(SDL_INIT_VIDEO);
@@ -254,6 +270,11 @@ int main(int argc, char* argv[]) {
              switch(event.type) {
                  case SDL_QUIT:
                      engine->quit();
+                     break;
+                 case SDL_MOUSEWHEEL: {
+                     mouse_wheel_x = event.wheel.x;
+                     mouse_wheel_y = event.wheel.y;
+                 }
                      break;
                  case SDL_WINDOWEVENT:
                      if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
