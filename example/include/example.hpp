@@ -4,5 +4,5 @@
 
 class ExampleApp : public prism::app {
 public:
-   
+    void initialize_render() override;
 };
