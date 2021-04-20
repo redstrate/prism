@@ -91,18 +91,18 @@ Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     Expects(gfx != nullptr);
     
     shader_compiler.set_include_path(file::get_domain_path(file::Domain::Internal).string());
-        
-    createDummyTexture();
+
+    create_dummy_texture();
     create_histogram_resources();
 
     shadow_pass = std::make_unique<ShadowPass>(gfx);
     scene_capture = std::make_unique<SceneCapture>(gfx);
-    smaaPass = std::make_unique<SMAAPass>(gfx, this);
+    smaa_pass = std::make_unique<SMAAPass>(gfx, this);
     
     if(enable_imgui)
         addPass<ImGuiPass>();
 
-    generateBRDF();
+    generate_brdf();
     
     GFXRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.label = "Offscreen";
@@ -117,8 +117,8 @@ Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
 
     unormRenderPass = gfx->create_render_pass(renderPassInfo);
 
-    createFontTexture();
-    createSkyPipeline();
+    create_font_texture();
+    create_sky_pipeline();
 }
 
 Renderer::~Renderer() = default;
@@ -137,8 +137,8 @@ void Renderer::resize_render_target(RenderTarget& target, const prism::Extent ex
     target.extent = extent;
         
     create_render_target_resources(target);
-    smaaPass->create_render_target_resources(target);
-    createPostPipelines();
+    smaa_pass->create_render_target_resources(target);
+    create_post_pipelines();
     
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Text";
@@ -163,18 +163,18 @@ void Renderer::resize_render_target(RenderTarget& target, const prism::Extent ex
     pipelineInfo.shader_input.push_constants = {
         {sizeof(UIPushConstant), 0}
     };
+
+    text_pipeline = gfx->create_graphics_pipeline(pipelineInfo);
     
-    textPipeline = gfx->create_graphics_pipeline(pipelineInfo);
-    
-    if(worldTextPipeline == nullptr) {
+    if(world_text_pipeline == nullptr) {
         pipelineInfo.render_pass = offscreenRenderPass;
         pipelineInfo.label = "Text World";
         pipelineInfo.depth.depth_mode = GFXDepthMode::LessOrEqual;
-        
-        worldTextPipeline = gfx->create_graphics_pipeline(pipelineInfo);
+
+        world_text_pipeline = gfx->create_graphics_pipeline(pipelineInfo);
     }
 
-    createUIPipelines();
+    create_ui_pipelines();
 
     for(auto& pass : passes)
         pass->create_render_target_resources(target);
@@ -208,9 +208,9 @@ void Renderer::init_screen(ui::Screen* screen) {
         metric.yoff2 = font.sizes[fontSize][i].yoff2;
     }
 
-    screen->glyph_buffer = gfx->create_buffer(nullptr, instanceAlignment + (sizeof(GylphMetric) * numGlyphs), false, GFXBufferUsage::Storage);
+    screen->glyph_buffer = gfx->create_buffer(nullptr, instance_alignment + (sizeof(GylphMetric) * numGlyphs), false, GFXBufferUsage::Storage);
 
-    gfx->copy_buffer(screen->glyph_buffer, metrics.data(), instanceAlignment, sizeof(GylphMetric) * numGlyphs);
+    gfx->copy_buffer(screen->glyph_buffer, metrics.data(), instance_alignment, sizeof(GylphMetric) * numGlyphs);
 
     screen->elements_buffer = gfx->create_buffer(nullptr, sizeof(ElementInstance) * 50, true, GFXBufferUsage::Storage);
 
@@ -306,12 +306,12 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
 
     commandbuffer->push_group("SMAA");
     
-    smaaPass->render(commandbuffer, target);
+    smaa_pass->render(commandbuffer, target);
     
     commandbuffer->pop_group();
 
-    if(render_options.enable_depth_of_field && dofPass != nullptr)
-        dofPass->render(commandbuffer, *scene);
+    if(render_options.enable_depth_of_field && dof_pass != nullptr)
+        dof_pass->render(commandbuffer, *scene);
     
     beginInfo.framebuffer = nullptr;
     beginInfo.render_pass = nullptr;
@@ -356,10 +356,10 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
     
     commandbuffer->dispatch(1, 1, 1);
 
-    commandbuffer->set_graphics_pipeline(postPipeline);
+    commandbuffer->set_graphics_pipeline(post_pipeline);
     
     if(render_options.enable_depth_of_field)
-        commandbuffer->bind_texture(dofPass->normal_field, 1);
+        commandbuffer->bind_texture(dof_pass->normal_field, 1);
     else
         commandbuffer->bind_texture(target.offscreenColorTexture, 1);
     
@@ -373,7 +373,7 @@ void Renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
     commandbuffer->bind_texture(average_luminance_texture, 6);
     
     if(render_options.enable_depth_of_field)
-        commandbuffer->bind_texture(dofPass->far_field, 7);
+        commandbuffer->bind_texture(dof_pass->far_field, 7);
     else
         commandbuffer->bind_texture(dummyTexture, 7);
 
@@ -506,7 +506,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
             command_buffer->bind_texture(scene.spotLightArray, 6);
             command_buffer->bind_texture(scene.irradianceCubeArray, 7);
             command_buffer->bind_texture(scene.prefilteredCubeArray, 8);
-            command_buffer->bind_texture(brdfTexture, 9);
+            command_buffer->bind_texture(brdf_texture, 9);
 
             if(!mesh.mesh->bones.empty())
                 command_buffer->bind_shader_buffer(part.bone_batrix_buffer, 0, 14, sizeof(Matrix4x4) * 128);
@@ -546,7 +546,7 @@ void Renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
             pc.sun_position_fov = Vector4(scene.get<Transform>(obj).get_world_position(), radians(camera.fov));
     }
     
-    command_buffer->set_graphics_pipeline(skyPipeline);
+    command_buffer->set_graphics_pipeline(sky_pipeline);
     
     command_buffer->set_push_constant(&pc, sizeof(SkyPushConstant));
     
@@ -634,7 +634,7 @@ void Renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen
         numElements++;
     }
 
-    gfx->copy_buffer(screen->glyph_buffer, instances.data(), 0, instanceAlignment);
+    gfx->copy_buffer(screen->glyph_buffer, instances.data(), 0, instance_alignment);
     gfx->copy_buffer(screen->instance_buffer, stringInstances.data(), 0, sizeof(StringInstance) * 50);
     gfx->copy_buffer(screen->elements_buffer, elementInstances.data(), sizeof(ElementInstance) * continuity.elementOffset, sizeof(ElementInstance) * elementInstances.size());
 
@@ -648,10 +648,10 @@ void Renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen
         pc.screenSize = windowSize;
 
         if(options.render_world) {
-            commandbuffer->set_graphics_pipeline(worldGeneralPipeline);
+            commandbuffer->set_graphics_pipeline(world_general_pipeline);
             pc.mvp = options.mvp;
         } else {
-            commandbuffer->set_graphics_pipeline(generalPipeline);
+            commandbuffer->set_graphics_pipeline(general_pipeline);
         }
 
         if (element.background.texture) {
@@ -671,18 +671,18 @@ void Renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen
     pc.screenSize = windowSize;
 
     if(options.render_world) {
-        commandbuffer->set_graphics_pipeline(worldTextPipeline);
+        commandbuffer->set_graphics_pipeline(world_text_pipeline);
         pc.mvp = options.mvp;
     } else {
-        commandbuffer->set_graphics_pipeline(textPipeline);
+        commandbuffer->set_graphics_pipeline(text_pipeline);
     }
 
     commandbuffer->set_push_constant(&pc, sizeof(UIPushConstant));
 
-    commandbuffer->bind_shader_buffer(screen->glyph_buffer, 0, 0, instanceAlignment);
-    commandbuffer->bind_shader_buffer(screen->glyph_buffer, instanceAlignment, 1, sizeof(GylphMetric) * numGlyphs);
+    commandbuffer->bind_shader_buffer(screen->glyph_buffer, 0, 0, instance_alignment);
+    commandbuffer->bind_shader_buffer(screen->glyph_buffer, instance_alignment, 1, sizeof(GylphMetric) * numGlyphs);
     commandbuffer->bind_shader_buffer(screen->instance_buffer, 0, 2, sizeof(StringInstance) * 50);
-    commandbuffer->bind_texture(fontTexture, 3);
+    commandbuffer->bind_texture(font_texture, 3);
 
     if(stringLen > 0)
         commandbuffer->draw(0, 4, 0, stringLen);
@@ -763,7 +763,7 @@ void Renderer::create_mesh_pipeline(Material& material) const {
     material.capture_pipeline = material_compiler.create_static_pipeline(pipelineInfo, false, true);
 }
 
-void Renderer::createDummyTexture() {
+void Renderer::create_dummy_texture() {
     GFXTextureCreateInfo createInfo = {};
     createInfo.label = "Dummy";
     createInfo.width = 1;
@@ -803,7 +803,7 @@ void Renderer::create_render_target_resources(RenderTarget& target) {
 
     target.offscreenFramebuffer = gfx->create_framebuffer(framebufferInfo);
     
-    if(postPipeline == nullptr) {
+    if(post_pipeline == nullptr) {
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.label = "Post";
         
@@ -823,29 +823,14 @@ void Renderer::create_render_target_resources(RenderTarget& target) {
         pipelineInfo.shader_input.push_constants = {
             {sizeof(PostPushConstants), 0}
         };
-        
-        postPipeline = gfx->create_graphics_pipeline(pipelineInfo);
-    
-        pipelineInfo.label = "Render to Texture";
-        pipelineInfo.render_pass = offscreenRenderPass;
-        
-        renderToTexturePipeline = gfx->create_graphics_pipeline(pipelineInfo);
-        
-        pipelineInfo.label = "Render to Texture (Unorm)";
-        pipelineInfo.render_pass = unormRenderPass;
-        
-        renderToUnormTexturePipeline = gfx->create_graphics_pipeline(pipelineInfo);
-        
-        pipelineInfo.label = "Render to Viewport";
-        pipelineInfo.render_pass = viewportRenderPass;
-        
-        renderToViewportPipeline = gfx->create_graphics_pipeline(pipelineInfo);
+
+        post_pipeline = gfx->create_graphics_pipeline(pipelineInfo);
     }
     
     target.sceneBuffer = gfx->create_buffer(nullptr, sizeof(SceneInformation), true, GFXBufferUsage::Storage);
 }
 
-void Renderer::createPostPipelines() {
+void Renderer::create_post_pipelines() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Post";
     
@@ -865,26 +850,11 @@ void Renderer::createPostPipelines() {
     pipelineInfo.shader_input.push_constants = {
         {sizeof(PostPushConstants), 0}
     };
-    
-    postPipeline = gfx->create_graphics_pipeline(pipelineInfo);
-    
-    pipelineInfo.label = "Render to Texture";
-    pipelineInfo.render_pass = offscreenRenderPass;
-    
-    renderToTexturePipeline = gfx->create_graphics_pipeline(pipelineInfo);
-    
-    pipelineInfo.label = "Render to Texture (Unorm)";
-    pipelineInfo.render_pass = unormRenderPass;
-    
-    renderToUnormTexturePipeline = gfx->create_graphics_pipeline(pipelineInfo);
-    
-    pipelineInfo.label = "Render to Viewport";
-    pipelineInfo.render_pass = viewportRenderPass;
-    
-    renderToViewportPipeline = gfx->create_graphics_pipeline(pipelineInfo);
+
+    post_pipeline = gfx->create_graphics_pipeline(pipelineInfo);
 }
 
-void Renderer::createFontTexture() {
+void Renderer::create_font_texture() {
     auto file = file::open(file::app_domain / "font.fp", true);
     if(file == std::nullopt) {
         prism::log::error(System::Renderer, "Failed to load font file!");
@@ -896,7 +866,7 @@ void Renderer::createFontTexture() {
     std::vector<unsigned char> bitmap(font.width * font.height);
     file->read(bitmap.data(), font.width * font.height);
 
-    instanceAlignment = (int)gfx->get_alignment(sizeof(GlyphInstance) * maxInstances);
+    instance_alignment = (int)gfx->get_alignment(sizeof(GlyphInstance) * maxInstances);
 
     GFXTextureCreateInfo textureInfo = {};
     textureInfo.label = "UI Font";
@@ -905,12 +875,12 @@ void Renderer::createFontTexture() {
     textureInfo.format = GFXPixelFormat::R8_UNORM;
     textureInfo.usage = GFXTextureUsage::Sampled;
 
-    fontTexture = gfx->create_texture(textureInfo);
+    font_texture = gfx->create_texture(textureInfo);
 
-    gfx->copy_texture(fontTexture, bitmap.data(), font.width * font.height);
+    gfx->copy_texture(font_texture, bitmap.data(), font.width * font.height);
 }
 
-void Renderer::createSkyPipeline() {
+void Renderer::create_sky_pipeline() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Sky";
     pipelineInfo.render_pass = offscreenRenderPass;
@@ -928,18 +898,18 @@ void Renderer::createSkyPipeline() {
 
     pipelineInfo.depth.depth_mode = GFXDepthMode::LessOrEqual;
 
-    skyPipeline = gfx->create_graphics_pipeline(pipelineInfo);
+    sky_pipeline = gfx->create_graphics_pipeline(pipelineInfo);
     
     associate_shader_reload("sky.vert", [this] {
-        createSkyPipeline();
+        create_sky_pipeline();
     });
     
     associate_shader_reload("sky.frag", [this] {
-        createSkyPipeline();
+        create_sky_pipeline();
     });
 }
 
-void Renderer::createUIPipelines() {
+void Renderer::create_ui_pipelines() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "UI";
 
@@ -962,22 +932,22 @@ void Renderer::createUIPipelines() {
         {sizeof(UIPushConstant), 0}
     };
 
-    generalPipeline = gfx->create_graphics_pipeline(pipelineInfo);
+    general_pipeline = gfx->create_graphics_pipeline(pipelineInfo);
 
     pipelineInfo.label = "UI World";
     pipelineInfo.render_pass = offscreenRenderPass;
     pipelineInfo.depth.depth_mode = GFXDepthMode::LessOrEqual;
 
-    worldGeneralPipeline = gfx->create_graphics_pipeline(pipelineInfo);
+    world_general_pipeline = gfx->create_graphics_pipeline(pipelineInfo);
 }
 
-void Renderer::generateBRDF() {
+void Renderer::generate_brdf() {
     GFXRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.label = "BRDF Gen";
     renderPassInfo.attachments.push_back(GFXPixelFormat::R8G8_SFLOAT);
     renderPassInfo.will_use_in_shader = true;
-    
-    brdfRenderPass = gfx->create_render_pass(renderPassInfo);
+
+    brdf_render_pass = gfx->create_render_pass(renderPassInfo);
     
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "BRDF";
@@ -985,9 +955,9 @@ void Renderer::generateBRDF() {
     pipelineInfo.shaders.vertex_src = file::Path("brdf.vert");
     pipelineInfo.shaders.fragment_src = file::Path("brdf.frag");
     
-    pipelineInfo.render_pass = brdfRenderPass;
-    
-    brdfPipeline = gfx->create_graphics_pipeline(pipelineInfo);
+    pipelineInfo.render_pass = brdf_render_pass;
+
+    brdf_pipeline = gfx->create_graphics_pipeline(pipelineInfo);
     
     GFXTextureCreateInfo textureInfo = {};
     textureInfo.label = "BRDF LUT";
@@ -995,26 +965,26 @@ void Renderer::generateBRDF() {
     textureInfo.width = brdf_resolution;
     textureInfo.height = brdf_resolution;
     textureInfo.usage = GFXTextureUsage::Sampled | GFXTextureUsage::Attachment;
-    
-    brdfTexture = gfx->create_texture(textureInfo);
+
+    brdf_texture = gfx->create_texture(textureInfo);
     
     GFXFramebufferCreateInfo framebufferInfo = {};
-    framebufferInfo.attachments = {brdfTexture};
-    framebufferInfo.render_pass = brdfRenderPass;
-    
-    brdfFramebuffer = gfx->create_framebuffer(framebufferInfo);
+    framebufferInfo.attachments = {brdf_texture};
+    framebufferInfo.render_pass = brdf_render_pass;
+
+    brdf_framebuffer = gfx->create_framebuffer(framebufferInfo);
     
     // render
     GFXCommandBuffer* command_buffer = gfx->acquire_command_buffer();
     
     GFXRenderPassBeginInfo beginInfo = {};
-    beginInfo.render_pass = brdfRenderPass;
-    beginInfo.framebuffer = brdfFramebuffer;
+    beginInfo.render_pass = brdf_render_pass;
+    beginInfo.framebuffer = brdf_framebuffer;
     beginInfo.render_area.extent = {brdf_resolution, brdf_resolution};
     
     command_buffer->set_render_pass(beginInfo);
     
-    command_buffer->set_graphics_pipeline(brdfPipeline);
+    command_buffer->set_graphics_pipeline(brdf_pipeline);
     
     Viewport viewport = {};
     viewport.width = brdf_resolution;

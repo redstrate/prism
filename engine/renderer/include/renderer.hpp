@@ -28,11 +28,9 @@ class GFXTexture;
 class SMAAPass;
 class ShadowPass;
 class SceneCapture;
-class GaussianHelper;
 class DoFPass;
 
 class Scene;
-struct MeshData;
 struct Camera;
 
 constexpr int max_scene_materials = 25, max_scene_lights = 25;
@@ -116,13 +114,13 @@ public:
     }
     
 private:
-    void createDummyTexture();
+    void create_dummy_texture();
     void create_render_target_resources(RenderTarget& target);
-    void createPostPipelines();
-    void createFontTexture();
-    void createSkyPipeline();
-    void createUIPipelines();
-    void generateBRDF();
+    void create_post_pipelines();
+    void create_font_texture();
+    void create_sky_pipeline();
+    void create_ui_pipelines();
+    void generate_brdf();
     void create_histogram_resources();
 
     GFX* gfx = nullptr;
@@ -132,34 +130,32 @@ private:
     ui::Screen* current_screen = nullptr;
     
     // sky
-    GFXPipeline* skyPipeline = nullptr;
+    GFXPipeline* sky_pipeline = nullptr;
 
     // post
-    GFXPipeline* postPipeline = nullptr;
-    GFXPipeline* renderToTexturePipeline = nullptr;
-    GFXPipeline* renderToViewportPipeline = nullptr;
+    GFXPipeline* post_pipeline = nullptr;
 
     // font
-    GFXTexture* fontTexture = nullptr;
-    GFXPipeline* textPipeline, *worldTextPipeline = nullptr;
-    int instanceAlignment = 0;
+    GFXTexture* font_texture = nullptr;
+    GFXPipeline* text_pipeline, *world_text_pipeline = nullptr;
+    int instance_alignment = 0;
     
     // brdf
-    GFXPipeline* brdfPipeline = nullptr;
-    GFXTexture* brdfTexture = nullptr;
-    GFXFramebuffer* brdfFramebuffer = nullptr;
-    GFXRenderPass* brdfRenderPass = nullptr;
+    GFXPipeline* brdf_pipeline = nullptr;
+    GFXTexture* brdf_texture = nullptr;
+    GFXFramebuffer* brdf_framebuffer = nullptr;
+    GFXRenderPass* brdf_render_pass = nullptr;
 
     // general ui
-    GFXPipeline* generalPipeline, *worldGeneralPipeline = nullptr;
+    GFXPipeline* general_pipeline, *world_general_pipeline = nullptr;
     
     // histogram compute
     GFXPipeline* histogram_pipeline = nullptr, *histogram_average_pipeline = nullptr;
     GFXBuffer* histogram_buffer = nullptr;
     GFXTexture* average_luminance_texture = nullptr;
 
-    std::unique_ptr<SMAAPass> smaaPass;
-    std::unique_ptr<DoFPass> dofPass;
+    std::unique_ptr<SMAAPass> smaa_pass;
+    std::unique_ptr<DoFPass> dof_pass;
     
     std::vector<std::unique_ptr<Pass>> passes;
 };
