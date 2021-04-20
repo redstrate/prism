@@ -1059,8 +1059,8 @@ void CommonEditor::load_options() {
             lastOpenedFiles.push_back(file.get<std::string>());
     }
     else {
-        defaultX = 0;
-        defaultY = 0;
+        defaultX = -1;
+        defaultY = -1;
         defaultWidth = 1280;
         defaultHeight = 720;
     }
