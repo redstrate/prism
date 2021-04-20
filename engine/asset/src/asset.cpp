@@ -13,7 +13,7 @@
 #include "renderer.hpp"
 #include "input.hpp"
 #include "physics.hpp"
-#include "imguilayer.hpp"
+#include "imgui_backend.hpp"
 
 std::unique_ptr<Mesh> load_mesh(const file::Path path) {
     Expects(!path.empty());

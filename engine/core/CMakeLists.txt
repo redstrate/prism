@@ -5,7 +5,7 @@ set(SRC
     include/cutscene.hpp
     include/physics.hpp
     include/scene.hpp
-    include/imguilayer.hpp
+    include/imgui_backend.hpp
     include/uielement.hpp
     include/screen.hpp
     include/object.hpp
@@ -18,7 +18,7 @@ set(SRC
     src/engine.cpp
     src/input.cpp
     src/physics.cpp
-    src/imguilayer.cpp
+    src/imgui_backend.cpp
     src/screen.cpp
     src/scene.cpp
     src/debug.cpp

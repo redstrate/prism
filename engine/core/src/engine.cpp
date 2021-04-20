@@ -14,7 +14,7 @@
 #include "screen.hpp"
 #include "renderer.hpp"
 #include "gfx.hpp"
-#include "imguilayer.hpp"
+#include "imgui_backend.hpp"
 #include "debug.hpp"
 #include "timer.hpp"
 #include "physics.hpp"
@@ -35,7 +35,7 @@ engine::engine(const int argc, char* argv[]) {
     
     console::register_variable("rs_dynamic_resolution", render_options.dynamic_resolution);
     
-    console::register_command("quit", console::ArgumentFormat(0), [this](const console::Arguments) {
+    console::register_command("quit", console::ArgumentFormat(0), [this](const console::Arguments&) {
         quit();
     });
         
@@ -44,7 +44,7 @@ engine::engine(const int argc, char* argv[]) {
 
     input = std::make_unique<Input>();
     physics = std::make_unique<Physics>();
-    imgui = std::make_unique<ImGuiLayer>();
+    imgui = std::make_unique<prism::imgui_backend>();
     assetm = std::make_unique<AssetManager>();
 }
 

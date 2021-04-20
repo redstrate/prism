@@ -20,11 +20,11 @@ class Input;
 class Renderer;
 class RenderTarget;
 class Physics;
-class ImGuiLayer;
 struct Timer;
 
 namespace prism {
     class app;
+    class imgui_backend;
 
     struct AnimationTarget {
         float current_time = 0.0f;
@@ -381,7 +381,7 @@ namespace prism {
 
         std::vector<AnimationTarget> animation_targets;
 
-        std::unique_ptr<ImGuiLayer> imgui;
+        std::unique_ptr<imgui_backend> imgui;
 
         const InputButton debug_button = InputButton::Q;
     };

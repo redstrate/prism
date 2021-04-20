@@ -1,4 +1,4 @@
-#include "imguilayer.hpp"
+#include "imgui_backend.hpp"
 
 #include <imgui.h>
 #include <imgui_stdlib.h>
@@ -6,6 +6,8 @@
 #include "engine.hpp"
 #include "platform.hpp"
 #include "assertions.hpp"
+
+using prism::imgui_backend;
 
 const std::map<ImGuiKey, InputButton> imToPl = {
     {ImGuiKey_Tab, InputButton::Tab},
@@ -31,7 +33,7 @@ const std::map<ImGuiKey, InputButton> imToPl = {
     {ImGuiKey_Z, InputButton::Z}
 };
 
-ImGuiLayer::ImGuiLayer() {
+imgui_backend::imgui_backend() {
     ImGui::CreateContext();
     
     ImGuiIO& io = ImGui::GetIO();
@@ -155,7 +157,7 @@ ImGuiLayer::ImGuiLayer() {
     };
 }
 
-void ImGuiLayer::begin_frame(const float delta_time) {
+void imgui_backend::begin_frame(const float delta_time) {
     ImGuiIO& io = ImGui::GetIO();
     
     const auto [width, height] = platform::get_window_size(0);
@@ -190,7 +192,7 @@ void ImGuiLayer::begin_frame(const float delta_time) {
     ImGui::NewFrame();
 }
 
-void ImGuiLayer::render(int index) {
+void imgui_backend::render(int index) {
     Expects(index >= 0);
     
     if(index == 0) {
@@ -199,19 +201,19 @@ void ImGuiLayer::render(int index) {
     }
 }
 
-void ImGuiLayer::process_key_down(unsigned int keyCode) {
-    Expects(keyCode >= 0);
+void imgui_backend::process_key_down(unsigned int key_code) {
+    Expects(key_code >= 0);
     
     ImGuiIO& io = ImGui::GetIO();
-    io.AddInputCharactersUTF8(platform::translate_keycode(keyCode));
+    io.AddInputCharactersUTF8(platform::translate_keycode(key_code));
     
-    io.KeysDown[keyCode] = true;
+    io.KeysDown[key_code] = true;
 }
 
-void ImGuiLayer::process_key_up(unsigned int keyCode) {
-    Expects(keyCode >= 0);
+void imgui_backend::process_key_up(unsigned int key_code) {
+    Expects(key_code >= 0);
 
     ImGuiIO& io = ImGui::GetIO();
     
-    io.KeysDown[keyCode] = false;
+    io.KeysDown[key_code] = false;
 }
