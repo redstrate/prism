@@ -5,6 +5,8 @@
 #include "engine.hpp"
 #include "log.hpp"
 
+using prism::input_system;
+
 bool is_in_range(int value, int cond, int range) {
     int low = cond - range;
     int high = cond + range;
@@ -12,7 +14,7 @@ bool is_in_range(int value, int cond, int range) {
     return value >= low && value <= high;
 }
 
-void Input::update() {
+void input_system::update() {
 	const auto& [x, y] = platform::get_cursor_position();
 	auto& [oldX, oldY] = _last_cursor_position;
     
@@ -72,28 +74,28 @@ void Input::update() {
             float nextValue = 0.0f;
 
             switch (axis) {
-            case Axis::MouseX:
+            case axis::MouseX:
                 nextValue = xDelta;
                 break;
-            case Axis::MouseY:
+            case axis::MouseY:
                 nextValue = yDelta;
                 break;
-            case Axis::ScrollX:
+            case axis::ScrollX:
                 nextValue = sx;
                 break;
-            case Axis::ScrollY:
+            case axis::ScrollY:
                 nextValue = sy;
                 break;
-            case Axis::LeftStickX:
+            case axis::LeftStickX:
                 nextValue = lx;
                 break;
-            case Axis::LeftStickY:
+            case axis::LeftStickY:
                 nextValue = ly;
                 break;
-            case Axis::RightStickX:
+            case axis::RightStickX:
                 nextValue = rx;
                 break;
-            case Axis::RightStickY:
+            case axis::RightStickY:
                 nextValue = ry;
                 break;
             }
@@ -104,21 +106,21 @@ void Input::update() {
 	}
 }
 
-void Input::add_binding(const std::string& name) {
-	InputBindingData data;
+void input_system::add_binding(const std::string& name) {
+	input_binding data;
 	data.name = name;
 
 	_input_bindings.push_back(data);
 }
 
-void Input::add_binding_button(const std::string& name, InputButton key, float value) {
+void input_system::add_binding_button(const std::string& name, InputButton key, float value) {
 	for (auto& binding : _input_bindings) {
 		if (binding.name == name)
 			binding.buttons[key] = value;
 	}
 }
 
-void Input::add_binding_axis(const std::string& name, Axis axis) {
+void input_system::add_binding_axis(const std::string& name, axis axis) {
 	for (auto& binding : _input_bindings) {
 		if (binding.name == name) {
             binding.axises.push_back(axis);
@@ -126,7 +128,7 @@ void Input::add_binding_axis(const std::string& name, Axis axis) {
 	}
 }
 
-float Input::get_value(const std::string& name) {
+float input_system::get_value(const std::string& name) {
 	for (auto& binding : _input_bindings) {
 		if (binding.name == name) {
 			return binding.value;
@@ -136,11 +138,11 @@ float Input::get_value(const std::string& name) {
 	return 0.0f;
 }
 
-bool Input::is_pressed(const std::string &name, bool repeating) {
+bool input_system::is_pressed(const std::string &name, bool repeating) {
     return get_value(name) == 1.0 && (repeating ? true : !is_repeating(name));
 }
 
-bool Input::is_repeating(const std::string& name) {
+bool input_system::is_repeating(const std::string& name) {
 	for (auto& binding : _input_bindings) {
 		if (binding.name == name) {
 			return binding.repeat;
@@ -150,6 +152,6 @@ bool Input::is_repeating(const std::string& name) {
 	return false;
 }
 
-std::vector<InputBindingData> Input::get_bindings() const {
+std::vector<prism::input_binding> input_system::get_bindings() const {
     return _input_bindings;
 }

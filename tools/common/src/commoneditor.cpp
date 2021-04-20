@@ -65,7 +65,7 @@ CommonEditor::CommonEditor(std::string id) : id(id) {
     
     load_options();
     
-    Input* input = engine->get_input();
+    auto input = engine->get_input();
     input->add_binding("movementX");
     input->add_binding("movementY");
     
@@ -78,8 +78,8 @@ CommonEditor::CommonEditor(std::string id) : id(id) {
     input->add_binding("lookX");
     input->add_binding("lookY");
     
-    input->add_binding_axis("lookX", Axis::MouseX);
-    input->add_binding_axis("lookY", Axis::MouseY);
+    input->add_binding_axis("lookX", prism::axis::MouseX);
+    input->add_binding_axis("lookY", prism::axis::MouseY);
     
     input->add_binding("cameraLook");
     input->add_binding_button("cameraLook", InputButton::MouseRight);
@@ -95,31 +95,6 @@ void CommonEditor::initialize_render() {
 static float yaw = 0.0f;
 static float pitch = 0.0f;
 static bool willCaptureMouse = false;
-
-struct Ray {
-    Vector3 origin, direction;
-    float t;
-};
-
-// from https://nelari.us/post/gizmos/
-float closest_distance_between_lines(Ray& l1, Ray& l2) {
-    const Vector3 dp = l2.origin - l1.origin;
-    const float v12 = dot(l1.direction, l1.direction);
-    const float v22 = dot(l2.direction, l2.direction);
-    const float v1v2 = dot(l1.direction, l2.direction);
-    
-    const float det = v1v2 * v1v2 - v12 * v22;
-    
-    const float inv_det = 10.f / det;
-    
-    const float dpv1 = dot(dp, l1.direction);
-    const float dpv2 = dot(dp, l2.direction);
-    
-    l1.t = inv_det * (v22 * dpv1 - v1v2 * dpv2);
-    l2.t = inv_det * (v1v2 * dpv1 - v12 * dpv2);
-    
-    return length(dp + l2.direction * l2.t - l1.direction * l1.t);
-}
 
 static float previous_intersect = 0.0;
 
@@ -197,14 +172,14 @@ void CommonEditor::update(float deltaTime) {
                 Vector4 ray_end = view_proj_inverse * Vector4(n.x, n.y, 1.0f, 1.0f);
                 ray_end *= 1.0f / ray_end.w;
                 
-                Ray camera_ray;
+                ray camera_ray;
                 camera_ray.origin = ray_start.xyz;
                 camera_ray.direction = normalize(ray_end.xyz - ray_start.xyz);
                 camera_ray.t = std::numeric_limits<float>::max();
                 
                 auto& transform = engine->get_scene()->get<Transform>(selected_object);
                 
-                Ray transform_ray;
+                ray transform_ray;
                 transform_ray.origin = last_object_position;
                 transform_ray.t = std::numeric_limits<float>::max();
                 

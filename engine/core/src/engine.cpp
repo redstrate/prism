@@ -42,7 +42,7 @@ engine::engine(const int argc, char* argv[]) {
     for(int i = 0; i < argc; i++)
         command_line_arguments.emplace_back(argv[i]);
 
-    input = std::make_unique<Input>();
+    input = std::make_unique<input_system>();
     physics = std::make_unique<Physics>();
     imgui = std::make_unique<prism::imgui_backend>();
     assetm = std::make_unique<AssetManager>();
@@ -108,7 +108,7 @@ GFX* engine::get_gfx() {
     return gfx;
 }
 
-Input* engine::get_input() {
+prism::input_system* engine::get_input() {
 	return input.get();
 }
 
