@@ -112,6 +112,11 @@ Renderer::Renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     
     offscreenRenderPass = gfx->create_render_pass(renderPassInfo);
 
+    renderPassInfo.label = "Offscreen (UNORM)";
+    renderPassInfo.attachments = {GFXPixelFormat::R8G8B8A8_UNORM};
+
+    unormRenderPass = gfx->create_render_pass(renderPassInfo);
+
     createFontTexture();
     createSkyPipeline();
 }
