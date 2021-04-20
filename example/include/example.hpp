@@ -2,7 +2,7 @@
 
 #include "app.hpp"
 
-class ExampleApp : public app {
+class ExampleApp : public prism::app {
 public:
    
 };

@@ -1,5 +1,5 @@
 #include "example.hpp"
 
-void app_main(Engine* engine) {
+void app_main(prism::engine* engine) {
 
 }

@@ -87,11 +87,13 @@ bool engine::is_paused() const {
 }
 
 void engine::quit() {
-    windows[0]->quit_requested = true;
+    if(!windows.empty())
+        windows[0]->quit_requested = true;
 }
 
 bool engine::is_quitting() const {
-    return windows[0]->quit_requested;
+    if(!windows.empty())
+        return windows[0]->quit_requested;
 }
 
 void engine::prepare_quit() {
