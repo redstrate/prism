@@ -1,5 +1,5 @@
 if(ENABLE_WINDOWS)
-	add_subdirectory(windows)
+	add_subdirectory(sdl)
 endif()
 
 if(ENABLE_LINUX)

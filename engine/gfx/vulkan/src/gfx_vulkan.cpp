@@ -1450,7 +1450,7 @@ void GFXVulkan::createLogicalDevice(std::vector<const char*> extensions) {
 
 void GFXVulkan::createSwapchain(NativeSurface* native_surface, VkSwapchainKHR oldSwapchain) {
 
-#ifdef PLATFORM_WINDOWS
+#ifdef PLATFORM_WINDOWS_OLD
 	// create win32 surface
     if(native_surface->surface == VK_NULL_HANDLE)
 	{

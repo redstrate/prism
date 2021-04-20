@@ -46,6 +46,8 @@ endif()
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     message("Windows build detected!")
 
+    find_package(SDL2 REQUIRED)
+
     set(ENABLE_WINDOWS ON)
     set(ENABLE_VULKAN ON)
 endif()

@@ -3,19 +3,33 @@
 
 #include "gfx_vulkan.hpp"
 #include "platform.hpp"
+#include <string_utils.hpp>
 
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_vulkan.h>
+#include <SDL.h>
+#include <SDL_vulkan.h>
 
 @APP_CLASS@* app = nullptr;
-GFX* interface = nullptr;
+GFX* gfx_interface = nullptr;
 
 struct Window {
     int identifier = 0;
     SDL_Window* window = nullptr;
+
+    bool operator==(const Window& b) {
+        return identifier == b.identifier && window == b.window;
+    }
 };
 
 std::vector<Window> windows;
+
+Window* get_window(const int index) {
+    for(auto& window : windows) {
+        if(window.identifier == index)
+            return &window;
+    }
+
+    return nullptr;
+}
 
 static std::map<InputButton, int> inputToKeyCode = { {
     {InputButton::A, 38},
@@ -53,6 +67,13 @@ int platform::open_window(const std::string_view title, const prism::Rectangle r
 }
 
 void platform::close_window(const int index) {
+    auto window = get_window(index);
+
+    engine->remove_window(window->identifier);
+
+    SDL_DestroyWindow(window->window);
+
+    utility::erase(windows, *window);
 }
 
 void platform::force_quit() {
@@ -67,23 +88,23 @@ float platform::get_monitor_dpi() {
 }
 
 prism::Rectangle platform::get_monitor_resolution() {
-    return {};
+    SDL_DisplayMode DM;
+    SDL_GetCurrentDisplayMode(0, &DM);
+
+    return {0, 0, (uint32_t)DM.w, (uint32_t)DM.h};
 }
 
 prism::Rectangle platform::get_monitor_work_area() {
     return platform::get_monitor_resolution();
 }
 
-Window* get_window(const int index) {
-    for(auto& window : windows) {
-        if(window.identifier == index)
-            return &window;
-    }
-
-    return nullptr;
-}
-
 prism::Offset platform::get_window_position(const int index) {
+    auto window = get_window(index);
+
+    int x, y;
+    SDL_GetWindowPosition(window->window, &x, &y);
+
+    return {(int32_t)x, (int32_t)y};
 }
 
 prism::Extent platform::get_window_size(const int index) {
@@ -105,15 +126,24 @@ prism::Extent platform::get_window_drawable_size(const int index) {
 }
 
 bool platform::is_window_focused(const int index) {
+    return false;
 }
 
 void platform::set_window_focused(const int index) {
+    auto window = get_window(index);
+    SDL_SetWindowInputFocus(window->window);
 }
 
 void platform::set_window_position(const int index, const prism::Offset offset) {
+    auto window = get_window(index);
+
+    SDL_SetWindowPosition(window->window, offset.x, offset.y);
 }
 
 void platform::set_window_size(const int index, const prism::Extent extent) {
+    auto window = get_window(index);
+
+    SDL_SetWindowSize(window->window, extent.width, extent.height);
 }
 
 void platform::set_window_title(const int index, const std::string_view title) {
@@ -131,24 +161,33 @@ int platform::get_keycode(const InputButton key) {
 }
 
 prism::Offset platform::get_cursor_position() {
-    return {0, 0};
+    int x, y;
+    SDL_GetMouseState(&x, &y);
+
+    return {(int32_t)x, (int32_t)y};
 }
 
 prism::Offset platform::get_screen_cursor_position() {
-    return {0, 0};
+    int x, y;
+    SDL_GetGlobalMouseState(&x, &y);
+
+    return {(int32_t)x, (int32_t)y};
 }
 
 bool platform::get_mouse_button_down(const int button) {
-    return false;
+    return SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT + button);
 }
 
 std::tuple<float, float> platform::get_wheel_delta() {
+    return {0.0f, 0.0f};
 }
 
 std::tuple<float, float> platform::get_right_stick_position() {
+    return {0.0f, 0.0f};
 }
 
 std::tuple<float, float> platform::get_left_stick_position() {
+    return {0.0f, 0.0f};
 }
 
 void platform::capture_mouse(const bool capture) {
@@ -178,16 +217,16 @@ void platform::unmute_output() {
 int main(int argc, char* argv[]) {
     SDL_Init(SDL_INIT_VIDEO);
 
-    engine = new prism::Engine(argc, argv);
+    engine = new prism::engine(argc, argv);
 
     app = new @APP_CLASS@();
     engine->set_app(app);
 
     GFXCreateInfo info = {};
 
-    interface = new GFXVulkan();
-    if(interface->initialize(info)) {
-        engine->set_gfx(interface);
+    gfx_interface = new GFXVulkan();
+    if(gfx_interface->initialize(info)) {
+        engine->set_gfx(gfx_interface);
     } else {
         return -1;
     }

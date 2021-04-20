@@ -5,7 +5,7 @@ add_platform(
         MAIN_FILE
         main.cpp.in
         LINK_LIBRARIES
-        SDL2
+        SDL2::Main
         Core
         GFXVulkan
 )
