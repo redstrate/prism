@@ -9,7 +9,7 @@ void app_main(prism::engine* engine) {
     file::set_domain_path(file::Domain::App, "data");
     file::set_domain_path(file::Domain::Internal, "{resource_dir}/shaders");
 
-    platform::open_window("Example", {0, 0, 1280, 720}, WindowFlags::Resizable);
+    platform::open_window("Example", {-1, -1, 1280, 720}, WindowFlags::Resizable);
 }
 
 void ExampleApp::initialize_render() {

@@ -89,7 +89,14 @@ int platform::open_window(const std::string_view title, const prism::Rectangle r
     if(flags == WindowFlags::Resizable)
         sdl_flags |= SDL_WINDOW_RESIZABLE;
 
-    win.window = SDL_CreateWindow(title.data(), rect.offset.x, rect.offset.y, rect.extent.width, rect.extent.height, sdl_flags);
+    int real_x = rect.offset.x;
+    int real_y = rect.offset.y;
+    if(rect.offset.x == -1 && rect.offset.y == -1) {
+        real_x = SDL_WINDOWPOS_CENTERED;
+        real_y = SDL_WINDOWPOS_CENTERED;
+    }
+
+    win.window = SDL_CreateWindow(title.data(), real_x, real_y, rect.extent.width, rect.extent.height, sdl_flags);
 
     engine->add_window((void*)&win, win.identifier, rect.extent);
     app->initialize_render();
@@ -281,6 +288,8 @@ int main(int argc, char* argv[]) {
                          auto window = get_window_by_sdl_id(event.window.windowID);
                          if(window != nullptr)
                             engine->resize(window->identifier, {static_cast<uint32_t>(event.window.data1), static_cast<uint32_t>(event.window.data2)});
+                     } else if(event.window.event == SDL_WINDOWEVENT_CLOSE) {
+                         engine->quit();
                      }
                      break;
              }
