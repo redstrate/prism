@@ -23,9 +23,9 @@ constexpr inline bool nearly_equal(const T a, const T b) {
     && std::nextafter(a, std::numeric_limits<T>::max()) >= b;
 }
 
-Matrix4x4 matrix_from_quat(const Quaternion quat);
-Quaternion quat_from_matrix(const Matrix3x3 matrix);
-Quaternion euler_to_quat(const Vector3 angle);
-Vector3 quat_to_euler(const Quaternion quat);
-Matrix4x4 inverse(const Matrix4x4 m);
-Quaternion angle_axis(const float angle, const Vector3 axis);
+Matrix4x4 matrix_from_quat(Quaternion quat);
+Quaternion quat_from_matrix(Matrix3x3 matrix);
+Quaternion euler_to_quat(Vector3 angle);
+Vector3 quat_to_euler(Quaternion quat);
+Matrix4x4 inverse(Matrix4x4 m);
+Quaternion angle_axis(float angle, Vector3 axis);
