@@ -31,6 +31,15 @@ Window* get_window(const int index) {
     return nullptr;
 }
 
+Window* get_window_by_sdl_id(const Uint32 id) {
+    for(auto& window : windows) {
+        if(SDL_GetWindowID(window.window) == id)
+            return &window;
+    }
+
+    return nullptr;
+}
+
 static std::map<InputButton, int> inputToKeyCode = { {
     {InputButton::A, 38},
     {InputButton::W, 25},
@@ -58,9 +67,15 @@ int platform::open_window(const std::string_view title, const prism::Rectangle r
     auto& win = windows.emplace_back();
     win.identifier = windows.size() - 1;
 
-    win.window = SDL_CreateWindow(title.data(), rect.offset.x, rect.offset.y, rect.extent.width, rect.extent.height, SDL_WINDOW_VULKAN);
+    int sdl_flags = SDL_WINDOW_VULKAN;
+    if(flags == WindowFlags::Borderless)
+        sdl_flags |= SDL_WINDOW_BORDERLESS;
+    if(flags == WindowFlags::Resizable)
+        sdl_flags |= SDL_WINDOW_RESIZABLE;
 
-    engine->add_window((void*)&win, 0, rect.extent);
+    win.window = SDL_CreateWindow(title.data(), rect.offset.x, rect.offset.y, rect.extent.width, rect.extent.height, sdl_flags);
+
+    engine->add_window((void*)&win, win.identifier, rect.extent);
     app->initialize_render();
 
     return win.identifier;
@@ -233,10 +248,21 @@ int main(int argc, char* argv[]) {
 
     app_main(engine);
 
-    while(1) {
+    while(!engine->is_quitting()) {
          SDL_Event event = {};
          while(SDL_PollEvent(&event)) {
-
+             switch(event.type) {
+                 case SDL_QUIT:
+                     engine->quit();
+                     break;
+                 case SDL_WINDOWEVENT:
+                     if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
+                         auto window = get_window_by_sdl_id(event.window.windowID);
+                         if(window != nullptr)
+                            engine->resize(window->identifier, {static_cast<uint32_t>(event.window.data1), static_cast<uint32_t>(event.window.data2)});
+                     }
+                     break;
+             }
          }
 
          if(engine->is_quitting())
@@ -244,7 +270,9 @@ int main(int argc, char* argv[]) {
 
          engine->update(1.0 / 60.0);
          engine->begin_frame(1.0 / 60.0);
-         engine->render(0);
+
+         for(auto window : windows)
+            engine->render(window.identifier);
 
          engine->end_frame();
      }
