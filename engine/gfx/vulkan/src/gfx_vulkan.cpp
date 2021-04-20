@@ -165,14 +165,14 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
     const VkDebugUtilsMessengerCallbackDataEXT *pCallbackData,
     void *pUserData) {
 
-	console::debug(System::GFX, pCallbackData->pMessage);
+    prism::log::debug(System::GFX, pCallbackData->pMessage);
 
     return VK_FALSE;
 }
 
 VkResult name_object(VkDevice device, VkObjectType type, uint64_t object, std::string_view name) {
     if(object == 0x0) {
-        console::error(System::GFX, "Failed to name object {}", name);
+        prism::log::error(System::GFX, "Failed to name object {}", name);
         return VK_ERROR_DEVICE_LOST;
     }
 
@@ -537,7 +537,7 @@ void GFXVulkan::copy_texture(GFXTexture* texture, void* data, GFXSize size) {
 }
 
 void GFXVulkan::copy_texture(GFXTexture* from, GFXTexture* to) {
-    console::error(System::GFX, "Copy Texture->Texture unimplemented!");
+    prism::log::error(System::GFX, "Copy Texture->Texture unimplemented!");
 }
 
 void GFXVulkan::copy_texture(GFXTexture* from, GFXBuffer* to) {
@@ -1688,7 +1688,7 @@ void GFXVulkan::resetDescriptorState() {
 void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSetLayout layout) {
 	uint64_t hash = getDescriptorHash(pipeline);
 
-	console::debug(System::GFX, "Caching descriptor hash {}", std::to_string(hash));
+    prism::log::debug(System::GFX, "Caching descriptor hash {}", std::to_string(hash));
 
 	vkDeviceWaitIdle(device);
 
@@ -1703,7 +1703,7 @@ void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSe
 
 	VkResult error = vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet);
 	if(error == VK_ERROR_OUT_OF_POOL_MEMORY) {
-	    console::error(System::GFX, "ERROR: COULD NOT CACHE BECAUSE OUT OF DESCRIPTOR SETS.");
+        prism::log::error(System::GFX, "ERROR: COULD NOT CACHE BECAUSE OUT OF DESCRIPTOR SETS.");
 	}
 
     if(error != VK_SUCCESS)

@@ -887,7 +887,7 @@ void Renderer::createPostPipelines() {
 void Renderer::createFontTexture() {
     auto file = file::open(file::app_domain / "font.fp", true);
     if(file == std::nullopt) {
-        console::error(System::Renderer, "Failed to load font file!");
+        prism::log::error(System::Renderer, "Failed to load font file!");
         return;
     }
 

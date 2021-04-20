@@ -751,7 +751,7 @@ void CommonEditor::set_undo_stack(UndoStack *stack) {
 bool mesh_readable(const file::Path path) {
     auto file = file::open(path);
     if(!file.has_value()) {
-        console::error(System::Renderer, "Failed to load mesh from {}!", path);
+        prism::log::error(System::Renderer, "Failed to load mesh from {}!", path);
         return false;
     }
     
@@ -764,7 +764,7 @@ bool mesh_readable(const file::Path path) {
 bool material_readable(const file::Path path) {
     auto file = file::open(path);
     if(!file.has_value()) {
-        console::error(System::Core, "Failed to load material from {}!", path);
+        prism::log::error(System::Core, "Failed to load material from {}!", path);
         return false;
     }
     
@@ -1057,13 +1057,13 @@ void CommonEditor::drawConsole() {
     ImGui::SameLine();
     
     if(ImGui::Button("Run")) {
-        console::parse_and_invoke_command(command_buffer);
+        prism::console::parse_and_invoke_command(command_buffer);
         command_buffer.clear();
     }
     
     ImGui::BeginChild("console_output", ImVec2(-1, -1), true);
     
-    for(const auto& message : console::stored_output)
+    for(const auto& message : prism::log::stored_output)
         ImGui::TextWrapped("%s", message.c_str());
     
     ImGui::EndChild();
@@ -1140,7 +1140,7 @@ void CommonEditor::save_thumbnail_cache() {
     
     FILE* file = fopen("thumbnail-cache", "wb");
     if(file == nullptr) {
-        console::error(System::Core, "Failed to write thumbnail cache!");
+        prism::log::error(System::Core, "Failed to write thumbnail cache!");
         return;
     }
     

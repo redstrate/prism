@@ -162,7 +162,7 @@ void ImGuiPass::load_font(const std::string_view filename) {
             io.Fonts->AddFontFromMemoryTTF(font_file->cast_data<unsigned char>(), font_file->size(), 15.0 * platform::get_window_dpi(0));
             ImGui::GetIO().FontGlobalScale = 1.0 / platform::get_window_dpi(0);
         } else {
-            console::error(System::Renderer, "Failed to load font file for imgui!");
+            prism::log::error(System::Renderer, "Failed to load font file for imgui!");
             return;
         }
     }

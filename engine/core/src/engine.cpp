@@ -27,15 +27,15 @@
 using prism::engine;
 
 engine::engine(const int argc, char* argv[]) {
-    console::info(System::Core, "Prism Engine loading...");
+    log::info(System::Core, "Prism Engine loading...");
     
-    console::register_command("test_cmd", console::ArgumentFormat(0), [](const console::Arguments&) {
-        console::info(System::Core, "Test cmd!");
+    console::register_command("test_cmd", console::argument_format(0), [](const console::arguments&) {
+        log::info(System::Core, "Test cmd!");
     });
     
     console::register_variable("rs_dynamic_resolution", render_options.dynamic_resolution);
     
-    console::register_command("quit", console::ArgumentFormat(0), [this](const console::Arguments&) {
+    console::register_command("quit", console::argument_format(0), [this](const console::arguments&) {
         quit();
     });
         
@@ -134,7 +134,7 @@ Scene* engine::load_scene(const file::Path& path) {
 
     auto file = file::open(path);
     if(!file.has_value()) {
-        console::error(System::Core, "Failed to load scene from {}!", path);
+        prism::log::error(System::Core, "Failed to load scene from {}!", path);
         return nullptr;
     }
 
@@ -227,7 +227,7 @@ Animation engine::load_animation(const file::Path& path) {
 
     auto file = file::open(path, true);
     if(!file.has_value()) {
-        console::error(System::Core, "Failed to load animation from {}!", path);
+        prism::log::error(System::Core, "Failed to load animation from {}!", path);
         return {};
     }
 
@@ -287,7 +287,7 @@ void engine::load_cutscene(const file::Path& path) {
 
     auto file = file::open(path);
     if(!file.has_value()) {
-        console::error(System::Core, "Failed to load cutscene from {}!", path);
+        prism::log::error(System::Core, "Failed to load cutscene from {}!", path);
         return;
     }
 
@@ -362,7 +362,7 @@ Object engine::add_prefab(Scene& scene, const file::Path& path, const std::strin
     
     auto file = file::open(path);
     if(!file.has_value()) {
-        console::error(System::Core, "Failed to load prefab from {}!", path);
+        prism::log::error(System::Core, "Failed to load prefab from {}!", path);
         return NullObject;
     }
 

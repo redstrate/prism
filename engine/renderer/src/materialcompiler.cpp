@@ -13,7 +13,7 @@
 ShaderSource get_shader(std::string filename, bool skinned, bool cubemap) {
     auto shader_file = file::open(file::internal_domain / filename);
     if(!shader_file.has_value()) {
-        console::error(System::Renderer, "Failed to open shader file {}!", filename);
+        prism::log::error(System::Renderer, "Failed to open shader file {}!", filename);
         return {};
     }
     

@@ -6,7 +6,7 @@
 #include "string_utils.hpp"
 #include "utility.hpp"
 
-void console::process_message(const Level level, const System system, const std::string_view message) {
+void prism::log::process_message(const Level level, const System system, const std::string_view message) {
     auto now = std::chrono::system_clock::now();
     std::time_t t_c = std::chrono::system_clock::to_time_t(now);
     

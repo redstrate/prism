@@ -21,7 +21,7 @@ std::optional<file::File> file::open(const file::Path path, const bool binary_mo
     auto str = get_file_path(path).string();
     FILE* file = fopen(str.c_str(), binary_mode ? "rb" : "r");
     if(file == nullptr) {
-        console::error(System::File, "Failed to open file handle from {}!", str);
+        prism::log::error(System::File, "Failed to open file handle from {}!", str);
         return {};
     }
     

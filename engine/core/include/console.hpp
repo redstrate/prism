@@ -6,46 +6,47 @@
 #include <variant>
 #include <string>
 
-namespace console {
-    enum class ArgType {
+namespace prism::console {
+    enum class argument_type {
         String,
         Integer,
         Boolean
     };
-    
-    struct ConsoleArgument {
-        ConsoleArgument(bool data) : data(data) {}
-        ConsoleArgument(int data) : data(data) {}
-        
-        ArgType query_type() const {
-            if(std::holds_alternative<std::string>(data))
-                return ArgType::String;
-            else if(std::holds_alternative<int>(data))
-                return ArgType::Integer;
-            else if(std::holds_alternative<bool>(data))
-                return ArgType::Boolean;
+
+    struct console_argument {
+        explicit console_argument(bool data) : data(data) {}
+
+        explicit console_argument(int data) : data(data) {}
+
+        [[nodiscard]] argument_type query_type() const {
+            if (std::holds_alternative<std::string>(data))
+                return argument_type::String;
+            else if (std::holds_alternative<int>(data))
+                return argument_type::Integer;
+            else if (std::holds_alternative<bool>(data))
+                return argument_type::Boolean;
         }
-        
+
         std::variant<std::string, int, bool> data;
     };
-    
-    struct Arguments {
-        std::vector<ConsoleArgument> arguments;
-    };
-    
-    using FunctionPtr = std::function<void(console::Arguments)>;
 
-    struct ArgumentFormat {
-        ArgumentFormat(const int num_arguments) : num_arguments(num_arguments) {}
-        
+    using arguments = std::vector<console_argument>;
+
+    using function_ptr = std::function<void(console::arguments)>;
+
+    struct argument_format {
+        explicit argument_format(const int num_arguments) : num_arguments(num_arguments) {}
+
         int num_arguments = 0;
-        std::vector<ArgType> argument_types;
+        std::vector<argument_type> argument_types;
     };
-    
-    void register_command(const std::string_view name, const ArgumentFormat expected_format, const FunctionPtr function);
-    
-    void invoke_command(const std::string_view name, const Arguments arguments);
-    void parse_and_invoke_command(const std::string_view command);
 
-    void register_variable(const std::string_view name, bool& variable);
+    void
+    register_command(std::string_view name, argument_format expected_format, function_ptr function);
+
+    void invoke_command(std::string_view name, arguments arguments);
+
+    void parse_and_invoke_command(std::string_view command);
+
+    void register_variable(std::string_view name, bool &variable);
 }

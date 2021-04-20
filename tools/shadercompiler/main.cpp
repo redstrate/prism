@@ -13,7 +13,7 @@ bool has_extension(const std::filesystem::path path, const std::string_view exte
 
 int main(int argc, char* argv[]) {
     if(argc < 2) {
-        console::error(System::Core, "Not enough arguments!");
+        prism::log::error(System::Core, "Not enough arguments!");
         return -1;
     }
     
@@ -33,8 +33,8 @@ int main(int argc, char* argv[]) {
         
         std::ofstream out(outname + ".glsl");
         out << buffer.rdbuf();
-        
-        console::info(System::Core, "Successfully written {} to {}.", source_path, destination_path);
+
+        prism::log::info(System::Core, "Successfully written {} to {}.", source_path, destination_path);
 
         return 0;
     } else {
@@ -60,7 +60,7 @@ int main(int argc, char* argv[]) {
         
         const auto compiled_source = shader_compiler.compile(ShaderLanguage::GLSL, stage, buffer.str(), language, options);
         if(!compiled_source.has_value()) {
-            console::error(System::Core, "Error when compiling {}!", source_path);
+            prism::log::error(System::Core, "Error when compiling {}!", source_path);
             return -1;
         }
         
@@ -82,8 +82,8 @@ int main(int argc, char* argv[]) {
             default:
                 break;
         }
-        
-        console::info(System::Core, "Successfully written shader from {} to {}.", source_path, destination_path);
+
+        prism::log::info(System::Core, "Successfully written shader from {} to {}.", source_path, destination_path);
         
         return 0;
     }

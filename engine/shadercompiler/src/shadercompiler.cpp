@@ -54,7 +54,7 @@ const std::vector<uint32_t> compile_glsl_to_spv(const std::string_view source_st
         includer.pushExternalLocalDirectory(path);
 
     if (!Shader.parse(&Resources, 100, false, messages, includer)) {
-        console::error(System::Renderer, "{}", Shader.getInfoLog());
+        prism::log::error(System::Renderer, "{}", Shader.getInfoLog());
         
         return {};
     }
@@ -63,7 +63,7 @@ const std::vector<uint32_t> compile_glsl_to_spv(const std::string_view source_st
     Program.addShader(&Shader);
     
     if(!Program.link(messages)) {
-        console::error(System::None, "Failed to link shader: {} {} {}", source_string.data(), Shader.getInfoLog(), Shader.getInfoDebugLog());
+        prism::log::error(System::None, "Failed to link shader: {} {} {}", source_string.data(), Shader.getInfoLog(), Shader.getInfoDebugLog());
         
         return {};
     }
@@ -78,7 +78,7 @@ const std::vector<uint32_t> compile_glsl_to_spv(const std::string_view source_st
 
 std::optional<ShaderSource> ShaderCompiler::compile(const ShaderLanguage from_language, const ShaderStage shader_stage, const ShaderSource& shader_source, const ShaderLanguage to_language, const CompileOptions& options) {
     if(from_language != ShaderLanguage::GLSL) {
-        console::error(System::Renderer, "Non-supported input language!");
+        prism::log::error(System::Renderer, "Non-supported input language!");
         return std::nullopt;
     }
     
@@ -97,7 +97,7 @@ std::optional<ShaderSource> ShaderCompiler::compile(const ShaderLanguage from_la
 
     auto spirv = compile_glsl_to_spv(shader_source.as_string(), lang, options);
     if(spirv.empty()) {
-        console::error(System::Renderer, "SPIRV generation failed!");
+        prism::log::error(System::Renderer, "SPIRV generation failed!");
         return std::nullopt;
     }
     

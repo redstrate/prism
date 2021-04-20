@@ -20,7 +20,7 @@ std::unique_ptr<Mesh> load_mesh(const file::Path path) {
     
     auto file = file::open(path, true);
     if(!file.has_value()) {
-        console::error(System::Renderer, "Failed to load mesh from {}!", path);
+        prism::log::error(System::Renderer, "Failed to load mesh from {}!", path);
         return nullptr;
     }
 
@@ -29,7 +29,7 @@ std::unique_ptr<Mesh> load_mesh(const file::Path path) {
 
     if(version == 5 || version == 6) {
     } else {
-        console::error(System::Renderer, "{} failed the mesh version check! reported version = {}", path, std::to_string(version));
+        prism::log::error(System::Renderer, "{} failed the mesh version check! reported version = {}", path, std::to_string(version));
         return nullptr;
     }
 
@@ -190,7 +190,7 @@ std::unique_ptr<Texture> load_texture(const file::Path path) {
     
     auto file = file::open(path, true);
     if(!file.has_value()) {
-        console::error(System::Renderer, "Failed to load texture from {}!", path);
+        prism::log::error(System::Renderer, "Failed to load texture from {}!", path);
         return nullptr;
     }
     
@@ -202,7 +202,7 @@ std::unique_ptr<Texture> load_texture(const file::Path path) {
     int width, height, channels;
     unsigned char* data = stbi_load_from_memory(file->cast_data<unsigned char>(), file->size(), &width, &height, &channels, 4);
     if(!data) {
-        console::error(System::Renderer, "Failed to load texture from {}!", path);
+        prism::log::error(System::Renderer, "Failed to load texture from {}!", path);
         return nullptr;
     }
     
@@ -247,7 +247,7 @@ std::unique_ptr<Material> load_material(const file::Path path) {
     
     auto file = file::open(path);
     if(!file.has_value()) {
-        console::error(System::Core, "Failed to load material from {}!", path);
+        prism::log::error(System::Core, "Failed to load material from {}!", path);
         return {};
     }
     
@@ -258,7 +258,7 @@ std::unique_ptr<Material> load_material(const file::Path path) {
     mat->path = path.string();
     
     if(!j.count("version") || j["version"] != 2) {
-        console::error(System::Core, "Material {} failed the version check!", path);
+        prism::log::error(System::Core, "Material {} failed the version check!", path);
         return mat;
     }
     

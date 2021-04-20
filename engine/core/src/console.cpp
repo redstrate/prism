@@ -7,41 +7,41 @@
 #include "log.hpp"
 #include "string_utils.hpp"
 
-struct RegisteredCommand {
-    RegisteredCommand(const console::ArgumentFormat format, const console::FunctionPtr function) : expected_format(format), function(function) {}
-    
-    console::ArgumentFormat expected_format;
-    std::function<void(console::Arguments)> function;
+struct registered_command {
+    registered_command(const prism::console::argument_format format, const prism::console::function_ptr function) : expected_format(format), function(function) {}
+
+    prism::console::argument_format expected_format;
+    std::function<void(prism::console::arguments)> function;
 };
 
-static std::unordered_map<std::string, RegisteredCommand> registered_commands;
+static std::unordered_map<std::string, registered_command> registered_commands;
 
 struct RegisteredVariable {
-    RegisteredVariable(bool& data) : type(console::ArgType::Boolean), data(&data) {}
-        
-    console::ArgType type;
+    RegisteredVariable(bool& data) : type(prism::console::argument_type::Boolean), data(&data) {}
+
+    prism::console::argument_type type;
     
     std::variant<bool*> data;
 };
 
 static std::unordered_map<std::string, RegisteredVariable> registered_variables;
 
-void console::register_command(const std::string_view name, const ArgumentFormat expected_format, const console::FunctionPtr function) {
-    registered_commands.try_emplace(name.data(), RegisteredCommand(expected_format, function));
+void prism::console::register_command(const std::string_view name, const prism::console::argument_format expected_format, const prism::console::function_ptr function) {
+    registered_commands.try_emplace(name.data(), registered_command(expected_format, function));
 }
 
-void console::invoke_command(const std::string_view name, const Arguments arguments) {
+void prism::console::invoke_command(const std::string_view name, const prism::console::arguments arguments) {
     for(auto& [command_name, command_data] : registered_commands) {
         if(command_name == name) {
             bool invalid_format = false;
             
-            if(arguments.arguments.size() != command_data.expected_format.num_arguments)
+            if(arguments.size() != command_data.expected_format.num_arguments)
                 invalid_format = true;
             
             if(invalid_format) {
-                console::info(System::Core, "Invalid command format!");
+                prism::log::info(System::Core, "Invalid command format!");
             } else {
-                command_data.function(console::Arguments());
+                command_data.function(console::arguments());
             }
             
             return;
@@ -52,18 +52,18 @@ void console::invoke_command(const std::string_view name, const Arguments argume
         if(variable_name == name) {
             bool invalid_format = false;
 
-            if(arguments.arguments.empty())
+            if(arguments.empty())
                 invalid_format = true;
             
-            if(arguments.arguments[0].query_type() != variable_data.type)
+            if(arguments[0].query_type() != variable_data.type)
                 invalid_format = true;
             
             if(invalid_format) {
-                console::info(System::Core, "Wrong or empty variable type!");
+                prism::log::info(System::Core, "Wrong or empty variable type!");
             } else {
-                auto argument = arguments.arguments[0];
+                auto argument = arguments[0];
                 switch(argument.query_type()) {
-                    case console::ArgType::Boolean:
+                    case console::argument_type::Boolean:
                         *std::get<bool*>(variable_data.data) = std::get<bool>(argument.data);
                         break;
                 }
@@ -73,39 +73,36 @@ void console::invoke_command(const std::string_view name, const Arguments argume
         }
     }
     
-    console::info(System::Core, "{} is not the name of a valid command or variable!", name.data());
+    prism::log::info(System::Core, "{} is not the name of a valid command or variable!", name.data());
 }
 
-void console::parse_and_invoke_command(const std::string_view command) {
+void prism::console::parse_and_invoke_command(const std::string_view command) {
     const auto tokens = tokenize(command, " ");
     if(tokens.empty())
         return;
     
-    const auto try_parse_argument = [](std::string_view arg) -> std::optional<ConsoleArgument> {
+    const auto try_parse_argument = [](std::string_view arg) -> std::optional<console_argument> {
         if(arg == "true") {
-            return ConsoleArgument(true);
+            return console_argument(true);
         } else if(arg == "false") {
-            return ConsoleArgument(false);
+            return console_argument(false);
         } else if(is_numeric(arg)) {
-            return ConsoleArgument(std::stoi(arg.data()));
+            return console_argument(std::stoi(arg.data()));
         }
         
         return std::nullopt;
     };
     
-    std::vector<ConsoleArgument> arguments;
+    std::vector<console_argument> arguments;
     
     for(int i = 1; i < tokens.size(); i++) {
         if(auto arg = try_parse_argument(tokens[i]); arg)
             arguments.push_back(*arg);
     }
-    
-    console::Arguments args;
-    args.arguments = arguments;
-    
-    console::invoke_command(tokens[0], args);
+
+    console::invoke_command(tokens[0], arguments);
 }
 
-void console::register_variable(const std::string_view name, bool& variable) {
+void prism::console::register_variable(const std::string_view name, bool& variable) {
     registered_variables.try_emplace(name.data(), RegisteredVariable(variable));
 }
