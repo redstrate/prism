@@ -21,8 +21,8 @@ void DebugPass::initialize() {
 
     {
         GFXGraphicsPipelineCreateInfo createInfo;
-        createInfo.shaders.vertex_src = file::Path("debug.vert");
-        createInfo.shaders.fragment_src = file::Path("debug.frag");
+        createInfo.shaders.vertex_src = ShaderSource(file::Path("debug.vert"));
+        createInfo.shaders.fragment_src = ShaderSource(file::Path("debug.frag"));
 
         GFXVertexInput vertexInput = {};
         vertexInput.stride = sizeof(Vector3);
@@ -69,8 +69,8 @@ void DebugPass::initialize() {
         // pipeline
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
 
-        pipelineInfo.shaders.vertex_src = file::Path("color.vert");
-        pipelineInfo.shaders.fragment_src = file::Path("color.frag");
+        pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("color.vert"));
+        pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("color.frag"));
 
         GFXVertexInput input;
         input.stride = sizeof(Vector3);
@@ -110,8 +110,8 @@ void DebugPass::initialize() {
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.label = "Sobel";
 
-        pipelineInfo.shaders.vertex_src = file::Path("color.vert");
-        pipelineInfo.shaders.fragment_src = file::Path("color.frag");
+        pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("color.vert"));
+        pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("color.frag"));
 
         GFXVertexInput input;
         input.stride = sizeof(Vector3);
@@ -142,8 +142,8 @@ void DebugPass::initialize() {
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.label = "Billboard";
         
-        pipelineInfo.shaders.vertex_src = file::Path("billboard.vert");
-        pipelineInfo.shaders.fragment_src = file::Path("billboard.frag");
+        pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("billboard.vert"));
+        pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("billboard.frag"));
         
         pipelineInfo.shader_input.bindings = {
             {1, GFXBindingType::PushConstant},

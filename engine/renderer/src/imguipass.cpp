@@ -23,8 +23,8 @@ void ImGuiPass::create_render_target_resources(RenderTarget& target) {
     if(pipeline == nullptr) {
         GFXGraphicsPipelineCreateInfo createInfo;
         createInfo.label = "ImGui";
-        createInfo.shaders.vertex_src = file::Path("imgui.vert");
-        createInfo.shaders.fragment_src = file::Path("imgui.frag");
+        createInfo.shaders.vertex_src = ShaderSource(file::Path("imgui.vert"));
+        createInfo.shaders.fragment_src = ShaderSource(file::Path("imgui.frag"));
 
         GFXVertexInput vertexInput = {};
         vertexInput.stride = sizeof(ImDrawVert);

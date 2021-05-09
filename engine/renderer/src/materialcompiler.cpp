@@ -31,7 +31,7 @@ ShaderSource get_shader(std::string filename, bool skinned, bool cubemap) {
     if(cubemap)
         options.add_definition("CUBEMAP");
     
-    return *shader_compiler.compile(ShaderLanguage::GLSL, stage, shader_file->read_as_string(), engine->get_gfx()->accepted_shader_language(), options);
+    return *shader_compiler.compile(ShaderLanguage::GLSL, stage, ShaderSource(shader_file->read_as_string()), engine->get_gfx()->accepted_shader_language(), options);
 }
 
 GFXPipeline* MaterialCompiler::create_static_pipeline(GFXGraphicsPipelineCreateInfo createInfo, bool positions_only, bool cubemap) {
@@ -393,5 +393,5 @@ ShaderSource MaterialCompiler::compile_material_fragment(Material& material, boo
     
     src += "}\n";
             
-    return *shader_compiler.compile(ShaderLanguage::GLSL, ShaderStage::Fragment, src, engine->get_gfx()->accepted_shader_language());
+    return *shader_compiler.compile(ShaderLanguage::GLSL, ShaderStage::Fragment, ShaderSource(src), engine->get_gfx()->accepted_shader_language());
 }

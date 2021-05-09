@@ -16,10 +16,10 @@ ShaderCompiler::ShaderCompiler() {
 }
 
 void ShaderCompiler::set_include_path(const std::string_view path) {
-    include_path.push_back(path.data());
+    include_path.emplace_back(path.data());
 }
 
-const std::vector<uint32_t> compile_glsl_to_spv(const std::string_view source_string, const EShLanguage shader_language, const CompileOptions& options) {
+std::vector<uint32_t> compile_glsl_to_spv(const std::string_view source_string, const EShLanguage shader_language, const CompileOptions& options) {
     std::string newString = "#version 460 core\n";
     
     newString += "#extension GL_GOOGLE_include_directive : enable\n";
@@ -34,36 +34,35 @@ const std::vector<uint32_t> compile_glsl_to_spv(const std::string_view source_st
     
     const char* InputCString = newString.c_str();
     
-    glslang::TShader Shader(shader_language);
-    
-    Shader.setStrings(&InputCString, 1);
+    glslang::TShader shader(shader_language);
+    shader.setStrings(&InputCString, 1);
     
     int ClientInputSemanticsVersion = 100; // maps to, say, #define VULKAN 100
-    glslang::EShTargetClientVersion VulkanClientVersion = glslang::EShTargetVulkan_1_1;
-    glslang::EShTargetLanguageVersion TargetVersion = glslang::EShTargetSpv_1_0;
-    
-    Shader.setEnvInput(glslang::EShSourceGlsl, shader_language, glslang::EShClientVulkan, ClientInputSemanticsVersion);
-    Shader.setEnvClient(glslang::EShClientVulkan, VulkanClientVersion);
-    Shader.setEnvTarget(glslang::EShTargetSpv, TargetVersion);
-    
-    TBuiltInResource Resources = DefaultTBuiltInResource;
-    EShMessages messages = (EShMessages) (EShMsgDefault);
-    
-    DirStackFileIncluder includer;
-    for(auto path : include_path)
-        includer.pushExternalLocalDirectory(path);
 
-    if (!Shader.parse(&Resources, 100, false, messages, includer)) {
-        prism::log::error(System::Renderer, "{}", Shader.getInfoLog());
+    shader.setEnvInput(glslang::EShSourceGlsl,
+                       shader_language,
+                       glslang::EShClientVulkan,
+                       ClientInputSemanticsVersion);
+
+    // we are targeting vulkan 1.1, so that uses SPIR-V 1.3
+    shader.setEnvClient(glslang::EShClientVulkan, glslang::EShTargetVulkan_1_1);
+    shader.setEnvTarget(glslang::EShTargetSpv,  glslang::EShTargetSpv_1_3);
+
+    DirStackFileIncluder file_includer;
+    for(const auto& path : include_path)
+        file_includer.pushExternalLocalDirectory(path);
+
+    if (!shader.parse(&DefaultTBuiltInResource, 100, false, EShMsgDefault, file_includer)) {
+        prism::log::error(System::Renderer, "{}", shader.getInfoLog());
         
         return {};
     }
     
     glslang::TProgram Program;
-    Program.addShader(&Shader);
+    Program.addShader(&shader);
     
-    if(!Program.link(messages)) {
-        prism::log::error(System::None, "Failed to link shader: {} {} {}", source_string.data(), Shader.getInfoLog(), Shader.getInfoDebugLog());
+    if(!Program.link(EShMsgDefault)) {
+        prism::log::error(System::None, "Failed to link shader: {} {} {}", source_string.data(), shader.getInfoLog(), shader.getInfoDebugLog());
         
         return {};
     }
@@ -116,10 +115,10 @@ std::optional<ShaderSource> ShaderCompiler::compile(const ShaderLanguage from_la
             
             msl.set_msl_options(opts);
             
-            return msl.compile();
+            return ShaderSource(msl.compile());
         }
         case ShaderLanguage::SPIRV:
-            return spirv;
+            return ShaderSource(spirv);
         default:
             return {};
     }

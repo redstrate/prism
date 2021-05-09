@@ -27,16 +27,10 @@ int main(int argc, char* argv[]) {
     buffer << t.rdbuf();
     
     if(has_extension(source_path, "nocompile")) {
-        std::string outname = argv[2];
-        outname = outname.substr(0, outname.length() - 5); // remove .glsl
-        outname = outname.substr(0, outname.length() - 10); // remove .nocompile
-        
-        std::ofstream out(outname + ".glsl");
+        destination_path = remove_substring(destination_path.string(), ".nocompile"); // remove extension
+
+        std::ofstream out(destination_path);
         out << buffer.rdbuf();
-
-        prism::log::info(System::Core, "Successfully written {} to {}.", source_path, destination_path);
-
-        return 0;
     } else {
         ShaderStage stage = ShaderStage::Vertex;
         if(has_extension(source_path, ".vert"))
@@ -52,13 +46,11 @@ int main(int argc, char* argv[]) {
         options.is_apple_mobile = (bool)argv[3];
 
         language = ShaderLanguage::MSL;
-        destination_path.replace_extension(".msl");
 #else
         language = ShaderLanguage::SPIRV;
-        destination_path.replace_extension(".spv");
 #endif
         
-        const auto compiled_source = shader_compiler.compile(ShaderLanguage::GLSL, stage, buffer.str(), language, options);
+        const auto compiled_source = shader_compiler.compile(ShaderLanguage::GLSL, stage, ShaderSource(buffer.str()), language, options);
         if(!compiled_source.has_value()) {
             prism::log::error(System::Core, "Error when compiling {}!", source_path);
             return -1;
@@ -82,9 +74,10 @@ int main(int argc, char* argv[]) {
             default:
                 break;
         }
-
-        prism::log::info(System::Core, "Successfully written shader from {} to {}.", source_path, destination_path);
-        
-        return 0;
     }
+
+    // TODO: output disabled for now, will have to expose in a better arg system
+    //prism::log::info(System::Core, "Successfully written shader from {} to {}.", source_path, destination_path);
+
+    return 0;
 }

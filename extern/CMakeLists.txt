@@ -9,13 +9,13 @@ FetchContent_Declare(
 FetchContent_Declare(
   spirv-cross
   GIT_REPOSITORY https://github.com/KhronosGroup/SPIRV-Cross.git
-  GIT_TAG 2020-05-19
+  GIT_TAG 2021-01-15
 )
 
 FetchContent_Declare(
   glslang
   GIT_REPOSITORY https://github.com/KhronosGroup/glslang.git
-  GIT_TAG master
+  GIT_TAG 3de5cfe50edecd001e6d703555284d9b10b3dd57 # taken from https://github.com/KhronosGroup/SPIRV-Cross/blob/2021-01-15/checkout_glslang_spirv_tools.sh#L3
 )
 
 # bullet

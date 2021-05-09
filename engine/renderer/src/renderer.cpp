@@ -144,8 +144,8 @@ void renderer::resize_render_target(RenderTarget& target, const prism::Extent ex
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Text";
     
-    pipelineInfo.shaders.vertex_src = file::Path("text.vert");
-    pipelineInfo.shaders.fragment_src = file::Path("text.frag");
+    pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("text.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("text.frag"));
     
     pipelineInfo.rasterization.primitive_type = GFXPrimitiveType::TriangleStrip;
     
@@ -713,8 +713,8 @@ void renderer::create_mesh_pipeline(Material& material) const {
     
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Mesh";
-    pipelineInfo.shaders.vertex_src = file::Path("mesh.vert");
-    pipelineInfo.shaders.fragment_src = file::Path("mesh.frag");
+    pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("mesh.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("mesh.frag"));
     
     pipelineInfo.shaders.vertex_constants = {materials_constant, lights_constant, spot_lights_constant, probes_constant};
     pipelineInfo.shaders.fragment_constants = {materials_constant, lights_constant, spot_lights_constant, probes_constant};
@@ -808,8 +808,8 @@ void renderer::create_render_target_resources(RenderTarget& target) {
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.label = "Post";
         
-        pipelineInfo.shaders.vertex_src = file::Path("post.vert");
-        pipelineInfo.shaders.fragment_src = file::Path("post.frag");
+        pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("post.vert"));
+        pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("post.frag"));
         
         pipelineInfo.shader_input.bindings = {
             {4, GFXBindingType::PushConstant},
@@ -835,8 +835,8 @@ void renderer::create_post_pipelines() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Post";
     
-    pipelineInfo.shaders.vertex_src = file::Path("post.vert");
-    pipelineInfo.shaders.fragment_src = file::Path("post.frag");
+    pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("post.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("post.frag"));
     
     pipelineInfo.shader_input.bindings = {
         {4, GFXBindingType::PushConstant},
@@ -914,8 +914,8 @@ void renderer::create_ui_pipelines() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "UI";
 
-    pipelineInfo.shaders.vertex_src = file::Path("ui.vert");
-    pipelineInfo.shaders.fragment_src = file::Path("ui.frag");
+    pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("ui.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("ui.frag"));
 
     pipelineInfo.rasterization.primitive_type = GFXPrimitiveType::TriangleStrip;
 
@@ -953,8 +953,8 @@ void renderer::generate_brdf() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "BRDF";
     
-    pipelineInfo.shaders.vertex_src = file::Path("brdf.vert");
-    pipelineInfo.shaders.fragment_src = file::Path("brdf.frag");
+    pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("brdf.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("brdf.frag"));
     
     pipelineInfo.render_pass = brdf_render_pass;
 
@@ -1047,7 +1047,7 @@ ShaderSource renderer::register_shader(const std::string_view shader_file) {
     
     // if shader editor system is not initialized, use prebuilt shaders
     if(base_shader_path.empty())
-        return file::Path(shader_file);
+        return ShaderSource(file::Path(shader_file));
     
     shader_compiler.set_include_path(base_shader_path.string());
     
@@ -1062,9 +1062,9 @@ ShaderSource renderer::register_shader(const std::string_view shader_file) {
     if(found_shader_source.empty()) {
         auto file = file::open(base_shader_path / shader_path.replace_extension(shader_path.extension().string() + ".glsl"));
         
-        return shader_compiler.compile(ShaderLanguage::GLSL, stage, file->read_as_string(), gfx->accepted_shader_language()).value();
+        return shader_compiler.compile(ShaderLanguage::GLSL, stage, ShaderSource(file->read_as_string()), gfx->accepted_shader_language()).value();
     } else {
-        return shader_compiler.compile(ShaderLanguage::GLSL, stage, found_shader_source, gfx->accepted_shader_language()).value();
+        return shader_compiler.compile(ShaderLanguage::GLSL, stage, ShaderSource(found_shader_source), gfx->accepted_shader_language()).value();
     }
 }
 

@@ -41,36 +41,36 @@ class ShaderSource {
 public:
     ShaderSource() : source(std::monostate()) {}
     ShaderSource(const ShaderSource& rhs) : source (rhs.source) {}
-    ShaderSource(const std::string source_string) : source(source_string) {}
-    ShaderSource(const std::vector<uint32_t> source_bytecode) : source(source_bytecode) {}
-    ShaderSource(const file::Path shader_path) : source(shader_path) {}
+    explicit ShaderSource(const std::string& source_string) : source(source_string) {}
+    explicit ShaderSource(const std::vector<uint32_t>& source_bytecode) : source(source_bytecode) {}
+    explicit ShaderSource(const file::Path& shader_path) : source(shader_path) {}
 
     std::variant<std::monostate, file::Path, std::string, std::vector<uint32_t>> source;
     
     /// Returns a view of the shader source as a path.
-    file::Path as_path() const {
+    [[nodiscard]] file::Path as_path() const {
         return std::get<file::Path>(source);
     }
     
     /// Returns a view of the shader source as plaintext.
-    std::string_view as_string() const {
+    [[nodiscard]] std::string_view as_string() const {
         return std::get<std::string>(source);
     }
     
     /// Returns a copy of the shader source as bytecode.
-    std::vector<uint32_t> as_bytecode() const {
+    [[nodiscard]] std::vector<uint32_t> as_bytecode() const {
         return std::get<std::vector<uint32_t>>(source);
     }
 
-    bool empty() const {
+    [[nodiscard]] bool empty() const {
         return std::holds_alternative<std::monostate>(source);
     }
     
-    bool is_path() const {
+    [[nodiscard]] bool is_path() const {
         return std::holds_alternative<file::Path>(source);
     }
     
-    bool is_string() const {
+    [[nodiscard]] bool is_string() const {
         return std::holds_alternative<std::string>(source);
     }
 };
@@ -81,7 +81,7 @@ public:
     ShaderCompiler();
     
     /// Sets the include directory used to search for files inside of #include directives.
-    void set_include_path(const std::string_view path);
+    void set_include_path(std::string_view path);
     
     /**
      Compiles from one shader language to another shader language.
@@ -92,7 +92,7 @@ public:
      @param options Optional compilation parameters.
      @note Right now, only GLSL is supported as a source shader language.
      */
-    std::optional<ShaderSource> compile(const ShaderLanguage from_language, const ShaderStage shader_stage, const ShaderSource& shader_source, const ShaderLanguage to_language, const CompileOptions& options = CompileOptions());
+    std::optional<ShaderSource> compile(ShaderLanguage from_language, ShaderStage shader_stage, const ShaderSource& shader_source, ShaderLanguage to_language, const CompileOptions& options = CompileOptions());
 };
 
 static inline ShaderCompiler shader_compiler;
