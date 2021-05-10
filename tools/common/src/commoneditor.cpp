@@ -49,7 +49,7 @@ const std::map<ImGuiKey, InputButton> imToPl = {
 
 CommonEditor::CommonEditor(std::string id) : id(id) {
 #ifdef PLATFORM_MACOS
-    file::set_domain_path(file::Domain::app, "../../../data");
+    file::set_domain_path(file::Domain::App, "../../../data");
 #else
     file::set_domain_path(file::Domain::App, "data");
 #endif

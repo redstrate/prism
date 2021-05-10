@@ -458,7 +458,7 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
                 if(file != std::nullopt) {
                     vertex_src = file->read_as_string();
                 } else {
-                    console::error(System::GFX, "Failed to load vertex shader from {}!", vertex_path);
+                    prism::log::error(System::GFX, "Failed to load vertex shader from {}!", vertex_path);
                 }
             }
             
@@ -490,7 +490,7 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
                 if(file != std::nullopt) {
                     fragment_src = file->read_as_string();
                 } else {
-                    console::error(System::GFX, "Failed to load fragment shader from {}!", fragment_path);
+                    prism::log::error(System::GFX, "Failed to load fragment shader from {}!", fragment_path);
                 }
             }
             
@@ -663,7 +663,7 @@ GFXPipeline* GFXMetal::create_compute_pipeline(const GFXComputePipelineCreateInf
             if(file != std::nullopt) {
                 compute_src = file->read_as_string();
             } else {
-                console::error(System::GFX, "Failed to load compute shader from {}!", compute_path);
+                prism::log::error(System::GFX, "Failed to load compute shader from {}!", compute_path);
             }
         }
         

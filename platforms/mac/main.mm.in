@@ -496,7 +496,7 @@ int main(int argc, char* argv[]) {
     
     NSApp = [NSApplication sharedApplication];
     
-    engine = new prism::Engine(argc, argv);
+    engine = new prism::engine(argc, argv);
     
     app = new @APP_CLASS@();
     engine->set_app(app);
