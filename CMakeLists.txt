@@ -13,6 +13,8 @@ include(FetchContent)
 if(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
     message("Linux build detected!")
 
+    find_package(SDL2 REQUIRED)
+
     set(ENABLE_VULKAN TRUE)
     set(ENABLE_LINUX TRUE)
 endif()
