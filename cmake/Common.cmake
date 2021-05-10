@@ -4,16 +4,7 @@ macro(set_engine_properties target)
 
     if(ENABLE_MACOS OR ENABLE_LINUX)
         target_compile_options(${target} PUBLIC
-            -Wall
-            -Wextra
-            -Wno-c++98-compat
-            -Wno-c++98-compat-pedantic
-            -Wno-padded
-            -Wno-documentation-unknown-command
-            -Wno-used-but-marked-unused
-            -Wno-system-headers
-            -Wconversion
-            -Wno-sign-conversion)
+            -fpermissive) # ew but required for now TODO: remove and test!
     endif()
     
     if(ENABLE_MACOS)
