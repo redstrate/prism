@@ -172,7 +172,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(
 
 VkResult name_object(VkDevice device, VkObjectType type, uint64_t object, std::string_view name) {
     if(object == 0x0) {
-        prism::log::error(System::GFX, "Failed to name object {}", name);
+        prism::log::error(System::GFX, "Failed to name object {}", name.data());
         return VK_ERROR_DEVICE_LOST;
     }
 
