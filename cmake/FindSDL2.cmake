@@ -163,6 +163,16 @@ if(SDL2_NO_DEFAULT_PATH)
     set(SDL2_NO_DEFAULT_PATH_CMD NO_DEFAULT_PATH)
 endif()
 
+SET(SDL2_SEARCH_PATHS
+    ~/Library/Frameworks
+    /Library/Frameworks
+    /usr/local
+    /usr
+    /sw # Fink
+    /opt/local # DarwinPorts
+    /opt/csw # Blastwave
+    /opt)
+
 # Search for the SDL2 include directory
 find_path(SDL2_INCLUDE_DIR SDL.h
         HINTS
@@ -171,7 +181,7 @@ find_path(SDL2_INCLUDE_DIR SDL.h
         PATH_SUFFIXES SDL2
         # path suffixes to search inside ENV{SDL2DIR}
         include/SDL2 include
-        PATHS ${SDL2_PATH}
+        PATHS ${SDL2_PATH} ${SDL2_SEARCH_PATHS}
         DOC "Where the SDL2 headers can be found"
         )
 
@@ -191,7 +201,7 @@ find_library(SDL2_LIBRARY
         ENV SDL2DIR
         ${SDL2_NO_DEFAULT_PATH_CMD}
         PATH_SUFFIXES lib ${VC_LIB_PATH_SUFFIX}
-        PATHS ${SDL2_PATH}
+        PATHS ${SDL2_PATH} ${SDL2_SEARCH_PATHS}
         DOC "Where the SDL2 Library can be found"
         )
 
