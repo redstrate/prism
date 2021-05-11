@@ -47,6 +47,8 @@ public:
 	GFXContext required_context() { return GFXContext::Vulkan; }
 	const char* get_name() override;
 
+    bool supports_feature(const GFXFeature feature) override;
+
     bool initialize(const GFXCreateInfo& info) override;
 
 	void initialize_view(void* native_handle, const int identifier, const uint32_t width, const uint32_t height) override;

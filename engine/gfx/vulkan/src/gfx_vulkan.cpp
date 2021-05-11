@@ -1357,6 +1357,13 @@ const char* GFXVulkan::get_name() {
     return "Vulkan";
 }
 
+bool GFXVulkan::supports_feature(const GFXFeature feature) {
+    if(feature == GFXFeature::CubemapArray)
+        return true;
+
+    return false;
+}
+
 VkResult CreateDebugUtilsMessengerEXT(
     VkInstance instance,
     const VkDebugUtilsMessengerCreateInfoEXT *pCreateInfo,

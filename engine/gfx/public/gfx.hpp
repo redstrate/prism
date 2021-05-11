@@ -304,7 +304,7 @@ public:
     virtual ShaderLanguage accepted_shader_language() { return ShaderLanguage::GLSL; }
     virtual const char* get_name() { return nullptr; }
     
-    virtual bool supports_feature([[maybe_unused]] const GFXFeature feature) { return true; }
+    virtual bool supports_feature([[maybe_unused]] const GFXFeature feature) { return false; }
 
 	// try to initialize
     virtual bool initialize([[maybe_unused]] const GFXCreateInfo& createInfo) { return false; }
