@@ -7,7 +7,7 @@ layout(location = 0) out vec2 outColor;
 vec2 IntegrateBRDF(float NdotV, float roughness) {
     vec3 V;
     V.x = sqrt(1.0 - NdotV*NdotV);
-    V.y = 1.0;
+    V.y = 0.0;
     V.z = NdotV;
     
     float A = 0.0;
