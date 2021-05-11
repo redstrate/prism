@@ -98,7 +98,15 @@ private:
 
 	uint32_t findMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     void transitionImageLayout(VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageSubresourceRange range, VkImageLayout oldLayout, VkImageLayout newLayout);
-	void inlineTransitionImageLayout(VkCommandBuffer command_buffer, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageSubresourceRange range, VkImageLayout oldLayout, VkImageLayout newLayout);
+	void inlineTransitionImageLayout(VkCommandBuffer command_buffer,
+                                  VkImage image,
+                                  VkFormat format,
+                                  VkImageAspectFlags aspect,
+                                  VkImageSubresourceRange range,
+                                  VkImageLayout oldLayout,
+                                  VkImageLayout newLayout,
+                                  VkPipelineStageFlags src_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT,
+                                  VkPipelineStageFlags dst_stage_mask = VK_PIPELINE_STAGE_ALL_COMMANDS_BIT);
 	VkShaderModule createShaderModule(const uint32_t* code, const int length);
 	VkCommandBuffer beginSingleTimeCommands();
 	void endSingleTimeCommands(VkCommandBuffer commandBuffer);

@@ -415,11 +415,9 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
     range.baseMipLevel = 0;
     range.levelCount = info.mip_count;
     range.baseArrayLayer = 0;
-    range.layerCount = info.array_length;
-    
-    if(info.type == GFXTextureType::Cubemap || info.type == GFXTextureType::CubemapArray)
-        range.layerCount *= 6;
-    
+    range.layerCount = array_length;
+    range.aspectMask = imageAspect;
+
     texture->range = range;
 
 	transitionImageLayout(texture->handle, imageFormat, imageAspect, range, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
@@ -445,7 +443,6 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 	}
 	viewInfo.format = imageFormat;
     viewInfo.subresourceRange = range;
-	viewInfo.subresourceRange.aspectMask = imageAspect;
 
 	vkCreateImageView(device, &viewInfo, nullptr, &texture->view);
 
@@ -1240,27 +1237,56 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
         {
             GFXVulkanTexture* src = (GFXVulkanTexture*)command.data.copy_texture.src;
             GFXVulkanTexture* dst = (GFXVulkanTexture*)command.data.copy_texture.dst;
-            
-            inlineTransitionImageLayout(cmd, src->handle, src->format, src->aspect, src->range, src->layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
-            inlineTransitionImageLayout(cmd, dst->handle, dst->format, dst->aspect, dst->range, dst->layout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
-            
+
             const int slice_offset = command.data.copy_texture.to_slice + command.data.copy_texture.to_layer * 6;
-            
+
+            VkImageSubresourceRange dstRange = {};
+            dstRange.layerCount = 1;
+            dstRange.baseArrayLayer = slice_offset;
+            dstRange.baseMipLevel = command.data.copy_texture.to_level;
+            dstRange.levelCount = 1;
+            dstRange.aspectMask = dst->aspect;
+
+            inlineTransitionImageLayout(cmd, src->handle, src->format, src->aspect, src->range, src->layout, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+            inlineTransitionImageLayout(cmd, dst->handle, dst->format, dst->aspect, dstRange, dst->layout, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
+
             VkImageCopy region = {};
-            region.extent = {static_cast<uint32_t>(command.data.copy_texture.width), static_cast<uint32_t>(command.data.copy_texture.height), 1};
-            region.dstSubresource.baseArrayLayer = slice_offset;
-            region.dstSubresource.mipLevel = command.data.copy_texture.to_level;
-            region.srcSubresource.aspectMask = src->aspect;
-            region.dstSubresource.aspectMask = dst->aspect;
+            region.extent.width = static_cast<uint32_t>(command.data.copy_texture.width);
+            region.extent.height = static_cast<uint32_t>(command.data.copy_texture.height);
+            region.extent.depth = 1.0f;
+
             region.srcSubresource.layerCount = 1;
-            region.dstSubresource.layerCount = 1;
+            region.srcSubresource.aspectMask = src->aspect;
+
+            region.dstSubresource.baseArrayLayer = dstRange.baseArrayLayer;
+            region.dstSubresource.mipLevel = dstRange.baseMipLevel;
+            region.dstSubresource.aspectMask = dstRange.aspectMask;
+            region.dstSubresource.layerCount = dstRange.layerCount;
             
             vkCmdCopyImage(cmd, src->handle, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, dst->handle, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &region);
             
             inlineTransitionImageLayout(cmd, src->handle, src->format, src->aspect, src->range, VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL, src->layout);
-            inlineTransitionImageLayout(cmd, dst->handle, dst->format, dst->aspect, dst->range, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dst->layout);
+            inlineTransitionImageLayout(cmd, dst->handle, dst->format, dst->aspect, dstRange, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, dst->layout);
         }
         break;
+        case GFXCommandType::SetViewport:
+        {
+            VkViewport viewport = {};
+            viewport.x = command.data.set_viewport.viewport.x;
+            viewport.y = command.data.set_viewport.viewport.height - command.data.set_viewport.viewport.y;
+            viewport.width = command.data.set_viewport.viewport.width;
+            viewport.height = -command.data.set_viewport.viewport.height;
+            viewport.maxDepth = 1.0f;
+
+            vkCmdSetViewport(cmd, 0, 1, &viewport);
+
+            VkRect2D scissor = {};
+            scissor.extent.width = command.data.set_viewport.viewport.width;
+            scissor.extent.height = command.data.set_viewport.viewport.height;
+
+            vkCmdSetScissor(cmd, 0, 1, &scissor);
+        }
+            break;
         case GFXCommandType::EndRenderPass:
         {
             if(currentRenderPass != nullptr) {
@@ -1850,8 +1876,10 @@ void GFXVulkan::transitionImageLayout(VkImage image, VkFormat format, VkImageAsp
 	endSingleTimeCommands(commandBuffer);
 }
 
-void GFXVulkan::inlineTransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageSubresourceRange range, VkImageLayout oldLayout, VkImageLayout newLayout) {
-	VkImageMemoryBarrier barrier{};
+void GFXVulkan::inlineTransitionImageLayout(VkCommandBuffer commandBuffer, VkImage image, VkFormat format, VkImageAspectFlags aspect, VkImageSubresourceRange range, VkImageLayout oldLayout, VkImageLayout newLayout,
+                                            VkPipelineStageFlags src_stage_mask,
+                                            VkPipelineStageFlags dst_stage_mask) {
+	VkImageMemoryBarrier barrier = {};
 	barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	barrier.oldLayout = oldLayout;
 	barrier.newLayout = newLayout;
@@ -1861,34 +1889,31 @@ void GFXVulkan::inlineTransitionImageLayout(VkCommandBuffer commandBuffer, VkIma
     barrier.subresourceRange = range;
 	barrier.subresourceRange.aspectMask = aspect;
 
-	VkPipelineStageFlags sourceStage;
-	VkPipelineStageFlags destinationStage;
-
-	if (oldLayout == VK_IMAGE_LAYOUT_UNDEFINED && newLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL) {
-		barrier.srcAccessMask = 0;
-		barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		destinationStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
+	switch(oldLayout) {
+	    case VK_IMAGE_LAYOUT_UNDEFINED:
+	        barrier.srcAccessMask = 0;
+	        break;
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            break;
+	    default:
+	        break;
 	}
-	else if (oldLayout == VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL && newLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL) {
-		barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
 
-		sourceStage = VK_PIPELINE_STAGE_TRANSFER_BIT;
-		destinationStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
-	}
-	else {
-		barrier.srcAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-		barrier.dstAccessMask = VK_ACCESS_MEMORY_READ_BIT;
-
-		sourceStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-		destinationStage = VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT;
-	}
+    switch(newLayout) {
+        case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
+            barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            break;
+        default:
+            break;
+    }
 
 	vkCmdPipelineBarrier(
 		commandBuffer,
-		sourceStage, destinationStage,
+		src_stage_mask, dst_stage_mask,
 		0,
 		0, nullptr,
 		0, nullptr,

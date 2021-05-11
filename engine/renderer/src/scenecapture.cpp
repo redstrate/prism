@@ -162,7 +162,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
         if(last_probe > max_environment_probes)
             return;
                 
-        if(scene->environment_dirty[last_probe]) {            
+        if(scene->environment_dirty[last_probe]) {
             std::map<Material*, int> material_indices;
             int numMaterialsInBuffer = 0;
             
@@ -342,7 +342,13 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 command_buffer->draw_indexed(cubeMesh->num_indices, 0, 0, 0);
                 
                 command_buffer->end_render_pass();
-                command_buffer->copy_texture(irradianceOffscreenTexture, irradiance_cubemap_resolution, irradiance_cubemap_resolution, scene->irradianceCubeArray, face, last_probe, 0);
+                command_buffer->copy_texture(irradianceOffscreenTexture,
+                                             irradiance_cubemap_resolution,
+                                             irradiance_cubemap_resolution,
+                                             scene->irradianceCubeArray,
+                                             face, // slice
+                                             last_probe, // layer
+                                             0); // level
             };
             
             for (int face = 0; face < 6; face++)
@@ -379,7 +385,9 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 command_buffer->draw_indexed(cubeMesh->num_indices, 0, 0, 0);
                 
                 command_buffer->end_render_pass();
-                command_buffer->copy_texture(prefilteredOffscreenTexture, info.render_area.extent.width, info.render_area.extent.height, scene->prefilteredCubeArray, face, last_probe, mip);
+                command_buffer->copy_texture(prefilteredOffscreenTexture,
+                                             resolution, resolution,
+                                             scene->prefilteredCubeArray, face, last_probe, mip);
             };
             
             for(int mip = 0; mip < mipLevels; mip++) {
