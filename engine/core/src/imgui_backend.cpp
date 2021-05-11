@@ -186,9 +186,11 @@ void imgui_backend::begin_frame(const float delta_time) {
         io.MousePos = ImVec2(static_cast<float>(x), static_cast<float>(y));
     }
 
-    io.MouseDown[0] = platform::get_mouse_button_down(0);
-    io.MouseDown[1] = platform::get_mouse_button_down(1);
-    
+    io.MouseDown[0] = mouse_buttons[0] || platform::get_mouse_button_down(0); // left
+    io.MouseDown[1] = mouse_buttons[1] || platform::get_mouse_button_down(1); // right
+    io.MouseDown[2] = mouse_buttons[2] || platform::get_mouse_button_down(2); // middle
+    mouse_buttons[0] = mouse_buttons[1] = mouse_buttons[2] = false;
+
     ImGui::NewFrame();
 }
 
@@ -216,4 +218,8 @@ void imgui_backend::process_key_up(unsigned int key_code) {
     ImGuiIO& io = ImGui::GetIO();
     
     io.KeysDown[key_code] = false;
+}
+
+void imgui_backend::process_mouse_down(int button) {
+    mouse_buttons[button] = true;
 }

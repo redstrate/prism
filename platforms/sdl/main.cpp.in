@@ -222,7 +222,20 @@ prism::Offset platform::get_screen_cursor_position() {
 }
 
 bool platform::get_mouse_button_down(const int button) {
-    return SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(SDL_BUTTON_LEFT + button);
+    Uint8 sdl_button = SDL_BUTTON_LEFT;
+    switch(button) {
+        case 0:
+            sdl_button = SDL_BUTTON_LEFT;
+            break;
+        case 1:
+            sdl_button = SDL_BUTTON_RIGHT;
+            break;
+        case 2:
+            sdl_button = SDL_BUTTON_MIDDLE;
+            break;
+    }
+
+    return (SDL_GetMouseState(NULL, NULL) & SDL_BUTTON(sdl_button)) != 0;
 }
 
 float mouse_wheel_x, mouse_wheel_y;
@@ -288,6 +301,22 @@ int main(int argc, char* argv[]) {
                      mouse_wheel_y = event.wheel.y;
                  }
                      break;
+                 case SDL_MOUSEBUTTONDOWN:
+                 {
+                     int engine_button = 0;
+                     if(event.button.button == SDL_BUTTON_RIGHT)
+                         engine_button = 1;
+                     else if(event.button.button == SDL_BUTTON_MIDDLE)
+                         engine_button = 2;
+
+                     engine->process_mouse_down(engine_button, {0, 0});
+                 }
+                    break;
+                 case SDL_KEYDOWN:
+                 {
+                     engine->process_key_down(event.key.keysym.scancode);
+                 }
+                    break;
                  case SDL_WINDOWEVENT:
                      if (event.window.event == SDL_WINDOWEVENT_RESIZED) {
                          auto window = get_window_by_sdl_id(event.window.windowID);

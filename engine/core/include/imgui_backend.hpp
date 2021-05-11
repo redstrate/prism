@@ -9,8 +9,12 @@ namespace prism {
 
         void render(int index);
 
-        void process_key_down(unsigned int key_code);
+        void process_mouse_down(int button);
 
+        void process_key_down(unsigned int key_code);
         void process_key_up(unsigned int key_code);
+
+    private:
+        bool mouse_buttons[3] = {};
     };
 }

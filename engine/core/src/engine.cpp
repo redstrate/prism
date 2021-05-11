@@ -479,6 +479,8 @@ void engine::process_key_up(const unsigned int keyCode) {
 void engine::process_mouse_down(const int button, const prism::Offset offset) {
 	if(current_screen != nullptr && button == 0)
         current_screen->process_mouse(offset.x, offset.y);
+
+	imgui->process_mouse_down(button);
 }
 
 void engine::push_event(const std::string_view name, const std::string_view data) {
