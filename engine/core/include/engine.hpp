@@ -321,7 +321,8 @@ namespace prism {
         /// If physics should upate. This is a control indepentent of the pause state.
         bool update_physics = true;
 
-#if defined(PLATFORM_TVOS) || defined(PLATFORM_IOS) || defined(PLATFORM_WINDOWS) || defined(PLATFORM_LINUX)
+        // we enable the debug menu by default on tvOS and iOS since there's no easily accessible keybind
+#if defined(PLATFORM_TVOS) || defined(PLATFORM_IOS)
         bool debug_enabled = true;
 #else
         bool debug_enabled = false;
