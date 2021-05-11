@@ -452,13 +452,13 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
             if(info.shaders.vertex_src.is_string()) {
                 vertex_src = info.shaders.vertex_src.as_string();
             } else {
-                const auto vertex_path = utility::format("{}.msl", info.shaders.vertex_src.as_path().string());
+                const auto vertex_path = info.shaders.vertex_src.as_path().string();
                 
                 auto file = file::open(file::internal_domain / vertex_path);
                 if(file != std::nullopt) {
                     vertex_src = file->read_as_string();
                 } else {
-                    prism::log::error(System::GFX, "Failed to load vertex shader from {}!", vertex_path);
+                    prism::log::error(System::GFX, "Failed to load vertex shader from {}!", vertex_path.data());
                 }
             }
             
@@ -484,13 +484,13 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
             if(info.shaders.fragment_src.is_string()) {
                 fragment_src = info.shaders.fragment_src.as_string();
             } else {
-                const auto fragment_path = utility::format("{}.msl", info.shaders.fragment_src.as_path().string());
+                const auto fragment_path = info.shaders.fragment_src.as_path().string();
                 
                 auto file = file::open(file::internal_domain / fragment_path);
                 if(file != std::nullopt) {
                     fragment_src = file->read_as_string();
                 } else {
-                    prism::log::error(System::GFX, "Failed to load fragment shader from {}!", fragment_path);
+                    prism::log::error(System::GFX, "Failed to load fragment shader from {}!", fragment_path.data());
                 }
             }
             
@@ -657,13 +657,13 @@ GFXPipeline* GFXMetal::create_compute_pipeline(const GFXComputePipelineCreateInf
         if(info.shaders.compute_path.empty()) {
             compute_src = info.shaders.compute_src.as_string();
         } else {
-            const auto compute_path = utility::format("{}.msl", info.shaders.compute_path);
+            const auto compute_path = info.shaders.compute_path;
             
             auto file = file::open(file::internal_domain / compute_path);
             if(file != std::nullopt) {
                 compute_src = file->read_as_string();
             } else {
-                prism::log::error(System::GFX, "Failed to load compute shader from {}!", compute_path);
+                prism::log::error(System::GFX, "Failed to load compute shader from {}!", compute_path.data());
             }
         }
         
