@@ -29,19 +29,11 @@ constexpr ShadowFilter default_shadow_filter = ShadowFilter::PCF;
 constexpr int default_shadow_resolution = 1024;
 #endif
 
-#if defined(PLATFORM_WINDOWS)
-constexpr bool default_enable_ibl = false;
-constexpr bool default_enable_normal_mapping = true;
-constexpr bool default_enable_point_shadows = true;
-constexpr ShadowFilter default_shadow_filter = ShadowFilter::PCSS;
-constexpr int default_shadow_resolution = 2048;
-#else
 constexpr bool default_enable_ibl = true;
 constexpr bool default_enable_normal_mapping = true;
 constexpr bool default_enable_point_shadows = true;
 constexpr ShadowFilter default_shadow_filter = ShadowFilter::PCSS;
 constexpr int default_shadow_resolution = 2048;
-#endif
 
 struct RenderOptions {
     DisplayColorSpace display_color_space = DisplayColorSpace::SRGB;
