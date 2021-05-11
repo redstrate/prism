@@ -1,5 +1,6 @@
 #include <@APP_INCLUDE@>
 #include <engine.hpp>
+#include <chrono>
 
 #include "gfx_vulkan.hpp"
 #include "platform.hpp"
@@ -271,7 +272,7 @@ void platform::mute_output() {}
 void platform::unmute_output() {}
 
 int main(int argc, char* argv[]) {
-    SDL_Init(SDL_INIT_VIDEO);
+    SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER);
 
     engine = new prism::engine(argc, argv);
 
@@ -288,6 +289,8 @@ int main(int argc, char* argv[]) {
     }
 
     app_main(engine);
+
+    auto end = std::chrono::high_resolution_clock::now();
 
     while(!engine->is_quitting()) {
          SDL_Event event = {};
@@ -332,13 +335,18 @@ int main(int argc, char* argv[]) {
          if(engine->is_quitting())
              break;
 
-         engine->update(1.0 / 60.0);
-         engine->begin_frame(1.0 / 60.0);
+        auto begin = std::chrono::high_resolution_clock::now();
 
-         for(auto window : windows)
+        float deltatime = (float)std::chrono::duration_cast<std::chrono::nanoseconds>(begin - end).count() / 1000000000ULL;
+        end = begin;
+
+        engine->update(deltatime);
+        engine->begin_frame(deltatime);
+
+        for(auto window : windows)
             engine->render(window.identifier);
 
-         engine->end_frame();
+        engine->end_frame();
      }
 
   return 0;
