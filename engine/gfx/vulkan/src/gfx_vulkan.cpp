@@ -1168,10 +1168,12 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 		case GFXCommandType::SetGraphicsPipeline:
 		{
 			currentPipeline = (GFXVulkanPipeline*)command.data.set_graphics_pipeline.pipeline;
-			vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->handle);
+			if(currentPipeline != nullptr) {
+                vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->handle);
 
-			resetDescriptorState();
-			lastDescriptorHash = 0;
+                resetDescriptorState();
+                lastDescriptorHash = 0;
+            }
 		}
 		break;
 		case GFXCommandType::SetVertexBuffer:
