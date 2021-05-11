@@ -8,6 +8,11 @@
 #include <SDL.h>
 #include <SDL_vulkan.h>
 
+#ifdef PLATFORM_WINDOWS
+#include <winrt/Windows.UI.ViewManagement.h>
+#pragma comment(lib, "windowsapp")
+#endif
+
 @APP_CLASS@* app = nullptr;
 GFX* gfx_interface = nullptr;
 
@@ -310,9 +315,25 @@ int main(int argc, char* argv[]) {
   return 0;
 }
 
+#ifdef PLATFORM_WINDOWS
+PlatformTheme platform::get_theme() {
+	using namespace winrt::Windows::UI::ViewManagement;
+
+	// TODO: figure out if this works pre-anniversary update/other windows other than 10
+	UISettings settings;
+	auto background = settings.GetColorValue(UIColorType::Background);
+	auto foreground = settings.GetColorValue(UIColorType::Foreground);
+
+	if (background == winrt::Windows::UI::Colors::White())
+		return PlatformTheme::Light;
+	else
+		return PlatformTheme::Dark;
+}
+#else
 PlatformTheme platform::get_theme() {
     return PlatformTheme::Light;
 }
+#endif
 
 void* platform::create_native_surface(int index, void* instance) {
     auto window = get_window(index);
