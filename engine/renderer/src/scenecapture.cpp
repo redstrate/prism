@@ -84,7 +84,7 @@ SceneCapture::SceneCapture(GFX* gfx) {
     textureInfo.width = scene_cubemap_resolution;
     textureInfo.height = scene_cubemap_resolution;
     textureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
-    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Transfer;
+    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::TransferSrc | GFXTextureUsage::Sampled;
     textureInfo.samplingMode = SamplingMode::ClampToEdge;
     
     offscreenTexture = gfx->create_texture(textureInfo);
@@ -431,7 +431,7 @@ void SceneCapture::createIrradianceResources() {
     textureInfo.width = irradiance_cubemap_resolution;
     textureInfo.height = irradiance_cubemap_resolution;
     textureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
-    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Transfer;
+    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::TransferSrc;
     textureInfo.samplingMode = SamplingMode::ClampToEdge;
     
     irradianceOffscreenTexture = gfx->create_texture(textureInfo);
@@ -486,7 +486,7 @@ void SceneCapture::createPrefilterResources() {
     textureInfo.width = scene_cubemap_resolution;
     textureInfo.height = scene_cubemap_resolution;
     textureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
-    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Transfer;
+    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::TransferSrc;
     textureInfo.samplingMode = SamplingMode::ClampToEdge;
     
     prefilteredOffscreenTexture = gfx->create_texture(textureInfo);

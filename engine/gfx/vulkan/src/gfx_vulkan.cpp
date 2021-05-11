@@ -341,21 +341,31 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 	VkImageTiling imageTiling;
 	imageTiling = VK_IMAGE_TILING_OPTIMAL;
 
+	const auto check_flag = [](const GFXTextureUsage usage, const GFXTextureUsage flag) {
+	    return (usage & flag) == flag;
+	};
+
 	VkImageUsageFlags imageUsage = 0;
-    if ((info.usage & GFXTextureUsage::Attachment) == GFXTextureUsage::Attachment) {
+	if(check_flag(info.usage, GFXTextureUsage::Attachment)) {
         if (info.format == GFXPixelFormat::DEPTH_32F) {
-            imageUsage = VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-		}
-		else {
-			imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-		}
-	}
-	else {
-		imageUsage = VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT;
-	}
-	
-	if((info.usage & GFXTextureUsage::Transfer) == GFXTextureUsage::Transfer)
-        imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+            imageUsage |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
+        }
+        else {
+            imageUsage |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        }
+    }
+
+	if(check_flag(info.usage, GFXTextureUsage::Sampled))
+	    imageUsage |= VK_IMAGE_USAGE_SAMPLED_BIT;
+
+	if(check_flag(info.usage, GFXTextureUsage::TransferSrc))
+	    imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
+
+    if(check_flag(info.usage, GFXTextureUsage::TransferDst))
+        imageUsage |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
+
+	if(check_flag(info.usage, GFXTextureUsage::Storage))
+	    imageUsage |= VK_IMAGE_USAGE_STORAGE_BIT;
 
 	VkImageAspectFlagBits imageAspect;
 	if (info.format == GFXPixelFormat::DEPTH_32F)
@@ -396,7 +406,20 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
     texture->height = info.height;
 	texture->format = imageFormat;
 	texture->aspect = imageAspect;
-	texture->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+
+    if(check_flag(info.usage, GFXTextureUsage::Attachment) && !check_flag(info.usage, GFXTextureUsage::Sampled)) {
+        if (info.format == GFXPixelFormat::DEPTH_32F) {
+            texture->layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+        } else {
+            texture->layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        }
+    } else if(check_flag(info.usage, GFXTextureUsage::Storage) && check_flag(info.usage, GFXTextureUsage::ShaderWrite)) {
+        texture->layout = VK_IMAGE_LAYOUT_GENERAL;
+    } else if(check_flag(info.usage, GFXTextureUsage::Sampled)) {
+        texture->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+	} else {
+	    texture->layout = VK_IMAGE_LAYOUT_UNDEFINED;
+	}
 
 	// allocate memory
 	VkMemoryRequirements memRequirements;
@@ -420,7 +443,7 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 
     texture->range = range;
 
-	transitionImageLayout(texture->handle, imageFormat, imageAspect, range, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+	transitionImageLayout(texture->handle, imageFormat, imageAspect, range, VK_IMAGE_LAYOUT_UNDEFINED, texture->layout);
 
 	// create image view
 	VkImageViewCreateInfo viewInfo = {};
@@ -997,6 +1020,121 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 	return pipeline;
 }
 
+GFXPipeline* GFXVulkan::create_compute_pipeline(const GFXComputePipelineCreateInfo& info) {
+    GFXVulkanPipeline* pipeline = new GFXVulkanPipeline();
+
+    vkDeviceWaitIdle(device);
+
+    VkShaderModule compute_module = VK_NULL_HANDLE;
+
+    const bool use_shader_source = !info.compute_src.is_path();
+
+    if (use_shader_source) {
+        auto shader_vector = info.compute_src.as_bytecode();
+
+        compute_module = createShaderModule(shader_vector.data(), shader_vector.size() * sizeof(uint32_t));
+    }
+    else {
+        auto shader = file::open(file::internal_domain / (info.compute_src.as_path().string()), true);
+        shader->read_all();
+
+        compute_module = createShaderModule(shader->cast_data<uint32_t>(), shader->size());
+    }
+
+    if(!use_shader_source)
+        name_object(device, VK_OBJECT_TYPE_SHADER_MODULE, (uint64_t)compute_module, info.compute_src.as_path().string());
+
+    VkPipelineShaderStageCreateInfo shaderStageInfo = {};
+    shaderStageInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+    shaderStageInfo.stage = VK_SHADER_STAGE_COMPUTE_BIT;
+    shaderStageInfo.module = compute_module;
+    shaderStageInfo.pName = "main";
+
+    // create push constants
+    std::vector<VkPushConstantRange> pushConstants;
+    for (auto& pushConstant : info.shader_input.push_constants) {
+        VkPushConstantRange range;
+        range.offset = pushConstant.offset;
+        range.size = pushConstant.size;
+        range.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
+
+        pushConstants.push_back(range);
+    }
+
+    // create descriptor layout
+    std::vector<VkDescriptorSetLayoutBinding> layoutBindings;
+    for (auto& binding : info.shader_input.bindings) {
+        // ignore push constants
+        if (binding.type == GFXBindingType::PushConstant)
+            continue;
+
+        VkDescriptorType descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+        switch (binding.type) {
+            case GFXBindingType::StorageBuffer:
+                descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
+                break;
+            case GFXBindingType::Texture:
+                descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+                break;
+            case GFXBindingType::StorageImage:
+            {
+                descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
+                pipeline->bindings_marked_as_storage_images.push_back(binding.binding);
+            }
+                break;
+            case GFXBindingType::SampledImage:
+            {
+                descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
+                pipeline->bindings_marked_as_sampled_images.push_back(binding.binding);
+            }
+                break;
+            case GFXBindingType::Sampler:
+                descriptorType = VK_DESCRIPTOR_TYPE_SAMPLER;
+                break;
+        }
+
+        VkDescriptorSetLayoutBinding layoutBinding = {};
+        layoutBinding.binding = binding.binding;
+        layoutBinding.descriptorType = descriptorType;
+        layoutBinding.descriptorCount = 1;
+        layoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
+
+        layoutBindings.push_back(layoutBinding);
+    }
+
+    VkDescriptorSetLayoutCreateInfo layoutCreateInfo = {};
+    layoutCreateInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    layoutCreateInfo.bindingCount = static_cast<uint32_t>(layoutBindings.size());
+    layoutCreateInfo.pBindings = layoutBindings.data();
+
+    vkCreateDescriptorSetLayout(device, &layoutCreateInfo, nullptr, &pipeline->descriptorLayout);
+
+    // create layout
+    VkPipelineLayoutCreateInfo pipelineLayoutInfo = {};
+    pipelineLayoutInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+    pipelineLayoutInfo.pushConstantRangeCount = static_cast<uint32_t>(pushConstants.size());
+    pipelineLayoutInfo.pPushConstantRanges = pushConstants.data();
+    pipelineLayoutInfo.pSetLayouts = &pipeline->descriptorLayout;
+    pipelineLayoutInfo.setLayoutCount = 1;
+
+    vkCreatePipelineLayout(device, &pipelineLayoutInfo, nullptr, &pipeline->layout);
+
+    // create pipeline
+    VkComputePipelineCreateInfo pipelineInfo = {};
+    pipelineInfo.sType = VK_STRUCTURE_TYPE_COMPUTE_PIPELINE_CREATE_INFO;
+    pipelineInfo.stage = shaderStageInfo;
+    pipelineInfo.layout = pipeline->layout;
+
+    vkCreateComputePipelines(device, VK_NULL_HANDLE, 1, &pipelineInfo, nullptr, &pipeline->handle);
+
+    pipeline->label = info.label;
+
+    name_object(device, VK_OBJECT_TYPE_PIPELINE, (uint64_t)pipeline->handle, pipeline->label);
+    name_object(device, VK_OBJECT_TYPE_PIPELINE_LAYOUT, (uint64_t)pipeline->layout, pipeline->label);
+
+    return pipeline;
+}
+
 GFXSize GFXVulkan::get_alignment(GFXSize size) {
 	VkPhysicalDeviceProperties properties;
 	vkGetPhysicalDeviceProperties(physicalDevice, &properties);
@@ -1057,8 +1195,9 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 	VkRenderPass currentRenderPass = VK_NULL_HANDLE;
 	GFXVulkanPipeline* currentPipeline = nullptr;
 	uint64_t lastDescriptorHash = 0;
+	bool is_compute = false;
 
-	const auto try_bind_descriptor = [cmd, this, &currentPipeline, &lastDescriptorHash]() -> bool {
+	const auto try_bind_descriptor = [cmd, this, &currentPipeline, &lastDescriptorHash, &is_compute]() -> bool {
         if(currentPipeline == nullptr)
             return false;
         
@@ -1070,7 +1209,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 			if (descriptor_set == VK_NULL_HANDLE)
 				return false;
 
-			vkCmdBindDescriptorSets(cmd, VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->layout, 0, 1, &descriptor_set, 0, nullptr);
+			vkCmdBindDescriptorSets(cmd, is_compute ? VK_PIPELINE_BIND_POINT_COMPUTE : VK_PIPELINE_BIND_POINT_GRAPHICS, currentPipeline->layout, 0, 1, &descriptor_set, 0, nullptr);
 
 			lastDescriptorHash = getDescriptorHash(currentPipeline);
 		}
@@ -1174,8 +1313,23 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                 resetDescriptorState();
                 lastDescriptorHash = 0;
             }
+
+            is_compute = false;
 		}
 		break;
+        case GFXCommandType::SetComputePipeline:
+        {
+            currentPipeline = (GFXVulkanPipeline*)command.data.set_compute_pipeline.pipeline;
+            if(currentPipeline != nullptr) {
+                vkCmdBindPipeline(cmd, VK_PIPELINE_BIND_POINT_COMPUTE, currentPipeline->handle);
+
+                resetDescriptorState();
+                lastDescriptorHash = 0;
+            }
+
+            is_compute = true;
+        }
+            break;
 		case GFXCommandType::SetVertexBuffer:
 		{
             VkBuffer buffer = ((GFXVulkanBuffer*)command.data.set_vertex_buffer.buffer)->handle;
@@ -1194,8 +1348,12 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
 			break;
         case GFXCommandType::SetPushConstant:
 		{
+		    VkShaderStageFlags applicableStages = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+		    if(is_compute)
+		        applicableStages = VK_SHADER_STAGE_COMPUTE_BIT;
+
 			if(currentPipeline != nullptr)
-				vkCmdPushConstants(cmd, currentPipeline->layout, VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT, 0, command.data.set_push_constant.size, command.data.set_push_constant.bytes.data());
+				vkCmdPushConstants(cmd, currentPipeline->layout, applicableStages , 0, command.data.set_push_constant.size, command.data.set_push_constant.bytes.data());
 		}
 			break;
         case GFXCommandType::BindShaderBuffer:
@@ -1297,6 +1455,12 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
             }
 		}
 		break;
+        case GFXCommandType::Dispatch:
+        {
+            if(try_bind_descriptor())
+                vkCmdDispatch(cmd, command.data.dispatch.group_count_x, command.data.dispatch.group_count_y, command.data.dispatch.group_count_z);
+        }
+            break;
         }
 	}
 
@@ -1783,32 +1947,25 @@ void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSe
 
 		VkDescriptorImageInfo imageInfo = {};
         imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-
 		imageInfo.imageView = vulkanTexture->view;
 		imageInfo.sampler = vulkanTexture->sampler;
-
-		//if (imageInfo.imageLayout != vulkanTexture->layout) {
-			GFXVulkanPipeline::ExpectedTransisition trans;
-			trans.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-			trans.newLayout = imageInfo.imageLayout;
-
-			pipeline->expectedTransisitions[vulkanTexture] = trans;
-		//}
 
 		VkWriteDescriptorSet descriptorWrite = {};
 		descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 		descriptorWrite.dstSet = descriptorSet;
 		descriptorWrite.dstBinding = i;
 		descriptorWrite.descriptorCount = 1;
-		descriptorWrite.pImageInfo = &imageInfo;
 
 		if (utility::contains(pipeline->bindings_marked_as_storage_images, i)) {
 			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-		} else if (utility::contains(pipeline->bindings_marked_as_sampled_images, i)) {
+            imageInfo.imageLayout = VK_IMAGE_LAYOUT_GENERAL;
+        } else if (utility::contains(pipeline->bindings_marked_as_sampled_images, i)) {
 			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
 		} else {
 			descriptorWrite.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 		}
+
+        descriptorWrite.pImageInfo = &imageInfo;
 
 		vkUpdateDescriptorSets(device, 1, &descriptorWrite, 0, nullptr);
 
@@ -1905,6 +2062,12 @@ void GFXVulkan::inlineTransitionImageLayout(VkCommandBuffer commandBuffer, VkIma
         case VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL:
             barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             break;
+        case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            barrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_GENERAL:
+            barrier.srcAccessMask = VK_ACCESS_SHADER_WRITE_BIT;
+            break;
 	    default:
 	        break;
 	}
@@ -1914,6 +2077,9 @@ void GFXVulkan::inlineTransitionImageLayout(VkCommandBuffer commandBuffer, VkIma
             barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
             break;
         case VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL:
+            barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+            break;
+        case VK_IMAGE_LAYOUT_GENERAL:
             barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
             break;
         default:

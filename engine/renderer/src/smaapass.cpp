@@ -102,7 +102,7 @@ void SMAAPass::create_textures() {
     areaInfo.width = AREATEX_WIDTH;
     areaInfo.height = AREATEX_HEIGHT;
     areaInfo.format = GFXPixelFormat::R8G8_UNORM;
-    areaInfo.usage = GFXTextureUsage::Sampled;
+    areaInfo.usage = GFXTextureUsage::Sampled | GFXTextureUsage::TransferDst;
     areaInfo.samplingMode = SamplingMode::ClampToEdge;
     
     area_image = gfx->create_texture(areaInfo);
@@ -115,7 +115,7 @@ void SMAAPass::create_textures() {
     searchInfo.width = SEARCHTEX_WIDTH;
     searchInfo.height = SEARCHTEX_HEIGHT;
     searchInfo.format = GFXPixelFormat::R8_UNORM;
-    searchInfo.usage = GFXTextureUsage::Sampled;
+    searchInfo.usage = GFXTextureUsage::Sampled | GFXTextureUsage::TransferDst;
     searchInfo.samplingMode = SamplingMode::ClampToEdge;
     
     search_image = gfx->create_texture(searchInfo);

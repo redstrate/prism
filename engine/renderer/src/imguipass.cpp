@@ -180,7 +180,7 @@ void ImGuiPass::create_font_texture() {
     createInfo.width = width;
     createInfo.height = height;
     createInfo.format = GFXPixelFormat::RGBA8_UNORM;
-    createInfo.usage = GFXTextureUsage::Sampled;
+    createInfo.usage = GFXTextureUsage::Sampled | GFXTextureUsage::TransferDst;
     
     font_texture = engine->get_gfx()->create_texture(createInfo);
     engine->get_gfx()->copy_texture(font_texture, pixels, width * height * 4);

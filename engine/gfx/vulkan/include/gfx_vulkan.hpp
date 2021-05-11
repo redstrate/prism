@@ -78,6 +78,7 @@ public:
 
     // pipeline operations
     GFXPipeline* create_graphics_pipeline(const GFXGraphicsPipelineCreateInfo& info) override;
+    GFXPipeline* create_compute_pipeline(const GFXComputePipelineCreateInfo& info) override;
 
     // misc operations
 	GFXSize get_alignment(const GFXSize size) override;

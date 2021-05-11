@@ -313,19 +313,12 @@ void renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
 
     if(render_options.enable_depth_of_field && dof_pass != nullptr)
         dof_pass->render(commandbuffer, *scene);
-    
-    beginInfo.framebuffer = nullptr;
-    beginInfo.render_pass = nullptr;
-    
-    commandbuffer->set_render_pass(beginInfo);
-    
-    Viewport viewport = {};
-    viewport.width = static_cast<float>(render_extent.width);
-    viewport.height = static_cast<float>(render_extent.height);
-    
-    commandbuffer->set_viewport(viewport);
-    
+
     commandbuffer->push_group("Post Processing");
+
+    commandbuffer->end_render_pass();
+
+    // begin auto exposure
     
     commandbuffer->set_compute_pipeline(histogram_pipeline);
     
@@ -356,6 +349,18 @@ void renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
     commandbuffer->bind_texture(average_luminance_texture, 0);
     
     commandbuffer->dispatch(1, 1, 1);
+
+    // continue post processing
+    beginInfo.framebuffer = nullptr;
+    beginInfo.render_pass = nullptr;
+
+    commandbuffer->set_render_pass(beginInfo);
+
+    Viewport viewport = {};
+    viewport.width = static_cast<float>(render_extent.width);
+    viewport.height = static_cast<float>(render_extent.height);
+
+    commandbuffer->set_viewport(viewport);
 
     commandbuffer->set_graphics_pipeline(post_pipeline);
     
@@ -770,7 +775,7 @@ void renderer::create_dummy_texture() {
     createInfo.width = 1;
     createInfo.height = 1;
     createInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
-    createInfo.usage = GFXTextureUsage::Sampled;
+    createInfo.usage = GFXTextureUsage::Sampled | GFXTextureUsage::TransferDst;
 
     dummy_texture = gfx->create_texture(createInfo);
 
@@ -787,13 +792,14 @@ void renderer::create_render_target_resources(RenderTarget& target) {
     textureInfo.width = extent.width;
     textureInfo.height = extent.height;
     textureInfo.format = GFXPixelFormat::RGBA_32F;
-    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Sampled;
+    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Sampled | GFXTextureUsage::Storage;
     textureInfo.samplingMode = SamplingMode::ClampToEdge;
 
     target.offscreenColorTexture = gfx->create_texture(textureInfo);
 
     textureInfo.label = "Offscreen Depth";
     textureInfo.format = GFXPixelFormat::DEPTH_32F;
+    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Sampled;
 
     target.offscreenDepthTexture = gfx->create_texture(textureInfo);
 
@@ -874,7 +880,7 @@ void renderer::create_font_texture() {
     textureInfo.width = font.width;
     textureInfo.height = font.height;
     textureInfo.format = GFXPixelFormat::R8_UNORM;
-    textureInfo.usage = GFXTextureUsage::Sampled;
+    textureInfo.usage = GFXTextureUsage::Sampled | GFXTextureUsage::TransferDst;
 
     font_texture = gfx->create_texture(textureInfo);
 
@@ -1000,17 +1006,23 @@ void renderer::generate_brdf() {
 
 void renderer::create_histogram_resources() {
     GFXComputePipelineCreateInfo create_info = {};
-    create_info.shaders.compute_path = "histogram.comp";
+    create_info.compute_src = ShaderSource(file::Path("histogram.comp"));
     create_info.workgroup_size_x = 16;
     create_info.workgroup_size_y = 16;
     
     create_info.shader_input.bindings = {
+        {0, GFXBindingType::StorageImage},
+        {1, GFXBindingType::StorageBuffer},
         {2, GFXBindingType::PushConstant}
+    };
+
+    create_info.shader_input.push_constants = {
+        {sizeof(Vector4), 0}
     };
     
     histogram_pipeline = gfx->create_compute_pipeline(create_info);
     
-    create_info.shaders.compute_path = "histogram-average.comp";
+    create_info.compute_src = ShaderSource(file::Path("histogram-average.comp"));
     create_info.workgroup_size_x = 256;
     create_info.workgroup_size_y = 1;
     
@@ -1023,7 +1035,7 @@ void renderer::create_histogram_resources() {
     texture_info.width = 1;
     texture_info.height = 1;
     texture_info.format = GFXPixelFormat::R_16F;
-    texture_info.usage = GFXTextureUsage::Sampled | GFXTextureUsage::ShaderWrite;
+    texture_info.usage = GFXTextureUsage::Sampled | GFXTextureUsage::ShaderWrite | GFXTextureUsage::Storage;
     
     average_luminance_texture = gfx->create_texture(texture_info);
 }

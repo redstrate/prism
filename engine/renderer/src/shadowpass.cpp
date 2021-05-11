@@ -381,9 +381,9 @@ void ShadowPass::create_offscreen_resources() {
     textureInfo.width = render_options.shadow_resolution;
     textureInfo.height = render_options.shadow_resolution;
     textureInfo.format = GFXPixelFormat::R_32F;
-    textureInfo.usage = GFXTextureUsage::Attachment;
+    textureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Sampled;
     textureInfo.samplingMode = SamplingMode::ClampToEdge;
-    
+
     offscreen_color_texture = gfx->create_texture(textureInfo);
     
     GFXTextureCreateInfo depthTextureInfo = {};
@@ -391,7 +391,7 @@ void ShadowPass::create_offscreen_resources() {
     depthTextureInfo.width = render_options.shadow_resolution;
     depthTextureInfo.height = render_options.shadow_resolution;
     depthTextureInfo.format = GFXPixelFormat::DEPTH_32F;
-    depthTextureInfo.usage = GFXTextureUsage::Attachment;
+    depthTextureInfo.usage = GFXTextureUsage::Attachment | GFXTextureUsage::Sampled;
     depthTextureInfo.samplingMode = SamplingMode::ClampToEdge;
     
     offscreen_depth = gfx->create_texture(depthTextureInfo);

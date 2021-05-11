@@ -38,10 +38,12 @@ enum class GFXVertexFormat : int {
 };
 
 enum class GFXTextureUsage : int {
-    Sampled = 1,
-    Attachment = 2,
-    ShaderWrite = 3,
-    Transfer = 4
+    Sampled = 0,
+    Attachment = 1,
+    ShaderWrite = 2,
+    TransferSrc = 4,
+    TransferDst = 8,
+    Storage = 16
 };
 
 inline GFXTextureUsage operator|(const GFXTextureUsage a, const GFXTextureUsage b) {
@@ -200,12 +202,9 @@ struct GFXGraphicsPipelineCreateInfo {
 
 struct GFXComputePipelineCreateInfo {
     std::string label; // only used for debug
-    
-    struct Shaders {
-        std::string_view compute_path;
-        ShaderSource compute_src;
-    } shaders;
-    
+
+    ShaderSource compute_src;
+
     struct ShaderBindings {
         std::vector<GFXPushConstant> push_constants;
         

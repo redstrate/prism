@@ -20,11 +20,4 @@ public:
 
     // dynamic descriptor sets
     std::map<uint64_t, VkDescriptorSet> cachedDescriptorSets;
-
-	struct ExpectedTransisition {
-		VkImageLayout oldLayout;
-		VkImageLayout newLayout;
-	};
-
-	std::map<GFXVulkanTexture*, ExpectedTransisition> expectedTransisitions;
 };
