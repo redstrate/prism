@@ -61,7 +61,7 @@ public:
     void asset_selected(std::filesystem::path path, AssetType type) override;
     
 private:
-    void open_asset(const prism::Path path);
+    void open_asset(const prism::path path);
     void setup_editor(Editor* editor);
 };
 

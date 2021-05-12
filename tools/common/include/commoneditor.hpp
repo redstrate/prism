@@ -188,7 +188,7 @@ public:
         }
     }
     
-    GFXTexture* get_asset_thumbnail(const prism::Path path) {
+    GFXTexture* get_asset_thumbnail(const prism::path path) {
         if(asset_thumbnails.count(path.string())) {
             return asset_thumbnails[path.string()];
         } else {

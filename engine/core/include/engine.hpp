@@ -134,7 +134,7 @@ namespace prism {
          @param path The scene file path.
          @return Returns a instance of the scene is successful, and nullptr on failure.
          */
-        Scene* load_scene(const prism::Path& path);
+        Scene* load_scene(const prism::path& path);
 
         /** Save the current scene to disk.
          @param path The absolute file path.
@@ -145,7 +145,7 @@ namespace prism {
          @param path The screen file path.
          @return Returns a instance of the screen if successful, and nullptr on failure.
          */
-        ui::Screen* load_screen(const prism::Path& path);
+        ui::Screen* load_screen(const prism::path& path);
 
         /** Set the current screen.
          @param screen The screen object to set as current. Can be null.
@@ -162,7 +162,7 @@ namespace prism {
          @param path The prefab file path.
          @param override_name If not empty, the root object's new name. Defaulted to a empty string.
          */
-        Object add_prefab(Scene& scene, const prism::Path& path, std::string_view override_name = "");
+        Object add_prefab(Scene& scene, const prism::path& path, std::string_view override_name = "");
 
         /** Save a tree of objects as a prefab to disk.
          @param root The parent object to save as a prefab.
@@ -180,12 +180,12 @@ namespace prism {
          @param path The animation file path.
          @return An animation.
          */
-        Animation load_animation(const prism::Path& path);
+        Animation load_animation(const prism::path& path);
 
         /** Load a cutscene from disk. This changes the current cutscene.
          @param path The cutscene file path.
          */
-        void load_cutscene(const prism::Path& path);
+        void load_cutscene(const prism::path& path);
 
         /** Saves the current cutscene to disk.
          @param path The absolute file path.

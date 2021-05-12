@@ -94,7 +94,7 @@ UIElement* ui::Screen::find_element(const std::string& id) {
     return foundElement;
 }
 
-ui::Screen::Screen(const prism::Path path) {
+ui::Screen::Screen(const prism::path path) {
     auto file = prism::open_file(path);
     if(!file.has_value()) {
         prism::log::error(System::Core, "Failed to load UI from {}!", path);

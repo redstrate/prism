@@ -144,8 +144,8 @@ void renderer::resize_render_target(RenderTarget& target, const prism::Extent ex
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Text";
     
-    pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("text.vert"));
-    pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("text.frag"));
+    pipelineInfo.shaders.vertex_src = ShaderSource(prism::path("text.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("text.frag"));
     
     pipelineInfo.rasterization.primitive_type = GFXPrimitiveType::TriangleStrip;
     
@@ -718,8 +718,8 @@ void renderer::create_mesh_pipeline(Material& material) const {
     
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Mesh";
-    pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("mesh.vert"));
-    pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("mesh.frag"));
+    pipelineInfo.shaders.vertex_src = ShaderSource(prism::path("mesh.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("mesh.frag"));
     
     pipelineInfo.shaders.vertex_constants = {materials_constant, lights_constant, spot_lights_constant, probes_constant};
     pipelineInfo.shaders.fragment_constants = {materials_constant, lights_constant, spot_lights_constant, probes_constant};
@@ -814,8 +814,8 @@ void renderer::create_render_target_resources(RenderTarget& target) {
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.label = "Post";
         
-        pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("post.vert"));
-        pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("post.frag"));
+        pipelineInfo.shaders.vertex_src = ShaderSource(prism::path("post.vert"));
+        pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("post.frag"));
         
         pipelineInfo.shader_input.bindings = {
             {4, GFXBindingType::PushConstant},
@@ -841,8 +841,8 @@ void renderer::create_post_pipelines() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Post";
     
-    pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("post.vert"));
-    pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("post.frag"));
+    pipelineInfo.shaders.vertex_src = ShaderSource(prism::path("post.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("post.frag"));
     
     pipelineInfo.shader_input.bindings = {
         {4, GFXBindingType::PushConstant},
@@ -920,8 +920,8 @@ void renderer::create_ui_pipelines() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "UI";
 
-    pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("ui.vert"));
-    pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("ui.frag"));
+    pipelineInfo.shaders.vertex_src = ShaderSource(prism::path("ui.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("ui.frag"));
 
     pipelineInfo.rasterization.primitive_type = GFXPrimitiveType::TriangleStrip;
 
@@ -959,8 +959,8 @@ void renderer::generate_brdf() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "BRDF";
     
-    pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("brdf.vert"));
-    pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("brdf.frag"));
+    pipelineInfo.shaders.vertex_src = ShaderSource(prism::path("brdf.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("brdf.frag"));
     
     pipelineInfo.render_pass = brdf_render_pass;
 
@@ -1006,7 +1006,7 @@ void renderer::generate_brdf() {
 
 void renderer::create_histogram_resources() {
     GFXComputePipelineCreateInfo create_info = {};
-    create_info.compute_src = ShaderSource(prism::Path("histogram.comp"));
+    create_info.compute_src = ShaderSource(prism::path("histogram.comp"));
     create_info.workgroup_size_x = 16;
     create_info.workgroup_size_y = 16;
     
@@ -1022,7 +1022,7 @@ void renderer::create_histogram_resources() {
     
     histogram_pipeline = gfx->create_compute_pipeline(create_info);
     
-    create_info.compute_src = ShaderSource(prism::Path("histogram-average.comp"));
+    create_info.compute_src = ShaderSource(prism::path("histogram-average.comp"));
     create_info.workgroup_size_x = 256;
     create_info.workgroup_size_y = 1;
     
@@ -1055,15 +1055,15 @@ ShaderSource renderer::register_shader(const std::string_view shader_file) {
         }
     }
     
-    prism::Path base_shader_path = get_shader_source_directory();
+    prism::path base_shader_path = get_shader_source_directory();
     
     // if shader editor system is not initialized, use prebuilt shaders
     if(base_shader_path.empty())
-        return ShaderSource(prism::Path(shader_file));
+        return ShaderSource(prism::path(shader_file));
     
     shader_compiler.set_include_path(base_shader_path.string());
     
-    prism::Path shader_path = prism::Path(shader_file);
+    prism::path shader_path = prism::path(shader_file);
     
     ShaderStage stage = ShaderStage::Vertex;
     if(shader_path.extension() == ".vert")

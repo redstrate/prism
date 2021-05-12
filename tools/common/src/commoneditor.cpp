@@ -723,7 +723,7 @@ void CommonEditor::set_undo_stack(UndoStack *stack) {
     current_stack = stack;
 }
 
-bool mesh_readable(const prism::Path path) {
+bool mesh_readable(const prism::path path) {
     auto file = prism::open_file(path);
     if(!file.has_value()) {
         prism::log::error(System::Renderer, "Failed to load mesh from {}!", path);
@@ -736,7 +736,7 @@ bool mesh_readable(const prism::Path path) {
     return version == 5 || version == 6;
 }
 
-bool material_readable(const prism::Path path) {
+bool material_readable(const prism::path path) {
     auto file = prism::open_file(path);
     if(!file.has_value()) {
         prism::log::error(System::Core, "Failed to load material from {}!", path);

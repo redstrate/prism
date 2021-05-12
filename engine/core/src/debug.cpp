@@ -169,7 +169,7 @@ void draw_shader_editor() {
         if(ImGui::Button("Select Path")) {
             platform::open_dialog(false, [](std::string path) {
                 // open_dialog() can't select folders yet, so use this as a workaround
-                options.shader_source_path = prism::Path(path).parent_path().string();
+                options.shader_source_path = prism::path(path).parent_path().string();
             });
         }
     } else {
@@ -186,11 +186,11 @@ void draw_shader_editor() {
         
         if(!selected_shader.empty()) {
             if(loaded_shader_string.empty()) {
-                prism::Path base_shader_path = options.shader_source_path;
+                prism::path base_shader_path = options.shader_source_path;
                 
                 shader_compiler.set_include_path(base_shader_path.string());
                 
-                prism::Path shader_path = prism::Path(selected_shader);
+                prism::path shader_path = prism::path(selected_shader);
                 
                 auto file = prism::open_file(base_shader_path / shader_path.replace_extension(shader_path.extension().string() + ".glsl"));
                 

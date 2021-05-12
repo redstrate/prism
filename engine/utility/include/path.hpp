@@ -3,5 +3,5 @@
 #include <filesystem>
 
 namespace prism {
-    using Path = std::filesystem::path;
+    using path = std::filesystem::path;
 }

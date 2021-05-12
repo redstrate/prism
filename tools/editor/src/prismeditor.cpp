@@ -125,7 +125,7 @@ void PrismEditor::setup_editor(Editor* editor) {
 
 }
 
-void PrismEditor::open_asset(const prism::Path path) {
+void PrismEditor::open_asset(const prism::path path) {
     if(path.extension() == ".prefab") {
         PrefabEditor* editor = new PrefabEditor();
         editor->path = path.string();

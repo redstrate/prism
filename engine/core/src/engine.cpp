@@ -131,7 +131,7 @@ void engine::create_empty_scene() {
     current_scene = scenes.back().get();
 }
 
-Scene* engine::load_scene(const prism::Path& path) {
+Scene* engine::load_scene(const prism::path& path) {
     Expects(!path.empty());
 
     auto file = prism::open_file(path);
@@ -191,7 +191,7 @@ void engine::save_scene(const std::string_view path) {
     out << j;
 }
 
-ui::Screen* engine::load_screen(const prism::Path& path) {
+ui::Screen* engine::load_screen(const prism::path& path) {
     Expects(!path.empty());
 
     return new ui::Screen(path);
@@ -224,7 +224,7 @@ AnimationChannel engine::load_animation(nlohmann::json a) {
     return animation;
 }
 
-Animation engine::load_animation(const prism::Path& path) {
+Animation engine::load_animation(const prism::path& path) {
     Expects(!path.empty());
 
     auto file = prism::open_file(path, true);
@@ -282,7 +282,7 @@ Animation engine::load_animation(const prism::Path& path) {
     return anim;
 }
 
-void engine::load_cutscene(const prism::Path& path) {
+void engine::load_cutscene(const prism::path& path) {
     Expects(!path.empty());
 
     cutscene = std::make_unique<Cutscene>();
@@ -359,7 +359,7 @@ void engine::save_cutscene(const std::string_view path) {
     out << j;
 }
 
-Object engine::add_prefab(Scene& scene, const prism::Path& path, const std::string_view override_name) {
+Object engine::add_prefab(Scene& scene, const prism::path& path, const std::string_view override_name) {
     Expects(!path.empty());
     
     auto file = prism::open_file(path);

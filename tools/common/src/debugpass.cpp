@@ -21,8 +21,8 @@ void DebugPass::initialize() {
 
     {
         GFXGraphicsPipelineCreateInfo createInfo;
-        createInfo.shaders.vertex_src = ShaderSource(prism::Path("debug.vert"));
-        createInfo.shaders.fragment_src = ShaderSource(prism::Path("debug.frag"));
+        createInfo.shaders.vertex_src = ShaderSource(prism::path("debug.vert"));
+        createInfo.shaders.fragment_src = ShaderSource(prism::path("debug.frag"));
 
         GFXVertexInput vertexInput = {};
         vertexInput.stride = sizeof(Vector3);
@@ -69,8 +69,8 @@ void DebugPass::initialize() {
         // pipeline
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
 
-        pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("color.vert"));
-        pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("color.frag"));
+        pipelineInfo.shaders.vertex_src = ShaderSource(prism::path("color.vert"));
+        pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("color.frag"));
 
         GFXVertexInput input;
         input.stride = sizeof(Vector3);
@@ -110,8 +110,8 @@ void DebugPass::initialize() {
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.label = "Sobel";
 
-        pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("color.vert"));
-        pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("color.frag"));
+        pipelineInfo.shaders.vertex_src = ShaderSource(prism::path("color.vert"));
+        pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("color.frag"));
 
         GFXVertexInput input;
         input.stride = sizeof(Vector3);
@@ -142,8 +142,8 @@ void DebugPass::initialize() {
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.label = "Billboard";
         
-        pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("billboard.vert"));
-        pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("billboard.frag"));
+        pipelineInfo.shaders.vertex_src = ShaderSource(prism::path("billboard.vert"));
+        pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("billboard.frag"));
         
         pipelineInfo.shader_input.bindings = {
             {1, GFXBindingType::PushConstant},

@@ -15,7 +15,7 @@
 #include "physics.hpp"
 #include "imgui_backend.hpp"
 
-std::unique_ptr<Mesh> load_mesh(const prism::Path path) {
+std::unique_ptr<Mesh> load_mesh(const prism::path path) {
     Expects(!path.empty());
     
     auto file = prism::open_file(path, true);
@@ -185,7 +185,7 @@ std::unique_ptr<Mesh> load_mesh(const prism::Path path) {
     return mesh;
 }
 
-std::unique_ptr<Texture> load_texture(const prism::Path path) {
+std::unique_ptr<Texture> load_texture(const prism::path path) {
     Expects(!path.empty());
     
     auto file = prism::open_file(path, true);
@@ -242,7 +242,7 @@ std::unique_ptr<Texture> load_texture(const prism::Path path) {
     return texture;
 }
 
-std::unique_ptr<Material> load_material(const prism::Path path) {
+std::unique_ptr<Material> load_material(const prism::path path) {
     Expects(!path.empty());
     
     auto file = prism::open_file(path);
@@ -331,7 +331,7 @@ std::unique_ptr<Material> load_material(const prism::Path path) {
     return mat;
 }
 
-void save_material(Material* material, const prism::Path path) {
+void save_material(Material* material, const prism::path path) {
     Expects(material != nullptr);
     Expects(!path.empty());
     

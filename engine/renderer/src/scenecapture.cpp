@@ -407,8 +407,8 @@ void SceneCapture::createSkyResources() {
     pipelineInfo.label = "Sky Scene Capture";
     pipelineInfo.render_pass = renderPass;
     
-    pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("sky.vert"));
-    pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("sky.frag"));
+    pipelineInfo.shaders.vertex_src = ShaderSource(prism::path("sky.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("sky.frag"));
     
     pipelineInfo.shader_input.bindings = {
         {1, GFXBindingType::PushConstant}
@@ -451,8 +451,8 @@ void SceneCapture::createIrradianceResources() {
 
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Irradiance Convolution";
-    pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("irradiance.vert"));
-    pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("irradiance.frag"));
+    pipelineInfo.shaders.vertex_src = ShaderSource(prism::path("irradiance.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("irradiance.frag"));
     
     GFXVertexInput input;
     input.stride = sizeof(Vector3);
@@ -503,8 +503,8 @@ void SceneCapture::createPrefilterResources() {
     
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Prefilter";
-    pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("filter.vert"));
-    pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("filter.frag"));
+    pipelineInfo.shaders.vertex_src = ShaderSource(prism::path("filter.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("filter.frag"));
     
     pipelineInfo.shaders.fragment_constants = {size_constant};
     

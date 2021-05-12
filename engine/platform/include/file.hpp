@@ -110,14 +110,14 @@ namespace prism {
      @param mode The access mode.
      @param path The absolute file path.
      */
-    void set_domain_path(domain domain, Path path);
-    Path get_domain_path(domain domain);
+    void set_domain_path(domain domain, path domain_path);
+    path get_domain_path(domain domain);
 
     /// Converts an absolute path to a domain relative path.
-    Path get_relative_path(domain domain, Path path);
+    path get_relative_path(domain domain, path domain_relative_path);
 
 	/// Returns the path to a writeable directory.
-	Path get_writeable_directory();
+	path get_writeable_directory();
 
     /**
      Opens a file handle.
@@ -126,12 +126,12 @@ namespace prism {
      @param binary_mode Whether or not to open the file as binary or ASCII. Defaults to false.
      @return An optional with a value if the file was loaded correctly, otherwise it's empty.
      */
-    std::optional<file> open_file(Path path, bool binary_mode = false);
+    std::optional<file> open_file(path file_path, bool binary_mode = false);
     
-    Path root_path(Path path);
-    Path get_file_path(const Path& path);
+    path root_path(path path);
+    path get_file_path(const path& path);
     
-    inline Path internal_domain = "/internal", app_domain = "/app";
+    inline path internal_domain = "/internal", app_domain = "/app";
 }
 
 inline std::array<std::string, 3> domain_data;

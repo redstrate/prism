@@ -6,7 +6,7 @@
 #include "log.hpp"
 #include "assertions.hpp"
 
-prism::Path prism::root_path(const Path path) {
+prism::path prism::root_path(const path path) {
     auto p = path;
     while(p.parent_path() != p && p.parent_path() != "/") {
         p = p.parent_path();
@@ -15,7 +15,7 @@ prism::Path prism::root_path(const Path path) {
     return p;
 }
 
-std::optional<prism::file> prism::open_file(const prism::Path path, const bool binary_mode) {
+std::optional<prism::file> prism::open_file(const prism::path path, const bool binary_mode) {
     Expects(!path.empty());
     
     auto str = get_file_path(path).string();
@@ -28,7 +28,7 @@ std::optional<prism::file> prism::open_file(const prism::Path path, const bool b
     return prism::file(file);
 }
 
-prism::Path prism::get_file_path(const prism::Path& path) {
+prism::path prism::get_file_path(const prism::path& path) {
     auto fixed_path = path;
     auto root = root_path(path);
     if(root == app_domain) {
@@ -40,15 +40,15 @@ prism::Path prism::get_file_path(const prism::Path& path) {
     return fixed_path;
 }
 
-prism::Path prism::get_domain_path(const domain domain) {
+prism::path prism::get_domain_path(const domain domain) {
     return domain_data[static_cast<int>(domain)];
 }
 
-prism::Path parent_domain(const prism::Path& path) {
+prism::path parent_domain(const prism::path& path) {
     return path;
 }
 
-prism::Path prism::get_relative_path(const domain domain, const Path path) {
+prism::path prism::get_relative_path(const domain domain, const path path) {
     // unimplemented
     return path;
 }
