@@ -66,6 +66,7 @@ void prepThreePointLighting() {
     scene->get<Transform>(sun_light).position = prism::float3(15);
     scene->add<Light>(sun_light).type = Light::Type::Sun;
     scene->get<Light>(sun_light).power = 5.0f;
+    scene->get<Light>(sun_light).size = 0.2f;
 
     scene->reset_shadows();
     scene->reset_environment();
