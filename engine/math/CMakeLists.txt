@@ -5,6 +5,7 @@ set(SRC
     include/vector.hpp
     include/quaternion.hpp
     include/plane.hpp
+    include/aabb.hpp
 
     src/transform.cpp
     src/math.cpp include/ray.hpp)

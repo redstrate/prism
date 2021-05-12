@@ -65,7 +65,7 @@ Quaternion quat_from_matrix(const Matrix3x3 m) {
     }
 }
 
-Quaternion euler_to_quat(const Vector3 angle) {
+Quaternion euler_to_quat(const prism::float3 angle) {
     const float cy = cosf(angle.z * 0.5f);
     const float sy = sinf(angle.z * 0.5f);
     const float cr = cosf(angle.x * 0.5f);
@@ -87,7 +87,7 @@ Quaternion euler_to_quat(const Vector3 angle) {
     return normalize(result);
 }
 
-Vector3 quat_to_euler(const Quaternion q) {
+prism::float3 quat_to_euler(const Quaternion q) {
     const float roll = atan2(2.0f * (q.x * q.y + q.w * q.z), q.w * q.w + q.x * q.x - q.y * q.y - q.z * q.z);
     
     const float y = 2.0f * (q.y * q.z + q.w * q.x);
@@ -97,7 +97,7 @@ Vector3 quat_to_euler(const Quaternion q) {
     
     const float yaw = asinf(-2.0f * (q.x * q.z - q.w * q.y));
     
-    return Vector3(pitch, yaw, roll);
+    return prism::float3(pitch, yaw, roll);
 }
 
 Matrix4x4 inverse(const Matrix4x4 m) {
@@ -125,30 +125,30 @@ Matrix4x4 inverse(const Matrix4x4 m) {
     const float Coef22 = m[1][0] * m[3][1] - m[3][0] * m[1][1];
     const float Coef23 = m[1][0] * m[2][1] - m[2][0] * m[1][1];
     
-    const Vector4 Fac0(Coef00, Coef00, Coef02, Coef03);
-    const Vector4 Fac1(Coef04, Coef04, Coef06, Coef07);
-    const Vector4 Fac2(Coef08, Coef08, Coef10, Coef11);
-    const Vector4 Fac3(Coef12, Coef12, Coef14, Coef15);
-    const Vector4 Fac4(Coef16, Coef16, Coef18, Coef19);
-    const Vector4 Fac5(Coef20, Coef20, Coef22, Coef23);
+    const prism::float4 Fac0(Coef00, Coef00, Coef02, Coef03);
+    const prism::float4 Fac1(Coef04, Coef04, Coef06, Coef07);
+    const prism::float4 Fac2(Coef08, Coef08, Coef10, Coef11);
+    const prism::float4 Fac3(Coef12, Coef12, Coef14, Coef15);
+    const prism::float4 Fac4(Coef16, Coef16, Coef18, Coef19);
+    const prism::float4 Fac5(Coef20, Coef20, Coef22, Coef23);
     
-    const Vector4 Vec0(m[1][0], m[0][0], m[0][0], m[0][0]);
-    const Vector4 Vec1(m[1][1], m[0][1], m[0][1], m[0][1]);
-    const Vector4 Vec2(m[1][2], m[0][2], m[0][2], m[0][2]);
-    const Vector4 Vec3(m[1][3], m[0][3], m[0][3], m[0][3]);
+    const prism::float4 Vec0(m[1][0], m[0][0], m[0][0], m[0][0]);
+    const prism::float4 Vec1(m[1][1], m[0][1], m[0][1], m[0][1]);
+    const prism::float4 Vec2(m[1][2], m[0][2], m[0][2], m[0][2]);
+    const prism::float4 Vec3(m[1][3], m[0][3], m[0][3], m[0][3]);
     
-    const Vector4 Inv0(Vec1 * Fac0 - Vec2 * Fac1 + Vec3 * Fac2);
-    const Vector4 Inv1(Vec0 * Fac0 - Vec2 * Fac3 + Vec3 * Fac4);
-    const Vector4 Inv2(Vec0 * Fac1 - Vec1 * Fac3 + Vec3 * Fac5);
-    const Vector4 Inv3(Vec0 * Fac2 - Vec1 * Fac4 + Vec2 * Fac5);
+    const prism::float4 Inv0(Vec1 * Fac0 - Vec2 * Fac1 + Vec3 * Fac2);
+    const prism::float4 Inv1(Vec0 * Fac0 - Vec2 * Fac3 + Vec3 * Fac4);
+    const prism::float4 Inv2(Vec0 * Fac1 - Vec1 * Fac3 + Vec3 * Fac5);
+    const prism::float4 Inv3(Vec0 * Fac2 - Vec1 * Fac4 + Vec2 * Fac5);
     
-    const Vector4 SignA(+1, -1, +1, -1);
-    const Vector4 SignB(-1, +1, -1, +1);
+    const prism::float4 SignA(+1, -1, +1, -1);
+    const prism::float4 SignB(-1, +1, -1, +1);
     const Matrix4x4 Inverse(Inv0 * SignA, Inv1 * SignB, Inv2 * SignA, Inv3 * SignB);
     
-    const Vector4 Row0(Inverse[0][0], Inverse[1][0], Inverse[2][0], Inverse[3][0]);
+    const prism::float4 Row0(Inverse[0][0], Inverse[1][0], Inverse[2][0], Inverse[3][0]);
     
-    const Vector4 Dot0(m[0] * Row0);
+    const prism::float4 Dot0(m[0] * Row0);
     const float Dot1 = (Dot0.x + Dot0.y) + (Dot0.z + Dot0.w);
     
     const float OneOverDeterminant = 1.0f / Dot1;
@@ -156,7 +156,7 @@ Matrix4x4 inverse(const Matrix4x4 m) {
     return Inverse * OneOverDeterminant;
 }
 
-Quaternion angle_axis(const float angle, const Vector3 axis) {
+Quaternion angle_axis(const float angle, const prism::float3 axis) {
     const float s = sinf(angle * 0.5f);
     
     Quaternion result;
@@ -169,8 +169,8 @@ Quaternion angle_axis(const float angle, const Vector3 axis) {
 }
 
 // from https://nelari.us/post/gizmos/
-float closest_distance_between_lines(ray& l1, ray& l2) {
-    const Vector3 dp = l2.origin - l1.origin;
+float prism::closest_distance_between_lines(prism::ray& l1, prism::ray& l2) {
+    const float3 dp = l2.origin - l1.origin;
     const float v12 = dot(l1.direction, l1.direction);
     const float v22 = dot(l2.direction, l2.direction);
     const float v1v2 = dot(l1.direction, l2.direction);

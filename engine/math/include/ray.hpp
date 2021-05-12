@@ -1,8 +1,12 @@
 #pragma once
 
-struct ray {
-    Vector3 origin, direction;
-    float t = 0.0f;
-};
+#include "vector.hpp"
 
-float closest_distance_between_lines(ray& l1, ray& l2);
+namespace prism {
+    struct ray {
+        float3 origin, direction;
+        float t = 0.0f;
+    };
+
+    float closest_distance_between_lines(ray& l1, ray& l2);
+}

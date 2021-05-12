@@ -510,9 +510,9 @@ void engine::calculate_bone(Mesh& mesh, const Mesh::Part& part, Bone& bone, cons
     if(parent_bone != nullptr)
         parent_matrix = parent_bone->local_transform;
 
-    Matrix4x4 local = transform::translate(Matrix4x4(), bone.position);
+    Matrix4x4 local = prism::translate(Matrix4x4(), bone.position);
     local *= matrix_from_quat(bone.rotation);
-    local = transform::scale(local, bone.scale);
+    local = prism::scale(local, bone.scale);
 
     bone.local_transform = parent_matrix * local;
 
@@ -531,9 +531,9 @@ void engine::calculate_object(Scene& scene, Object object, const Object parent_o
 
     auto& transform = scene.get<Transform>(object);
 
-    Matrix4x4 local = transform::translate(Matrix4x4(), transform.position);
+    Matrix4x4 local = prism::translate(Matrix4x4(), transform.position);
     local *= matrix_from_quat(transform.rotation);
-    local = transform::scale(local, transform.scale);
+    local = prism::scale(local, transform.scale);
 
     transform.model = parent_matrix * local;
 
@@ -589,7 +589,7 @@ void engine::update_animation_channel(Scene& scene, const AnimationChannel& chan
         }
 
         if(keyframeIndex != -1) {
-            Vector3* targetVec = nullptr;
+            prism::float3* targetVec = nullptr;
             if(channel.bone != nullptr)
                 targetVec = &channel.bone->position;
 

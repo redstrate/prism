@@ -13,7 +13,7 @@
 
 struct BillPushConstant {
     Matrix4x4 mvp;
-    Vector4 color;
+    prism::float4 color;
 };
 
 void DebugPass::initialize() {
@@ -25,7 +25,7 @@ void DebugPass::initialize() {
         createInfo.shaders.fragment_src = ShaderSource(prism::path("debug.frag"));
 
         GFXVertexInput vertexInput = {};
-        vertexInput.stride = sizeof(Vector3);
+        vertexInput.stride = sizeof(prism::float3);
 
         createInfo.vertex_input.inputs.push_back(vertexInput);
 
@@ -35,7 +35,7 @@ void DebugPass::initialize() {
         createInfo.vertex_input.attributes.push_back(positionAttribute);
 
         createInfo.shader_input.push_constants = {
-            {sizeof(Matrix4x4) + sizeof(Vector4), 0}
+            {sizeof(Matrix4x4) + sizeof(prism::float4), 0}
         };
 
         createInfo.shader_input.bindings = {
@@ -73,7 +73,7 @@ void DebugPass::initialize() {
         pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("color.frag"));
 
         GFXVertexInput input;
-        input.stride = sizeof(Vector3);
+        input.stride = sizeof(prism::float3);
 
         pipelineInfo.vertex_input.inputs.push_back(input);
 
@@ -87,7 +87,7 @@ void DebugPass::initialize() {
         };
 
         pipelineInfo.shader_input.push_constants = {
-            {sizeof(Matrix4x4) + sizeof(Vector4), 0}
+            {sizeof(Matrix4x4) + sizeof(prism::float4), 0}
         };
 
         pipelineInfo.render_pass = selectRenderPass;
@@ -114,7 +114,7 @@ void DebugPass::initialize() {
         pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("color.frag"));
 
         GFXVertexInput input;
-        input.stride = sizeof(Vector3);
+        input.stride = sizeof(prism::float3);
 
         pipelineInfo.vertex_input.inputs.push_back(input);
 
@@ -128,7 +128,7 @@ void DebugPass::initialize() {
         };
 
         pipelineInfo.shader_input.push_constants = {
-            {sizeof(Matrix4x4) + sizeof(Vector4), 0}
+            {sizeof(Matrix4x4) + sizeof(prism::float4), 0}
         };
 
         pipelineInfo.render_pass = sobelRenderPass;
@@ -223,10 +223,10 @@ void DebugPass::createOffscreenResources() {
     }
 }
 
-void DebugPass::draw_arrow(GFXCommandBuffer* commandBuffer, Vector3 color, Matrix4x4 model) {
+void DebugPass::draw_arrow(GFXCommandBuffer* commandBuffer, prism::float3 color, Matrix4x4 model) {
     struct PushConstant {
         Matrix4x4 mvp;
-        Vector4 color;
+        prism::float4 color;
     } pc;
     pc.mvp = model;
     pc.color = color;
@@ -244,7 +244,7 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
     
     struct PushConstant {
         Matrix4x4 mvp;
-        Vector4 color;
+        prism::float4 color;
     };
     
     Matrix4x4 vp = camera.perspective * camera.view;
@@ -252,17 +252,17 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
 	commandBuffer->set_graphics_pipeline(primitive_pipeline);
 
     struct DebugPrimitive {
-        Vector3 position, size;
+        prism::float3 position, size;
         Quaternion rotation;
-        Vector4 color;
+        prism::float4 color;
     };
 
     std::vector<DebugPrimitive> primitives;
     
     struct DebugBillboard {
-        Vector3 position;
+        prism::float3 position;
         GFXTexture* texture;
-        Vector4 color;
+        prism::float4 color;
     };
     
     std::vector<DebugBillboard> billboards;
@@ -281,7 +281,7 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
                 prim.position = transform.get_world_position();
                 prim.rotation = transform.rotation;
                 prim.size = collision.size / 2.0f;
-                prim.color = collision.is_trigger ? Vector4(0, 0, 1, 1) : Vector4(0, 1, 0, 1);
+                prim.color = collision.is_trigger ? prism::float4(0, 0, 1, 1) : prism::float4(0, 1, 0, 1);
 
                 primitives.push_back(prim);
             }
@@ -290,7 +290,7 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
         if(scene.has<Light>(obj)) {
             DebugBillboard bill;
             bill.position = transform.get_world_position();
-            bill.color = Vector4(scene.get<Light>(obj).color, 1.0f);
+            bill.color = prism::float4(scene.get<Light>(obj).color, 1.0f);
             
             switch(scene.get<Light>(obj).type) {
                 case Light::Type::Point:
@@ -315,14 +315,14 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
                 prim.position = transform.get_world_position();
                 prim.rotation = transform.rotation;
                 prim.size = probe.size / 2.0f;
-                prim.color = Vector4(0, 1, 1, 1);
+                prim.color = prism::float4(0, 1, 1, 1);
                 
                 primitives.push_back(prim);
             }
             
             DebugBillboard bill;
             bill.position = transform.get_world_position();
-            bill.color = Vector4(1.0f);
+            bill.color = prism::float4(1.0f);
             bill.texture = probeTexture->handle;
             
             billboards.push_back(bill);
@@ -333,9 +333,9 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
     for(auto& prim : primitives) {
         PushConstant pc;
 
-        Matrix4x4 m = transform::translate(Matrix4x4(), prim.position);
+        Matrix4x4 m = prism::translate(Matrix4x4(), prim.position);
         m *= matrix_from_quat(prim.rotation);
-        m = transform::scale(m, prim.size);
+        m = prism::scale(m, prim.size);
 
         pc.mvp = vp * m;
         pc.color = prim.color;
@@ -354,7 +354,7 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
 
     // draw primitives
     for(auto& bill : billboards) {
-        Matrix4x4 m = transform::translate(Matrix4x4(), bill.position);
+        Matrix4x4 m = prism::translate(Matrix4x4(), bill.position);
         
         BillPushConstant pc;
         pc.mvp = vp * m;
@@ -376,17 +376,17 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
         const float base_scale = 0.05f;
         const float scale_factor = length(position - scene.get<Transform>(camObj).get_world_position());
         
-        Matrix4x4 base_model = transform::translate(Matrix4x4(), position);
-        base_model = transform::scale(base_model, base_scale * scale_factor);
+        Matrix4x4 base_model = prism::translate(Matrix4x4(), position);
+        base_model = prism::scale(base_model, base_scale * scale_factor);
                                                     
         // draw y axis
-        draw_arrow(commandBuffer, Vector3(0, 1, 0), vp * base_model);
+        draw_arrow(commandBuffer, prism::float3(0, 1, 0), vp * base_model);
         
         // draw x axis
-        draw_arrow(commandBuffer, Vector3(1, 0, 0), vp * base_model * matrix_from_quat(angle_axis(radians(-90.0f), Vector3(0, 0, 1))));
+        draw_arrow(commandBuffer, prism::float3(1, 0, 0), vp * base_model * matrix_from_quat(angle_axis(radians(-90.0f), prism::float3(0, 0, 1))));
         
         // draw z axis
-        draw_arrow(commandBuffer, Vector3(0, 0, 1), vp * base_model * matrix_from_quat(angle_axis(radians(90.0f), Vector3(1, 0, 0))));
+        draw_arrow(commandBuffer, prism::float3(0, 0, 1), vp * base_model * matrix_from_quat(angle_axis(radians(90.0f), prism::float3(1, 0, 0))));
     }
     
     // draw sobel
@@ -407,11 +407,11 @@ void DebugPass::render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) {
         
         struct PC {
             Matrix4x4 mvp;
-            Vector4 color;
+            prism::float4 color;
         } pc;
         
         pc.mvp = vp * engine->get_scene()->get<Transform>(selected_object).model;
-        pc.color = Vector4(1);
+        pc.color = prism::float4(1);
         
         commandBuffer->set_push_constant(&pc, sizeof(PC));
         
@@ -482,14 +482,14 @@ void DebugPass::get_selected_object(int x, int y, std::function<void(SelectableO
         const float base_scale = 0.05f;
         const float scale_factor = length(position - engine->get_scene()->get<Transform>(camObj).position);
         
-        const Matrix4x4 translate_model = transform::translate(Matrix4x4(), position);
-        const Matrix4x4 scale_model = transform::scale(Matrix4x4(), base_scale * scale_factor);
+        const Matrix4x4 translate_model = prism::translate(Matrix4x4(), position);
+        const Matrix4x4 scale_model = prism::scale(Matrix4x4(), base_scale * scale_factor);
         
         add_arrow(SelectableObject::Axis::Y, translate_model * scale_model);
         
-        add_arrow(SelectableObject::Axis::X, translate_model * matrix_from_quat(angle_axis(radians(-90.0f), Vector3(0, 0, 1))) * scale_model);
+        add_arrow(SelectableObject::Axis::X, translate_model * matrix_from_quat(angle_axis(radians(-90.0f), prism::float3(0, 0, 1))) * scale_model);
         
-        add_arrow(SelectableObject::Axis::Z, translate_model * matrix_from_quat(angle_axis(radians(90.0f), Vector3(1, 0, 0))) * scale_model);
+        add_arrow(SelectableObject::Axis::Z, translate_model * matrix_from_quat(angle_axis(radians(90.0f), prism::float3(1, 0, 0))) * scale_model);
     }
     
     GFXCommandBuffer* commandBuffer = engine->get_gfx()->acquire_command_buffer();
@@ -536,13 +536,13 @@ void DebugPass::get_selected_object(int x, int y, std::function<void(SelectableO
 
         struct PC {
             Matrix4x4 mvp;
-            Vector4 color;
+            prism::float4 color;
         } pc;
 
         pc.mvp = camera.perspective * camera.view * model;
         
         if(object.render_type == SelectableObject::RenderType::Sphere)
-            pc.mvp = transform::scale(pc.mvp, Vector3(object.sphere_size));
+            pc.mvp = prism::scale(pc.mvp, prism::float3(object.sphere_size));
 
         pc.color = {
             float((i & 0x000000FF) >> 0) / 255.0f,

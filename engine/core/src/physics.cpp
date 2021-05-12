@@ -18,9 +18,9 @@ void Physics::update(float deltaTime) {
     for(auto [obj, rigidbody] : engine->get_scene()->get_all<Rigidbody>()) {     
         if(rigidbody.body != nullptr) {
             if(rigidbody.type == Rigidbody::Type::Dynamic) {
-                if(rigidbody.stored_force != Vector3(0.0f)) {
+                if(rigidbody.stored_force != prism::float3(0.0f)) {
                     rigidbody.body->setLinearVelocity(btVector3(rigidbody.stored_force.x, rigidbody.stored_force.y, rigidbody.stored_force.z));
-                    rigidbody.stored_force = Vector3(0.0f);
+                    rigidbody.stored_force = prism::float3(0.0f);
                 }
             }
         }
@@ -78,7 +78,7 @@ void Physics::update(float deltaTime) {
         
         if(rigidbody.type == Rigidbody::Type::Dynamic) {
             btTransform trans = rigidbody.body->getWorldTransform();
-            transform.position = Vector3(trans.getOrigin().x(), trans.getOrigin().y(), trans.getOrigin().z());
+            transform.position = prism::float3(trans.getOrigin().x(), trans.getOrigin().y(), trans.getOrigin().z());
         } else {
             btTransform t;
             t.setIdentity();
@@ -104,7 +104,7 @@ void Physics::remove_object(Object object) {
     }
 }
 
-Physics::RayResult Physics::raycast(Vector3 from, Vector3 to) {
+Physics::RayResult Physics::raycast(prism::float3 from, prism::float3 to) {
     Physics::RayResult result;
     
     btVector3 btFrom(from.x, from.y, from.z);
@@ -131,7 +131,7 @@ Physics::RayResult Physics::raycast(Vector3 from, Vector3 to) {
         
         auto vec = res.m_hitPointWorld[closestCollisionObject];;
         
-        result.location = Vector3(vec.x(), vec.y(), vec.z());
+        result.location = prism::float3(vec.x(), vec.y(), vec.z());
     }
     
     return result;

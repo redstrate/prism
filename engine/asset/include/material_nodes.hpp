@@ -46,8 +46,8 @@ struct MaterialProperty {
     DataType type;
 
     MaterialProperty(std::string n, DataType t) : name(n), type(t) {}
-    
-    Vector3 value;
+
+    prism::float3 value;
     AssetPtr<Texture> value_tex;
     float float_value;
 };

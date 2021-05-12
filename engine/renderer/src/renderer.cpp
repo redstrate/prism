@@ -27,7 +27,7 @@
 using prism::renderer;
 
 struct ElementInstance {
-    Vector4 color;
+    prism::float4 color;
     uint32_t position = 0, size = 0;
     uint32_t padding[2];
 };
@@ -47,23 +47,23 @@ struct StringInstance {
 };
 
 struct SceneMaterial {
-    Vector4 color, info;
+    prism::float4 color, info;
 };
 
 struct SceneLight {
-    Vector4 positionType;
-    Vector4 directionPower;
-    Vector4 colorSize;
-    Vector4 shadowsEnable;
+    prism::float4 positionType;
+    prism::float4 directionPower;
+    prism::float4 colorSize;
+    prism::float4 shadowsEnable;
 };
 
 struct SceneProbe {
-    Vector4 position, size;
+    prism::float4 position, size;
 };
 
 struct SceneInformation {
-    Vector4 options;
-    Vector4 camPos;
+    prism::float4 options;
+    prism::float4 camPos;
     Matrix4x4 vp, lightspace;
     Matrix4x4 spotLightSpaces[max_spot_shadows];
     SceneMaterial materials[max_scene_materials];
@@ -74,17 +74,17 @@ struct SceneInformation {
 };
 
 struct PostPushConstants {
-    Vector4 viewport, options, transform_ops;
+    prism::float4 viewport, options, transform_ops;
 };
 
 struct UIPushConstant {
-    Vector2 screenSize;
+    prism::float2 screenSize;
     Matrix4x4 mvp;
 };
 
 struct SkyPushConstant {
     Matrix4x4 view;
-    Vector4 sun_position_fov;
+    prism::float4 sun_position_fov;
     float aspect;
 };
 
@@ -277,14 +277,14 @@ void renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
         for(auto& [obj, camera] : cameras) {            
             const bool requires_limited_perspective = render_options.enable_depth_of_field;
             if(requires_limited_perspective) {
-                camera.perspective = transform::perspective(radians(camera.fov),
+                camera.perspective = prism::perspective(radians(camera.fov),
                                                             static_cast<float>(render_extent.width) / static_cast<float>(render_extent.height),
-                                                            camera.near,
-                                                            100.0f);
+                                                        camera.near,
+                                                        100.0f);
             } else {
-                camera.perspective = transform::infinite_perspective(radians(camera.fov),
+                camera.perspective = prism::infinite_perspective(radians(camera.fov),
                                                                      static_cast<float>(render_extent.width) / static_cast<float>(render_extent.height),
-                                                                     camera.near);
+                                                                 camera.near);
             }
         
             camera.view = inverse(scene->get<Transform>(obj).model);
@@ -326,25 +326,25 @@ void renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
     commandbuffer->bind_shader_buffer(histogram_buffer, 0, 1, sizeof(uint32_t) * 256);
     
     const float lum_range = render_options.max_luminance - render_options.min_luminance;
-    
-    Vector4 params = Vector4(render_options.min_luminance,
+
+    prism::float4 params = prism::float4(render_options.min_luminance,
                              1.0f / lum_range,
                              static_cast<float>(render_extent.width),
                              static_cast<float>(render_extent.height));
     
-    commandbuffer->set_push_constant(&params, sizeof(Vector4));
+    commandbuffer->set_push_constant(&params, sizeof(prism::float4));
     
     commandbuffer->dispatch(static_cast<uint32_t>(std::ceil(static_cast<float>(render_extent.width) / 16.0f)),
                             static_cast<uint32_t>(std::ceil(static_cast<float>(render_extent.height) / 16.0f)), 1);
     
     commandbuffer->set_compute_pipeline(histogram_average_pipeline);
     
-    params = Vector4(render_options.min_luminance,
+    params = prism::float4(render_options.min_luminance,
                      lum_range,
                      std::clamp(1.0f - std::exp(-(1.0f / 60.0f) * 1.1f), 0.0f, 1.0f),
                      static_cast<float>(render_extent.width * render_extent.height));
     
-    commandbuffer->set_push_constant(&params, sizeof(Vector4));
+    commandbuffer->set_push_constant(&params, sizeof(prism::float4));
     
     commandbuffer->bind_texture(average_luminance_texture, 0);
     
@@ -394,7 +394,7 @@ void renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
     pc.transform_ops.y = static_cast<float>(render_options.tonemapping);
     
     const auto [width, height] = render_extent;
-    pc.viewport = Vector4(1.0f / static_cast<float>(width), 1.0f / static_cast<float>(height), static_cast<float>(width), static_cast<float>(height));
+    pc.viewport = prism::float4(1.0f / static_cast<float>(width), 1.0f / static_cast<float>(height), static_cast<float>(width), static_cast<float>(height));
     
     commandbuffer->set_push_constant(&pc, sizeof(PostPushConstants));
     
@@ -421,20 +421,20 @@ void renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
             
     SceneInformation sceneInfo = {};
     sceneInfo.lightspace = scene.lightSpace;
-    sceneInfo.options = Vector4(1, 0, 0, 0);
+    sceneInfo.options = prism::float4(1, 0, 0, 0);
     sceneInfo.camPos = scene.get<Transform>(camera_object).get_world_position();
     sceneInfo.camPos.w = 2.0f * camera.near * std::tan(camera.fov * 0.5f) * (static_cast<float>(extent.width) / static_cast<float>(extent.height));
     sceneInfo.vp =  camera.perspective * camera.view;
     
     for(const auto& [obj, light] : scene.get_all<Light>()) {
         SceneLight sl;
-        sl.positionType = Vector4(scene.get<Transform>(obj).get_world_position(), static_cast<float>(light.type));
+        sl.positionType = prism::float4(scene.get<Transform>(obj).get_world_position(), static_cast<float>(light.type));
+
+        prism::float3 front = prism::float3(0.0f, 0.0f, 1.0f) * scene.get<Transform>(obj).rotation;
         
-        Vector3 front = Vector3(0.0f, 0.0f, 1.0f) * scene.get<Transform>(obj).rotation;
-        
-        sl.directionPower = Vector4(-front, light.power);
-        sl.colorSize = Vector4(utility::from_srgb_to_linear(light.color), radians(light.spot_size));
-        sl.shadowsEnable = Vector4(light.enable_shadows, radians(light.size), 0, 0);
+        sl.directionPower = prism::float4(-front, light.power);
+        sl.colorSize = prism::float4(utility::from_srgb_to_linear(light.color), radians(light.spot_size));
+        sl.shadowsEnable = prism::float4(light.enable_shadows, radians(light.size), 0, 0);
         
         sceneInfo.lights[sceneInfo.numLights++] = sl;
     }
@@ -445,8 +445,8 @@ void renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
     int last_probe = 0;
     for(const auto& [obj, probe] : scene.get_all<EnvironmentProbe>()) {
         SceneProbe p;
-        p.position = Vector4(scene.get<Transform>(obj).position, probe.is_sized ? 1.0f : 2.0f);
-        p.size = Vector4(probe.size, probe.intensity);
+        p.position = prism::float4(scene.get<Transform>(obj).position, probe.is_sized ? 1.0f : 2.0f);
+        p.size = prism::float4(probe.size, probe.intensity);
         
         sceneInfo.probes[last_probe++] = p;
     }
@@ -549,7 +549,7 @@ void renderer::render_camera(GFXCommandBuffer* command_buffer, Scene& scene, Obj
     
     for(const auto& [obj, light] : scene.get_all<Light>()) {
         if(light.type == Light::Type::Sun)
-            pc.sun_position_fov = Vector4(scene.get<Transform>(obj).get_world_position(), radians(camera.fov));
+            pc.sun_position_fov = prism::float4(scene.get<Transform>(obj).get_world_position(), radians(camera.fov));
     }
     
     command_buffer->set_graphics_pipeline(sky_pipeline);
@@ -644,7 +644,7 @@ void renderer::render_screen(GFXCommandBuffer *commandbuffer, ui::Screen* screen
     gfx->copy_buffer(screen->instance_buffer, stringInstances.data(), 0, sizeof(StringInstance) * 50);
     gfx->copy_buffer(screen->elements_buffer, elementInstances.data(), sizeof(ElementInstance) * continuity.elementOffset, sizeof(ElementInstance) * elementInstances.size());
 
-    const Vector2 windowSize = {static_cast<float>(extent.width), static_cast<float>(extent.height)};
+    const prism::float2 windowSize = {static_cast<float>(extent.width), static_cast<float>(extent.height)};
 
     for(auto [i, element] : utility::enumerate(screen->elements)) {
         if(!element.visible)
@@ -1017,7 +1017,7 @@ void renderer::create_histogram_resources() {
     };
 
     create_info.shader_input.push_constants = {
-        {sizeof(Vector4), 0}
+        {sizeof(prism::float4), 0}
     };
     
     histogram_pipeline = gfx->create_compute_pipeline(create_info);

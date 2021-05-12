@@ -61,11 +61,11 @@ std::unique_ptr<Mesh> load_mesh(const prism::path path) {
     };
     
     // read positions
-    mesh->position_buffer = read_buffer(sizeof(Vector3));
-    mesh->normal_buffer = read_buffer(sizeof(Vector3));
-    mesh->texture_coord_buffer = read_buffer(sizeof(Vector2));
-    mesh->tangent_buffer = read_buffer(sizeof(Vector3));
-    mesh->bitangent_buffer = read_buffer(sizeof(Vector3));
+    mesh->position_buffer = read_buffer(sizeof(prism::float3));
+    mesh->normal_buffer = read_buffer(sizeof(prism::float3));
+    mesh->texture_coord_buffer = read_buffer(sizeof(prism::float2));
+    mesh->tangent_buffer = read_buffer(sizeof(prism::float3));
+    mesh->bitangent_buffer = read_buffer(sizeof(prism::float3));
 
     if(mesh_type == MeshType::Skinned)
         mesh->bone_buffer = read_buffer(sizeof(BoneVertexData));
@@ -98,14 +98,14 @@ std::unique_ptr<Mesh> load_mesh(const prism::path path) {
             
             file->read_string(bone);
             file->read_string(parent);
-            
-            Vector3 pos;
+
+            prism::float3 pos;
             file->read(&pos);
             
             Quaternion rot;
             file->read(&rot);
-            
-            Vector3 scl;
+
+            prism::float3 scl;
             file->read(&scl);
                         
             if(!boneMapping.count(bone)) {
@@ -155,7 +155,7 @@ std::unique_ptr<Mesh> load_mesh(const prism::path path) {
         file->read_string(p.name);
         
         if(version == 6) {
-            file->read(&p.aabb);
+            file->read(&p.bounding_box);
         }
         
         int numVerts = 0;

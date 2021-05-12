@@ -40,7 +40,7 @@ DoFPass::DoFPass(GFX* gfx, prism::renderer* renderer) : renderer(renderer) {
     };
 
     create_info.shader_input.push_constants = {
-        {sizeof(Vector4), 0}
+        {sizeof(prism::float4), 0}
     };
     
     create_info.render_pass = renderpass;
@@ -102,10 +102,10 @@ void DoFPass::render(GFXCommandBuffer* command_buffer, Scene&) {
     command_buffer->bind_texture(aperture_texture->handle, 3);
 
     //const auto extent = renderer->get_render_extent();
+
+    prism::float4 params(render_options.depth_of_field_strength, 0.0, 0.0, 0.0);
     
-    Vector4 params(render_options.depth_of_field_strength, 0.0, 0.0, 0.0);
-    
-    command_buffer->set_push_constant(&params, sizeof(Vector4));
+    command_buffer->set_push_constant(&params, sizeof(prism::float4));
     
     command_buffer->draw(0, 4, 0, extent.width * extent.height);
     
@@ -122,7 +122,7 @@ void DoFPass::render(GFXCommandBuffer* command_buffer, Scene&) {
 
     params.y = 1;
     
-    command_buffer->set_push_constant(&params, sizeof(Vector4));
+    command_buffer->set_push_constant(&params, sizeof(prism::float4));
     
     command_buffer->draw(0, 4, 0, extent.width * extent.height);
 }

@@ -103,12 +103,12 @@ void ImGuiPass::render_post(GFXCommandBuffer* command_buffer, RenderTarget& targ
         command_buffer->set_index_buffer(target.index_buffer[target.current_frame], IndexType::UINT16);
     }
 
-    const Matrix4x4 projection = transform::orthographic(draw_data->DisplayPos.x,
+    const Matrix4x4 projection = prism::orthographic(draw_data->DisplayPos.x,
                                                 draw_data->DisplayPos.x + draw_data->DisplaySize.x,
                                                 draw_data->DisplayPos.y + draw_data->DisplaySize.y,
-                                                draw_data->DisplayPos.y,
-                                                0.0f,
-                                                1.0f);
+                                                     draw_data->DisplayPos.y,
+                                                     0.0f,
+                                                     1.0f);
                  
     command_buffer->set_push_constant(&projection, sizeof(Matrix4x4));
     

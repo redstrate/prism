@@ -16,23 +16,23 @@ struct PushConstant {
 };
 
 struct SceneMaterial {
-    Vector4 color, info;
+    prism::float4 color, info;
 };
 
 struct SceneLight {
-    Vector4 positionType;
-    Vector4 directionPower;
-    Vector4 colorSize;
-    Vector4 shadowsEnable;
+    prism::float4 positionType;
+    prism::float4 directionPower;
+    prism::float4 colorSize;
+    prism::float4 shadowsEnable;
 };
 
 struct SceneProbe {
-    Vector4 position, size;
+    prism::float4 position, size;
 };
 
 struct SceneInformation {
-    Vector4 options;
-    Vector4 camPos;
+    prism::float4 options;
+    prism::float4 camPos;
     Matrix4x4 vp, lightspace;
     Matrix4x4 spotLightSpaces[max_spot_shadows];
     SceneMaterial materials[max_scene_materials];
@@ -44,7 +44,7 @@ struct SceneInformation {
 
 struct SkyPushConstant {
     Matrix4x4 view;
-    Vector4 sun_position_fov;
+    prism::float4 sun_position_fov;
     float aspect;
 };
 
@@ -57,12 +57,12 @@ struct FilterPushConstant {
 const int mipLevels = 5;
 
 const std::array<Matrix4x4, 6> sceneTransforms = {
-    transform::look_at(Vector3(0), Vector3(-1.0, 0.0, 0.0), Vector3(0.0, -1.0, 0.0)), // right
-    transform::look_at(Vector3(0), Vector3(1.0, 0.0, 0.0), Vector3(0.0, -1.0, 0.0)), // left
-    transform::look_at(Vector3(0), Vector3( 0.0, -1.0, 0.0), Vector3(0.0, 0.0, -1.0)), // top
-    transform::look_at(Vector3(0), Vector3( 0.0, 1.0, 0.0), Vector3(0.0, 0.0, 1.0)), // bottom
-    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, 1.0), Vector3(0.0, -1.0, 0.0)), // back
-    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, -1.0), Vector3(0.0, -1.0, 0.0)) // front
+        prism::look_at(prism::float3(0), prism::float3(-1.0, 0.0, 0.0), prism::float3(0.0, -1.0, 0.0)), // right
+        prism::look_at(prism::float3(0), prism::float3(1.0, 0.0, 0.0), prism::float3(0.0, -1.0, 0.0)), // left
+        prism::look_at(prism::float3(0), prism::float3(0.0, -1.0, 0.0), prism::float3(0.0, 0.0, -1.0)), // top
+        prism::look_at(prism::float3(0), prism::float3(0.0, 1.0, 0.0), prism::float3(0.0, 0.0, 1.0)), // bottom
+        prism::look_at(prism::float3(0), prism::float3(0.0, 0.0, 1.0), prism::float3(0.0, -1.0, 0.0)), // back
+        prism::look_at(prism::float3(0), prism::float3(0.0, 0.0, -1.0), prism::float3(0.0, -1.0, 0.0)) // front
 };
 
 inline AssetPtr<Mesh> cubeMesh;
@@ -166,10 +166,10 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
             std::map<Material*, int> material_indices;
             int numMaterialsInBuffer = 0;
             
-            const Vector3 lightPos = scene->get<Transform>(obj).get_world_position();
+            const prism::float3 lightPos = scene->get<Transform>(obj).get_world_position();
             
-            const Matrix4x4 projection = transform::infinite_perspective(radians(90.0f), 1.0f, 0.1f);
-            const Matrix4x4 model = transform::translate(Matrix4x4(), Vector3(-lightPos.x, -lightPos.y, -lightPos.z));
+            const Matrix4x4 projection = prism::infinite_perspective(radians(90.0f), 1.0f, 0.1f);
+            const Matrix4x4 model = prism::translate(Matrix4x4(), prism::float3(-lightPos.x, -lightPos.y, -lightPos.z));
             
             SceneInformation sceneInfo = {};
             sceneInfo.lightspace = scene->lightSpace;
@@ -179,13 +179,13 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
             
             for(const auto [obj, light] : scene->get_all<Light>()) {
                 SceneLight sl;
-                sl.positionType = Vector4(scene->get<Transform>(obj).get_world_position(), (int)light.type);
+                sl.positionType = prism::float4(scene->get<Transform>(obj).get_world_position(), (int)light.type);
+
+                prism::float3 front = prism::float3(0.0f, 0.0f, 1.0f) * scene->get<Transform>(obj).rotation;
                 
-                Vector3 front = Vector3(0.0f, 0.0f, 1.0f) * scene->get<Transform>(obj).rotation;
-                
-                sl.directionPower = Vector4(-front, light.power);
-                sl.colorSize = Vector4(utility::from_srgb_to_linear(light.color), radians(light.spot_size));
-                sl.shadowsEnable = Vector4(light.enable_shadows, radians(light.size), 0, 0);
+                sl.directionPower = prism::float4(-front, light.power);
+                sl.colorSize = prism::float4(utility::from_srgb_to_linear(light.color), radians(light.spot_size));
+                sl.shadowsEnable = prism::float4(light.enable_shadows, radians(light.size), 0, 0);
                 
                 sceneInfo.lights[sceneInfo.numLights++] = sl;
             }
@@ -295,7 +295,7 @@ void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
                 
                 for(auto& [obj, light] : scene->get_all<Light>()) {
                     if(light.type == Light::Type::Sun)
-                        pc.sun_position_fov = Vector4(scene->get<Transform>(obj).get_world_position(), radians(90.0f));
+                        pc.sun_position_fov = prism::float4(scene->get<Transform>(obj).get_world_position(), radians(90.0f));
                 }
                 
                 command_buffer->set_graphics_pipeline(skyPipeline);
@@ -455,7 +455,7 @@ void SceneCapture::createIrradianceResources() {
     pipelineInfo.shaders.fragment_src = ShaderSource(prism::path("irradiance.frag"));
     
     GFXVertexInput input;
-    input.stride = sizeof(Vector3);
+    input.stride = sizeof(prism::float3);
     
     pipelineInfo.vertex_input.inputs.push_back(input);
     
@@ -509,7 +509,7 @@ void SceneCapture::createPrefilterResources() {
     pipelineInfo.shaders.fragment_constants = {size_constant};
     
     GFXVertexInput input;
-    input.stride = sizeof(Vector3);
+    input.stride = sizeof(prism::float3);
     
     pipelineInfo.vertex_input.inputs.push_back(input);
     

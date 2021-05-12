@@ -23,10 +23,10 @@ public:
 
     struct RayResult {
         bool hasHit;
-        Vector3 location;
+        prism::float3 location;
     };
 
-    RayResult raycast(Vector3 from, Vector3 to);
+    RayResult raycast(prism::float3 from, prism::float3 to);
 
 private:
     std::unique_ptr<btBroadphaseInterface> broadphase;

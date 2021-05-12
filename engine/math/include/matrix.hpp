@@ -13,7 +13,7 @@ public:
             unordered_data[i] = ((i / M) == (i % N) ? diagonal : T(0));
     }
     
-    constexpr Matrix(const Vector4 m1_, const Vector4 m2_, const Vector4 m3_, const Vector4 m4_) {
+    constexpr Matrix(const prism::float4 m1_, const prism::float4 m2_, const prism::float4 m3_, const prism::float4 m4_) {
         columns[0] = m1_;
         columns[1] = m2_;
         columns[2] = m3_;
@@ -22,7 +22,7 @@ public:
     
     constexpr inline void operator*=(const Matrix rhs);
 
-    using VectorType = Vector<N, T>;
+    using VectorType = prism::Vector<N, T>;
     
     constexpr VectorType& operator[](const size_t index) { return columns[index]; }
     constexpr VectorType operator[](const size_t index) const { return columns[index]; }
@@ -49,8 +49,8 @@ constexpr inline Matrix4x4 operator*(const Matrix4x4 lhs, const Matrix4x4 rhs) {
     return tmp;
 }
 
-constexpr inline Vector4 operator*(const Matrix4x4 lhs, const Vector4 rhs) {
-    Vector4 tmp;
+constexpr inline prism::float4 operator*(const Matrix4x4 lhs, const prism::float4 rhs) {
+    prism::float4 tmp;
     for(int r = 0; r < 4; r++) {
         for(int c = 0; c < 4; c++)
             tmp[r] += lhs.data[c][r] * rhs.data[c];

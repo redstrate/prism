@@ -15,12 +15,12 @@ struct PushConstant {
 };
 
 const std::array<Matrix4x4, 6> shadowTransforms = {
-    transform::look_at(Vector3(0), Vector3(1.0, 0.0, 0.0), Vector3(0.0, 1.0, 0.0)), // right
-    transform::look_at(Vector3(0), Vector3(-1.0, 0.0, 0.0), Vector3(0.0, 1.0, 0.0)), // left
-    transform::look_at(Vector3(0), Vector3( 0.0, 1.0, 0.0), Vector3(0.0, 0.0, -1.0)), // top
-    transform::look_at(Vector3(0), Vector3( 0.0, -1.0, 0.0), Vector3(0.0, 0.0, 1.0)), // bottom
-    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, 1.0), Vector3(0.0, 1.0, 0.0)), // back
-    transform::look_at(Vector3(0), Vector3( 0.0, 0.0, -1.0), Vector3(0.0, 1.0, 0.0)) // front
+        prism::look_at(prism::float3(0), prism::float3(1.0, 0.0, 0.0), prism::float3(0.0, 1.0, 0.0)), // right
+        prism::look_at(prism::float3(0), prism::float3(-1.0, 0.0, 0.0), prism::float3(0.0, 1.0, 0.0)), // left
+        prism::look_at(prism::float3(0), prism::float3(0.0, 1.0, 0.0), prism::float3(0.0, 0.0, -1.0)), // top
+        prism::look_at(prism::float3(0), prism::float3(0.0, -1.0, 0.0), prism::float3(0.0, 0.0, 1.0)), // bottom
+        prism::look_at(prism::float3(0), prism::float3(0.0, 0.0, 1.0), prism::float3(0.0, 1.0, 0.0)), // back
+        prism::look_at(prism::float3(0), prism::float3(0.0, 0.0, -1.0), prism::float3(0.0, 1.0, 0.0)) // front
 };
 
 ShadowPass::ShadowPass(GFX* gfx) {
@@ -109,7 +109,7 @@ void ShadowPass::render(GFXCommandBuffer* command_buffer, Scene& scene) {
     }
 }
 
-void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, const Matrix4x4 light_matrix, const Matrix4x4 model, const Vector3 light_position, const Light::Type type, const CameraFrustum& frustum, const int base_instance) {
+void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, const Matrix4x4 light_matrix, const Matrix4x4 model, const prism::float3 light_position, const Light::Type type, const CameraFrustum& frustum, const int base_instance) {
     for(auto [obj, mesh] : scene.get_all<Renderable>()) {
         if(!mesh.mesh)
             continue;
@@ -135,7 +135,7 @@ void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, c
                     break;
             }
             
-            command_buffer->bind_shader_buffer(point_location_buffer, 0, 2, sizeof(Vector3) * max_point_shadows);
+            command_buffer->bind_shader_buffer(point_location_buffer, 0, 2, sizeof(prism::float3) * max_point_shadows);
 
             command_buffer->set_push_constant(&pc, sizeof(PushConstant));
             command_buffer->set_depth_bias(1.25f, 0.00f, 1.75f);
@@ -159,7 +159,7 @@ void ShadowPass::render_meshes(GFXCommandBuffer* command_buffer, Scene& scene, c
                     break;
             }
 
-            command_buffer->bind_shader_buffer(point_location_buffer, 0, 2, sizeof(Vector3) * max_point_shadows);
+            command_buffer->bind_shader_buffer(point_location_buffer, 0, 2, sizeof(prism::float3) * max_point_shadows);
             
             command_buffer->set_push_constant(&pc, sizeof(PushConstant));
             
@@ -192,10 +192,10 @@ void ShadowPass::render_sun(GFXCommandBuffer* command_buffer, Scene& scene, Obje
         
         command_buffer->set_viewport(viewport);
         
-        const Vector3 lightPos = scene.get<Transform>(light_object).position;
+        const prism::float3 lightPos = scene.get<Transform>(light_object).position;
         
-        const Matrix4x4 projection = transform::orthographic(-25.0f, 25.0f, -25.0f, 25.0f, 0.1f, 100.0f);
-        const Matrix4x4 view = transform::look_at(lightPos, Vector3(0), Vector3(0, 1, 0));
+        const Matrix4x4 projection = prism::orthographic(-25.0f, 25.0f, -25.0f, 25.0f, 0.1f, 100.0f);
+        const Matrix4x4 view = prism::look_at(lightPos, prism::float3(0), prism::float3(0, 1, 0));
         
         const Matrix4x4 realMVP = projection * view;
         
@@ -230,7 +230,7 @@ void ShadowPass::render_spot(GFXCommandBuffer* command_buffer, Scene& scene, Obj
         
         command_buffer->set_viewport(viewport);
         
-        const Matrix4x4 perspective = transform::perspective(radians(90.0f), 1.0f, 0.1f, 100.0f);
+        const Matrix4x4 perspective = prism::perspective(radians(90.0f), 1.0f, 0.1f, 100.0f);
         
         const Matrix4x4 realMVP = perspective * inverse(scene.get<Transform>(light_object).model);
         
@@ -276,9 +276,9 @@ void ShadowPass::render_point(GFXCommandBuffer* command_buffer, Scene& scene, Ob
             
             command_buffer->set_viewport(viewport);
             
-            const Vector3 lightPos = scene.get<Transform>(light_object).get_world_position();
+            const prism::float3 lightPos = scene.get<Transform>(light_object).get_world_position();
             
-            const Matrix4x4 projection = transform::perspective(radians(90.0f), 1.0f, 0.1f, 100.0f);
+            const Matrix4x4 projection = prism::perspective(radians(90.0f), 1.0f, 0.1f, 100.0f);
             const Matrix4x4 model = inverse(scene.get<Transform>(light_object).model);
             
             const auto frustum = normalize_frustum(extract_frustum(projection * shadowTransforms[face] * model));
@@ -402,6 +402,6 @@ void ShadowPass::create_offscreen_resources() {
     
     offscreen_framebuffer = gfx->create_framebuffer(info);
 
-    point_location_buffer = gfx->create_buffer(nullptr, sizeof(Vector3) * max_point_shadows, false, GFXBufferUsage::Storage);
-    point_location_map = reinterpret_cast<Vector3*>(gfx->get_buffer_contents(point_location_buffer));
+    point_location_buffer = gfx->create_buffer(nullptr, sizeof(prism::float3) * max_point_shadows, false, GFXBufferUsage::Storage);
+    point_location_map = reinterpret_cast<prism::float3*>(gfx->get_buffer_contents(point_location_buffer));
 }

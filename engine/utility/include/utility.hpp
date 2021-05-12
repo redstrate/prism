@@ -99,8 +99,8 @@ namespace utility {
         return static_cast<uint16_t>(32.0f * f + 0.5f);
     }
 
-    inline Vector3 from_srgb_to_linear(const Vector3 sRGB) {
-        Vector3 linear = sRGB;
+    inline prism::float3 from_srgb_to_linear(const prism::float3 sRGB) {
+        prism::float3 linear = sRGB;
         for(auto& component : linear.data) {
             if(component > 0.04045f) {
                 component = std::pow((component + 0.055) / (1.055), 2.4f);

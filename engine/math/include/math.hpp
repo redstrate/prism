@@ -25,7 +25,7 @@ constexpr inline bool nearly_equal(const T a, const T b) {
 
 Matrix4x4 matrix_from_quat(Quaternion quat);
 Quaternion quat_from_matrix(Matrix3x3 matrix);
-Quaternion euler_to_quat(Vector3 angle);
-Vector3 quat_to_euler(Quaternion quat);
+Quaternion euler_to_quat(prism::float3 angle);
+prism::float3 quat_to_euler(Quaternion quat);
 Matrix4x4 inverse(Matrix4x4 m);
-Quaternion angle_axis(float angle, Vector3 axis);
+Quaternion angle_axis(float angle, prism::float3 axis);

@@ -22,7 +22,7 @@ inline Plane normalize(const Plane& plane) {
     return normalized_plane;
 }
 
-inline float distance_to_point(const Plane& plane, const Vector3& point) {
+inline float distance_to_point(const Plane& plane, const prism::float3& point) {
     return plane.a * point.x +
            plane.b * point.y +
            plane.c * point.z +

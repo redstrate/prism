@@ -100,7 +100,7 @@ static float previous_intersect = 0.0;
 
 void CommonEditor::update(float deltaTime) {
     if(engine->get_scene() != nullptr) {
-        Vector3 offset;
+        prism::float3 offset;
         
         willCaptureMouse = engine->get_input()->is_repeating("cameraLook") && accepting_viewport_input;
         
@@ -111,10 +111,10 @@ void CommonEditor::update(float deltaTime) {
             pitch += engine->get_input()->get_value("lookY") * 50.0f * deltaTime;
             
             const float speed = 7.00f;
-            
-            Vector3 forward, right;
-            forward = normalize(angle_axis(yaw, Vector3(0, 1, 0)) * angle_axis(pitch, Vector3(1, 0, 0)) * Vector3(0, 0, 1));
-            right = normalize(angle_axis(yaw, Vector3(0, 1, 0)) * Vector3(1, 0, 0));
+
+            prism::float3 forward, right;
+            forward = normalize(angle_axis(yaw, prism::float3(0, 1, 0)) * angle_axis(pitch, prism::float3(1, 0, 0)) * prism::float3(0, 0, 1));
+            right = normalize(angle_axis(yaw, prism::float3(0, 1, 0)) * prism::float3(1, 0, 0));
             
             float movX = engine->get_input()->get_value("movementX");
             float movY = engine->get_input()->get_value("movementY");
@@ -124,7 +124,7 @@ void CommonEditor::update(float deltaTime) {
             engine->get_scene()->get<Transform>(obj).position += right * movX * speed * deltaTime;
             engine->get_scene()->get<Transform>(obj).position += forward * -movY * speed * deltaTime;
             
-            engine->get_scene()->get<Transform>(obj).rotation = angle_axis(yaw, Vector3(0, 1, 0)) * angle_axis(pitch, Vector3(1, 0, 0));
+            engine->get_scene()->get<Transform>(obj).rotation = angle_axis(yaw, prism::float3(0, 1, 0)) * angle_axis(pitch, prism::float3(1, 0, 0));
         }
         
         doing_viewport_input = willCaptureMouse;
@@ -156,8 +156,8 @@ void CommonEditor::update(float deltaTime) {
                 
                 const auto width = viewport_width;
                 const auto height = viewport_height;
-                
-                Vector2 n = Vector2(((viewport_x / (float)width) * 2) - 1,
+
+                prism::float2 n = prism::float2(((viewport_x / (float)width) * 2) - 1,
                                     ((viewport_y / (float)height) * 2) - 1); // [-1, 1] mouse coordinates
                 n.y = -n.y;
                 
@@ -165,37 +165,37 @@ void CommonEditor::update(float deltaTime) {
                 n.y = std::clamp(n.y, -1.0f, 1.0f);
                                 
                 const Matrix4x4 view_proj_inverse = inverse(cam.perspective * cam.view);
-                
-                Vector4 ray_start = view_proj_inverse * Vector4(n.x, n.y, 0.0f, 1.0f);
+
+                prism::float4 ray_start = view_proj_inverse * prism::float4(n.x, n.y, 0.0f, 1.0f);
                 ray_start *= 1.0f / ray_start.w;
-                
-                Vector4 ray_end = view_proj_inverse * Vector4(n.x, n.y, 1.0f, 1.0f);
+
+                prism::float4 ray_end = view_proj_inverse * prism::float4(n.x, n.y, 1.0f, 1.0f);
                 ray_end *= 1.0f / ray_end.w;
                 
-                ray camera_ray;
+                prism::ray camera_ray;
                 camera_ray.origin = ray_start.xyz;
                 camera_ray.direction = normalize(ray_end.xyz - ray_start.xyz);
                 camera_ray.t = std::numeric_limits<float>::max();
                 
                 auto& transform = engine->get_scene()->get<Transform>(selected_object);
                 
-                ray transform_ray;
+                prism::ray transform_ray;
                 transform_ray.origin = last_object_position;
                 transform_ray.t = std::numeric_limits<float>::max();
                 
                 switch(axis) {
                     case SelectableObject::Axis::X:
-                        transform_ray.direction = Vector3(1, 0, 0);
+                        transform_ray.direction = prism::float3(1, 0, 0);
                         break;
                     case SelectableObject::Axis::Y:
-                        transform_ray.direction = Vector3(0, 1, 0);
+                        transform_ray.direction = prism::float3(0, 1, 0);
                         break;
                     case SelectableObject::Axis::Z:
-                        transform_ray.direction = Vector3(0, 0, 1);
+                        transform_ray.direction = prism::float3(0, 0, 1);
                         break;
                 }
                 
-                closest_distance_between_lines(camera_ray, transform_ray);
+                prism::closest_distance_between_lines(camera_ray, transform_ray);
                 
                 const float current_intersect = transform_ray.t;
                 if(previous_intersect == 0.0)
@@ -817,9 +817,9 @@ GFXTexture* CommonEditor::get_material_preview(Material& material) {
     scene.add<Renderable>(sphere).mesh = assetm->get<Mesh>(prism::app_domain / "models" / "sphere.model");
     scene.get<Renderable>(sphere).materials.push_back(assetm->get<Material>(prism::app_domain / material.path)); // we throw away our material handle here :-(
     
-    scene.get<Transform>(sphere).rotation = euler_to_quat(Vector3(radians(90.0f), 0, 0));
+    scene.get<Transform>(sphere).rotation = euler_to_quat(prism::float3(radians(90.0f), 0, 0));
 
-    return generate_common_preview(scene, Vector3(0, 0, 3));
+    return generate_common_preview(scene, prism::float3(0, 0, 3));
 }
 
 GFXTexture* CommonEditor::get_mesh_preview(Mesh& mesh) {
@@ -830,20 +830,20 @@ GFXTexture* CommonEditor::get_mesh_preview(Mesh& mesh) {
     
     float biggest_component = 0.0f;
     for(const auto& part : scene.get<Renderable>(mesh_obj).mesh->parts) {
-        const auto find_biggest_component = [&biggest_component](const Vector3 vec) {
+        const auto find_biggest_component = [&biggest_component](const prism::float3 vec) {
             for(auto& component : vec.data) {
                 if(std::fabs(component) > biggest_component)
                     biggest_component = component;
             }
         };
         
-        find_biggest_component(part.aabb.min);
-        find_biggest_component(part.aabb.max);
+        find_biggest_component(part.bounding_box.min);
+        find_biggest_component(part.bounding_box.max);
         
         scene.get<Renderable>(mesh_obj).materials.push_back(assetm->get<Material>(prism::app_domain / "materials" / "Material.material"));
     }
     
-    return generate_common_preview(scene, Vector3(biggest_component * 2.0f));
+    return generate_common_preview(scene, prism::float3(biggest_component * 2.0f));
 }
 
 GFXTexture* CommonEditor::get_texture_preview(Texture& texture) {
@@ -889,11 +889,11 @@ GFXTexture* CommonEditor::get_texture_preview(Texture& texture) {
     command_buffer->bind_texture(renderer->dummy_texture, 4);
     
     struct PostPushConstants {
-        Vector4 viewport;
-        Vector4 options;
+        prism::float4 viewport;
+        prism::float4 options;
     } pc;
     pc.options.w = 1.0;
-    pc.viewport = Vector4(1.0 / (float)thumbnail_resolution, 1.0 / (float)thumbnail_resolution, thumbnail_resolution, thumbnail_resolution);
+    pc.viewport = prism::float4(1.0 / (float)thumbnail_resolution, 1.0 / (float)thumbnail_resolution, thumbnail_resolution, thumbnail_resolution);
     
     command_buffer->set_push_constant(&pc, sizeof(PostPushConstants));
     
@@ -904,7 +904,7 @@ GFXTexture* CommonEditor::get_texture_preview(Texture& texture) {
     return final_texture;
 }
 
-GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 camera_position) {
+GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const prism::float3 camera_position) {
     auto gfx = engine->get_gfx();
     
     // setup scene
@@ -914,19 +914,19 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
     auto camera = scene.add_object();
     scene.add<Camera>(camera);
     
-    camera_look_at(scene, camera, camera_position, Vector3(0));
+    camera_look_at(scene, camera, camera_position, prism::float3(0));
     
     auto light = scene.add_object();
-    scene.get<Transform>(light).position = Vector3(5);
+    scene.get<Transform>(light).position = prism::float3(5);
     scene.add<Light>(light).type = Light::Type::Sun;
     
     auto probe = scene.add_object();
     scene.add<EnvironmentProbe>(probe).is_sized = false;
-    scene.get<Transform>(probe).position = Vector3(3);
+    scene.get<Transform>(probe).position = prism::float3(3);
     
     engine->update_scene(scene);
     
-    scene.get<Camera>(camera).perspective = transform::infinite_perspective(radians(45.0f), 1.0f, 0.1f);
+    scene.get<Camera>(camera).perspective = prism::infinite_perspective(radians(45.0f), 1.0f, 0.1f);
     scene.get<Camera>(camera).view = inverse(scene.get<Transform>(camera).model);
     
     auto renderer = engine->get_renderer();
@@ -1010,12 +1010,12 @@ GFXTexture* CommonEditor::generate_common_preview(Scene& scene, const Vector3 ca
     command_buffer->bind_texture(renderer->dummy_texture, 4);
     
     struct PostPushConstants {
-        Vector4 viewport;
-        Vector4 options;
+        prism::float4 viewport;
+        prism::float4 options;
     } pc;
     pc.options.w = 1.0;
-    pc.viewport = Vector4(1.0 / (float)thumbnail_resolution, 1.0 / (float)thumbnail_resolution, thumbnail_resolution, thumbnail_resolution);
-    
+    pc.viewport = prism::float4(1.0 / (float)thumbnail_resolution, 1.0 / (float)thumbnail_resolution, thumbnail_resolution, thumbnail_resolution);
+
     command_buffer->set_push_constant(&pc, sizeof(PostPushConstants));
     
     command_buffer->draw(0, 4, 0, 1);

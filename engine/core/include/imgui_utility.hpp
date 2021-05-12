@@ -42,8 +42,8 @@ namespace ImGui {
 
     inline bool DragQuat(const char* label, Quaternion* quat) {
         bool result = false;
-        
-        Vector3 euler = quat_to_euler(*quat);
+
+        prism::float3 euler = quat_to_euler(*quat);
         
         euler.x = degrees(euler.x);
         euler.y = degrees(euler.y);

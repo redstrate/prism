@@ -4,7 +4,6 @@ set(SRC
     include/string_utils.hpp
     include/timer.hpp
     include/common.hpp
-    include/aabb.hpp
     include/file_utils.hpp
     include/assertions.hpp
     include/path.hpp

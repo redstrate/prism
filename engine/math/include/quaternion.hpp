@@ -21,15 +21,15 @@ constexpr inline Quaternion operator*(const Quaternion lhs, const float rhs) {
     return tmp;
 }
 
-constexpr inline Vector3 operator*(const Quaternion& lhs, const Vector3& rhs) {
-    const Vector3 quatVector = Vector3(lhs.x, lhs.y, lhs.z);
-    const Vector3 uv = cross(quatVector, rhs);
-    const Vector3 uuv = cross(quatVector, uv);
+constexpr inline prism::float3 operator*(const Quaternion& lhs, const prism::float3& rhs) {
+    const prism::float3 quatVector = prism::float3(lhs.x, lhs.y, lhs.z);
+    const prism::float3 uv = cross(quatVector, rhs);
+    const prism::float3 uuv = cross(quatVector, uv);
     
     return rhs + ((uv * lhs.w) + uuv) * 2.0f;
 }
 
-constexpr inline Vector3 operator*(const Vector3& rhs, const Quaternion& lhs) {
+constexpr inline prism::float3 operator*(const prism::float3& rhs, const Quaternion& lhs) {
     return lhs * rhs;
 }
 

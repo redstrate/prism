@@ -19,7 +19,7 @@ struct Collision {
         Capsule
     } type = Type::Cube;
 
-    Vector3 size;
+    prism::float3 size;
 
     bool is_trigger = false;
     std::string trigger_id;
@@ -41,12 +41,12 @@ struct Rigidbody {
     bool enable_deactivation = true;
     bool enable_rotation = true;
 
-    void add_force(const Vector3 force) {
+    void add_force(const prism::float3 force) {
         stored_force += force;
     }
 
     btRigidBody* body = nullptr;
-    Vector3 stored_force;
+    prism::float3 stored_force;
 };
 
 struct Data {
@@ -57,12 +57,12 @@ struct Data {
 };
 
 struct Transform {
-    Vector3 position, scale = Vector3(1);
+    prism::float3 position, scale = prism::float3(1);
     Quaternion rotation;
 
     Matrix4x4 model;
 
-    Vector3 get_world_position() const {
+    prism::float3 get_world_position() const {
         return {
             model[3][0],
             model[3][1],
@@ -85,7 +85,7 @@ struct Light {
         Sun = 2
     } type = Type::Point;
 
-    Vector3 color = Vector3(1);
+    prism::float3 color = prism::float3(1);
 
     float power = 10.0f;
     float size = 1.0f;
@@ -116,7 +116,7 @@ struct UI {
 
 struct EnvironmentProbe {
     bool is_sized = true;
-    Vector3 size = Vector3(10);
+    prism::float3 size = prism::float3(10);
     
     float intensity = 1.0;
 };

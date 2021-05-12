@@ -49,7 +49,7 @@ GFXPipeline* MaterialCompiler::create_static_pipeline(GFXGraphicsPipelineCreateI
     
     if(positions_only) {
         createInfo.vertex_input.inputs = {
-            {position_buffer_index, sizeof(Vector3)}
+            {position_buffer_index, sizeof(prism::float3)}
         };
         
         createInfo.vertex_input.attributes = {
@@ -57,11 +57,11 @@ GFXPipeline* MaterialCompiler::create_static_pipeline(GFXGraphicsPipelineCreateI
         };
     } else {
         createInfo.vertex_input.inputs = {
-            {position_buffer_index, sizeof(Vector3)},
-            {normal_buffer_index, sizeof(Vector3)},
-            {texcoord_buffer_index, sizeof(Vector2)},
-            {tangent_buffer_index, sizeof(Vector3)},
-            {bitangent_buffer_index, sizeof(Vector3)}
+            {position_buffer_index, sizeof(prism::float3)},
+            {normal_buffer_index, sizeof(prism::float3)},
+            {texcoord_buffer_index, sizeof(prism::float2)},
+            {tangent_buffer_index, sizeof(prism::float3)},
+            {bitangent_buffer_index, sizeof(prism::float3)}
         };
         
         createInfo.vertex_input.attributes = {
@@ -89,7 +89,7 @@ GFXPipeline* MaterialCompiler::create_skinned_pipeline(GFXGraphicsPipelineCreate
     
     if(positions_only) {
         createInfo.vertex_input.inputs = {
-            {position_buffer_index, sizeof(Vector3)},
+            {position_buffer_index, sizeof(prism::float3)},
             {bone_buffer_index, sizeof(BoneVertexData)}
         };
         
@@ -100,11 +100,11 @@ GFXPipeline* MaterialCompiler::create_skinned_pipeline(GFXGraphicsPipelineCreate
         };
     } else {
         createInfo.vertex_input.inputs = {
-            {position_buffer_index, sizeof(Vector3)},
-            {normal_buffer_index, sizeof(Vector3)},
-            {texcoord_buffer_index, sizeof(Vector2)},
-            {tangent_buffer_index, sizeof(Vector3)},
-            {bitangent_buffer_index, sizeof(Vector3)},
+            {position_buffer_index, sizeof(prism::float3)},
+            {normal_buffer_index, sizeof(prism::float3)},
+            {texcoord_buffer_index, sizeof(prism::float2)},
+            {tangent_buffer_index, sizeof(prism::float3)},
+            {bitangent_buffer_index, sizeof(prism::float3)},
             {bone_buffer_index, sizeof(BoneVertexData)}
         };
         

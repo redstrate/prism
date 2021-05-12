@@ -9,7 +9,7 @@
 
 struct PositionKeyFrame {
     float time;
-    Vector3 value;
+    prism::float3 value;
 };
 
 inline bool operator==(const PositionKeyFrame& lhs, const PositionKeyFrame& rhs) {
@@ -23,7 +23,7 @@ struct RotationKeyFrame {
 
 struct ScaleKeyFrame {
     float time;
-    Vector3 value;
+    prism::float3 value;
 };
 
 struct Bone;

@@ -51,11 +51,11 @@ void SMAAPass::render(GFXCommandBuffer* command_buffer, RenderTarget& target) {
     beginInfo.render_pass = render_pass;
     
     struct PushConstant {
-        Vector4 viewport;
+        prism::float4 viewport;
         Matrix4x4 correction_matrix;
     } pc;
     
-    pc.viewport = Vector4(1.0f / static_cast<float>(target.extent.width), 1.0f / static_cast<float>(target.extent.height), target.extent.width, target.extent.height);
+    pc.viewport = prism::float4(1.0f / static_cast<float>(target.extent.width), 1.0f / static_cast<float>(target.extent.height), target.extent.width, target.extent.height);
 
     // edge
     {
@@ -143,7 +143,7 @@ void SMAAPass::create_pipelines() {
     createInfo.render_pass = render_pass;
     
     createInfo.shader_input.push_constants = {
-        {sizeof(Vector4) + sizeof(Matrix4x4), 0}
+        {sizeof(prism::float4) + sizeof(Matrix4x4), 0}
     };
     
     createInfo.shader_input.bindings = {

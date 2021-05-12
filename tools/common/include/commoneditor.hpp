@@ -155,7 +155,7 @@ public:
     GFXTexture* get_material_preview(Material& material);
     GFXTexture* get_mesh_preview(Mesh& mesh);
     GFXTexture* get_texture_preview(Texture& texture);
-    GFXTexture* generate_common_preview(Scene& scene, const Vector3 camera_position);
+    GFXTexture* generate_common_preview(Scene& scene, const prism::float3 camera_position);
 
     template<typename T>
     GFXTexture* get_asset_thumbnail(AssetPtr<T>& asset) {
@@ -326,7 +326,7 @@ private:
     
     bool transforming_axis = false;
     SelectableObject::Axis axis;
-    Vector3 last_object_position;
+    prism::float3 last_object_position;
     
     bool open_asset_popup = false;
     AssetType current_asset_type;

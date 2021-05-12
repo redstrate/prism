@@ -252,7 +252,7 @@ public:
  @param target The position to be centered in the camera's view.
  @note Although this is a look at function, it applies no special attribute to the camera and simply changes it's position and rotation.
  */
-void camera_look_at(Scene& scene, Object cam, Vector3 pos, Vector3 target);
+void camera_look_at(Scene& scene, Object cam, prism::float3 pos, prism::float3 target);
 
 Object load_object(Scene& scene, const nlohmann::json obj);
 nlohmann::json save_object(Object obj);

@@ -6,9 +6,9 @@
 #include "transform.hpp"
 #include "asset.hpp"
 
-void camera_look_at(Scene& scene, Object cam, Vector3 pos, Vector3 target) {
+void camera_look_at(Scene& scene, Object cam, prism::float3 pos, prism::float3 target) {
     scene.get<Transform>(cam).position = pos;
-    scene.get<Transform>(cam).rotation = transform::quat_look_at(pos, target, Vector3(0, 1, 0));
+    scene.get<Transform>(cam).rotation = prism::quat_look_at(pos, target, prism::float3(0, 1, 0));
 }
 
 void load_transform_component(nlohmann::json j, Transform& t) {

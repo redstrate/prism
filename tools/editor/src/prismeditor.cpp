@@ -50,7 +50,7 @@ void prepScene() {
 
     scene->add<Camera>(camera);
     
-    camera_look_at(*scene, camera, Vector3(0, 2, 3), Vector3(0));
+    camera_look_at(*scene, camera, prism::float3(0, 2, 3), prism::float3(0));
 }
 
 void prepThreePointLighting() {
@@ -63,7 +63,7 @@ void prepThreePointLighting() {
     scene->get(sun_light).name = "sun light";
     scene->get(sun_light).editor_object = true;
 
-    scene->get<Transform>(sun_light).position = Vector3(15);
+    scene->get<Transform>(sun_light).position = prism::float3(15);
     scene->add<Light>(sun_light).type = Light::Type::Sun;
     scene->get<Light>(sun_light).power = 5.0f;
 
@@ -78,8 +78,8 @@ void prepPrefabScene() {
     scene->get(plane).name = "plane";
     scene->get(plane).editor_object = true;
 
-    scene->get<Transform>(plane).position = Vector3(0, -1, 0);
-    scene->get<Transform>(plane).scale = Vector3(50);
+    scene->get<Transform>(plane).position = prism::float3(0, -1, 0);
+    scene->get<Transform>(plane).scale = prism::float3(50);
 
     scene->add<Renderable>(plane).mesh = assetm->get<Mesh>(prism::app_domain / "models/plane.model");
 
@@ -93,8 +93,8 @@ Renderable* prepMaterialScene() {
     scene->get(plane).name = "plane";
     scene->get(plane).editor_object = true;
 
-    scene->get<Transform>(plane).position = Vector3(0, -1, 0);
-    scene->get<Transform>(plane).scale = Vector3(50);
+    scene->get<Transform>(plane).position = prism::float3(0, -1, 0);
+    scene->get<Transform>(plane).scale = prism::float3(50);
 
     scene->add<Renderable>(plane).mesh = assetm->get<Mesh>(prism::app_domain / "models/plane.model");
     scene->get<Renderable>(plane).materials.push_back(assetm->get<Material>(prism::app_domain / "materials/Material.material"));
@@ -103,7 +103,7 @@ Renderable* prepMaterialScene() {
     scene->get(sphere).name = "sphere";
     scene->get(sphere).editor_object = true;
 
-    scene->get<Transform>(sphere).rotation = euler_to_quat(Vector3(radians(90.0f), 0, 0));
+    scene->get<Transform>(sphere).rotation = euler_to_quat(prism::float3(radians(90.0f), 0, 0));
     
     scene->add<Renderable>(sphere).mesh = assetm->get<Mesh>(prism::app_domain / "models/sphere.model");
 

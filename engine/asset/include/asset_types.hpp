@@ -63,9 +63,9 @@ struct Bone {
 
     Bone* parent = nullptr;
 
-    Vector3 position;
+    prism::float3 position;
     Quaternion rotation;
-    Vector3 scale;
+    prism::float3 scale;
 };
 
 class Mesh : public Asset {
@@ -74,7 +74,7 @@ public:
     // with multiple materials with different textures, etc
     struct Part {
         std::string name;
-        AABB aabb;
+        prism::aabb bounding_box;
         
         GFXBuffer* bone_batrix_buffer = nullptr;
         std::vector<Matrix4x4> offset_matrices;

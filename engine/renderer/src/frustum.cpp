@@ -59,11 +59,11 @@ CameraFrustum normalize_frustum(const CameraFrustum& frustum) {
     return normalized_frustum;
 }
 
-bool test_point_plane(const Plane& plane, const Vector3& point) {
+bool test_point_plane(const Plane& plane, const prism::float3& point) {
     return distance_to_point(plane, point) > 0.0;
 }
 
-bool test_point_frustum(const CameraFrustum& frustum, const Vector3& point) {
+bool test_point_frustum(const CameraFrustum& frustum, const prism::float3& point) {
     bool inside_frustum = false;
     
     for(int i = 0; i < 6; i++)
@@ -72,7 +72,7 @@ bool test_point_frustum(const CameraFrustum& frustum, const Vector3& point) {
     return !inside_frustum;
 }
 
-bool test_aabb_frustum(const CameraFrustum& frustum, const AABB& aabb) {
+bool test_aabb_frustum(const CameraFrustum& frustum, const prism::aabb& aabb) {
     for(int i = 0; i < 6; i++) {
         int out = 0;
         
@@ -86,10 +86,10 @@ bool test_aabb_frustum(const CameraFrustum& frustum, const AABB& aabb) {
     return true;
 }
 
-AABB get_aabb_for_part(const Transform& transform, const Mesh::Part& part) {
-    AABB aabb = {};
-    aabb.min = part.aabb.min - transform.get_world_position();
-    aabb.max = transform.get_world_position() + part.aabb.max;
+prism::aabb get_aabb_for_part(const Transform& transform, const Mesh::Part& part) {
+    prism::aabb aabb = {};
+    aabb.min = part.bounding_box.min - transform.get_world_position();
+    aabb.max = transform.get_world_position() + part.bounding_box.max;
     aabb.min *= transform.scale;
     aabb.max *= transform.scale;
     

@@ -52,7 +52,7 @@ public:
 	void render_scene(Scene& scene, GFXCommandBuffer* commandBuffer) override;
 
     void get_selected_object(int x, int y, std::function<void(SelectableObject)> callback);
-    void draw_arrow(GFXCommandBuffer* commandBuffer, Vector3 color, Matrix4x4 model);
+    void draw_arrow(GFXCommandBuffer* commandBuffer, prism::float3 color, Matrix4x4 model);
     
     GFXTexture* get_requested_texture(PassTextureType type) override {
         if(type == PassTextureType::SelectionSobel)
