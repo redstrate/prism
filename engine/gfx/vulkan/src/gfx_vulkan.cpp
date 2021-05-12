@@ -189,6 +189,18 @@ VkResult name_object(VkDevice device, VkObjectType type, uint64_t object, std::s
         return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
 
+void cmd_debug_marker_begin(VkDevice device, VkCommandBuffer command_buffer, VkDebugMarkerMarkerInfoEXT marker_info) {
+    auto func = (PFN_vkCmdDebugMarkerBeginEXT)vkGetDeviceProcAddr(device, "vkCmdDebugMarkerBeginEXT");
+    if (func != nullptr)
+        func(command_buffer, &marker_info);
+}
+
+void cmd_debug_marker_end(VkDevice device, VkCommandBuffer command_buffer) {
+    auto func = (PFN_vkCmdDebugMarkerEndEXT)vkGetDeviceProcAddr(device, "vkCmdDebugMarkerEndEXT");
+    if (func != nullptr)
+        func(command_buffer);
+}
+
 bool GFXVulkan::initialize(const GFXCreateInfo& info) {
 #ifdef PLATFORM_WINDOWS
     const char* surface_name = "VK_KHR_win32_surface";
@@ -1460,6 +1472,23 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
             if(try_bind_descriptor())
                 vkCmdDispatch(cmd, command.data.dispatch.group_count_x, command.data.dispatch.group_count_y, command.data.dispatch.group_count_z);
         }
+            break;
+        case GFXCommandType::PushGroup:
+        {
+            VkDebugMarkerMarkerInfoEXT marker_info = {};
+            marker_info.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT;
+            marker_info.pMarkerName = command.data.push_group.name.data();\
+
+            cmd_debug_marker_begin(device, cmd, marker_info);
+        }
+            break;
+        case GFXCommandType::PopGroup:
+        {
+            cmd_debug_marker_end(device, cmd);
+        }
+            break;
+        default:
+            prism::log::error(System::GFX, "Unhandled GFX Command Type {}", utility::enum_to_string(command.type));
             break;
         }
 	}
