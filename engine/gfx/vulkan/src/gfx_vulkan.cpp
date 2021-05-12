@@ -189,16 +189,14 @@ VkResult name_object(VkDevice device, VkObjectType type, uint64_t object, std::s
         return VK_ERROR_EXTENSION_NOT_PRESENT;
 }
 
-void cmd_debug_marker_begin(VkDevice device, VkCommandBuffer command_buffer, VkDebugMarkerMarkerInfoEXT marker_info) {
-    auto func = (PFN_vkCmdDebugMarkerBeginEXT)vkGetDeviceProcAddr(device, "vkCmdDebugMarkerBeginEXT");
-    if (func != nullptr)
-        func(command_buffer, &marker_info);
+void cmd_debug_marker_begin(VkDevice device, VkCommandBuffer command_buffer, VkDebugUtilsLabelEXT marker_info) {
+    auto func = (PFN_vkCmdBeginDebugUtilsLabelEXT)vkGetDeviceProcAddr(device, "vkCmdBeginDebugUtilsLabelEXT");
+    func(command_buffer, &marker_info);
 }
 
 void cmd_debug_marker_end(VkDevice device, VkCommandBuffer command_buffer) {
-    auto func = (PFN_vkCmdDebugMarkerEndEXT)vkGetDeviceProcAddr(device, "vkCmdDebugMarkerEndEXT");
-    if (func != nullptr)
-        func(command_buffer);
+    auto func = (PFN_vkCmdEndDebugUtilsLabelEXT)vkGetDeviceProcAddr(device, "vkCmdEndDebugUtilsLabelEXT");
+    func(command_buffer);
 }
 
 bool GFXVulkan::initialize(const GFXCreateInfo& info) {
@@ -1475,9 +1473,9 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
             break;
         case GFXCommandType::PushGroup:
         {
-            VkDebugMarkerMarkerInfoEXT marker_info = {};
-            marker_info.sType = VK_STRUCTURE_TYPE_DEBUG_MARKER_MARKER_INFO_EXT;
-            marker_info.pMarkerName = command.data.push_group.name.data();\
+            VkDebugUtilsLabelEXT marker_info = {};
+            marker_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_LABEL_EXT;
+            marker_info.pLabelName = command.data.push_group.name.data();
 
             cmd_debug_marker_begin(device, cmd, marker_info);
         }
