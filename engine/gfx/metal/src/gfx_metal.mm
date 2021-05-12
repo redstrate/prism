@@ -654,10 +654,10 @@ GFXPipeline* GFXMetal::create_compute_pipeline(const GFXComputePipelineCreateInf
     id<MTLLibrary> computeLibrary;
     {
         std::string compute_src;
-        if(info.shaders.compute_path.empty()) {
-            compute_src = info.shaders.compute_src.as_string();
+        if(info.compute_src.is_string()) {
+            compute_src = info.compute_src.as_string();
         } else {
-            const auto compute_path = info.shaders.compute_path;
+            const auto compute_path = info.compute_src.as_path().string();
             
             auto file = file::open(file::internal_domain / compute_path);
             if(file != std::nullopt) {
