@@ -15,7 +15,7 @@ namespace ui {
     class Screen {
     public:
         Screen() {}
-        Screen(const file::Path path);
+        Screen(const prism::Path path);
 
         void process_event(const std::string& type, std::string data = "");
 

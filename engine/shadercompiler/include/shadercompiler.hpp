@@ -43,13 +43,13 @@ public:
     ShaderSource(const ShaderSource& rhs) : source (rhs.source) {}
     explicit ShaderSource(const std::string& source_string) : source(source_string) {}
     explicit ShaderSource(const std::vector<uint32_t>& source_bytecode) : source(source_bytecode) {}
-    explicit ShaderSource(const file::Path& shader_path) : source(shader_path) {}
+    explicit ShaderSource(const prism::Path& shader_path) : source(shader_path) {}
 
-    std::variant<std::monostate, file::Path, std::string, std::vector<uint32_t>> source;
+    std::variant<std::monostate, prism::Path, std::string, std::vector<uint32_t>> source;
     
     /// Returns a view of the shader source as a path.
-    [[nodiscard]] file::Path as_path() const {
-        return std::get<file::Path>(source);
+    [[nodiscard]] prism::Path as_path() const {
+        return std::get<prism::Path>(source);
     }
     
     /// Returns a view of the shader source as plaintext.
@@ -67,7 +67,7 @@ public:
     }
     
     [[nodiscard]] bool is_path() const {
-        return std::holds_alternative<file::Path>(source);
+        return std::holds_alternative<prism::Path>(source);
     }
     
     [[nodiscard]] bool is_string() const {

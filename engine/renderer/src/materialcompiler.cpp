@@ -11,7 +11,7 @@
 #include "renderer.hpp"
 
 ShaderSource get_shader(std::string filename, bool skinned, bool cubemap) {
-    auto shader_file = file::open(file::internal_domain / filename);
+    auto shader_file = prism::open_file(prism::internal_domain / filename);
     if(!shader_file.has_value()) {
         prism::log::error(System::Renderer, "Failed to open shader file {}!", filename);
         return {};

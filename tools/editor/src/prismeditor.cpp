@@ -81,7 +81,7 @@ void prepPrefabScene() {
     scene->get<Transform>(plane).position = Vector3(0, -1, 0);
     scene->get<Transform>(plane).scale = Vector3(50);
 
-    scene->add<Renderable>(plane).mesh = assetm->get<Mesh>(file::app_domain / "models/plane.model");
+    scene->add<Renderable>(plane).mesh = assetm->get<Mesh>(prism::app_domain / "models/plane.model");
 
     prepThreePointLighting();
 }
@@ -96,8 +96,8 @@ Renderable* prepMaterialScene() {
     scene->get<Transform>(plane).position = Vector3(0, -1, 0);
     scene->get<Transform>(plane).scale = Vector3(50);
 
-    scene->add<Renderable>(plane).mesh = assetm->get<Mesh>(file::app_domain / "models/plane.model");
-    scene->get<Renderable>(plane).materials.push_back(assetm->get<Material>(file::app_domain / "materials/Material.material"));
+    scene->add<Renderable>(plane).mesh = assetm->get<Mesh>(prism::app_domain / "models/plane.model");
+    scene->get<Renderable>(plane).materials.push_back(assetm->get<Material>(prism::app_domain / "materials/Material.material"));
     
     auto sphere = scene->add_object();
     scene->get(sphere).name = "sphere";
@@ -105,7 +105,7 @@ Renderable* prepMaterialScene() {
 
     scene->get<Transform>(sphere).rotation = euler_to_quat(Vector3(radians(90.0f), 0, 0));
     
-    scene->add<Renderable>(sphere).mesh = assetm->get<Mesh>(file::app_domain / "models/sphere.model");
+    scene->add<Renderable>(sphere).mesh = assetm->get<Mesh>(prism::app_domain / "models/sphere.model");
 
     prepThreePointLighting();
     
@@ -125,7 +125,7 @@ void PrismEditor::setup_editor(Editor* editor) {
 
 }
 
-void PrismEditor::open_asset(const file::Path path) {
+void PrismEditor::open_asset(const prism::Path path) {
     if(path.extension() == ".prefab") {
         PrefabEditor* editor = new PrefabEditor();
         editor->path = path.string();

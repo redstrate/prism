@@ -23,8 +23,8 @@ void ImGuiPass::create_render_target_resources(RenderTarget& target) {
     if(pipeline == nullptr) {
         GFXGraphicsPipelineCreateInfo createInfo;
         createInfo.label = "ImGui";
-        createInfo.shaders.vertex_src = ShaderSource(file::Path("imgui.vert"));
-        createInfo.shaders.fragment_src = ShaderSource(file::Path("imgui.frag"));
+        createInfo.shaders.vertex_src = ShaderSource(prism::Path("imgui.vert"));
+        createInfo.shaders.fragment_src = ShaderSource(prism::Path("imgui.frag"));
 
         GFXVertexInput vertexInput = {};
         vertexInput.stride = sizeof(ImDrawVert);
@@ -153,9 +153,9 @@ void ImGuiPass::load_font(const std::string_view filename) {
     ImGuiIO& io = ImGui::GetIO();
 
     if(io.Fonts->Fonts.empty()) {
-        auto file = file::open(file::app_domain / filename);
+        auto file = prism::open_file(prism::app_domain / filename);
         if(file != std::nullopt) {
-            font_file = std::make_unique<file::File>(std::move(file.value()));
+            font_file = std::make_unique<prism::file>(std::move(file.value()));
 
             font_file->read_all();
             

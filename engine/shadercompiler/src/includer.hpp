@@ -134,7 +134,7 @@ protected:
     // If no path markers, return current working directory.
     // Otherwise, strip file name and return path leading up to it.
     virtual std::string getDirectory(const std::string) const {
-        //return file::get_domain_path(file::Domain::Internal).string();
+        //return file::get_domain_path(file::domain::Internal).string();
         return "";
     }
 };

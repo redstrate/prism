@@ -91,7 +91,7 @@ struct SkyPushConstant {
 renderer::renderer(GFX* gfx, const bool enable_imgui) : gfx(gfx) {
     Expects(gfx != nullptr);
     
-    shader_compiler.set_include_path(file::get_domain_path(file::Domain::Internal).string());
+    shader_compiler.set_include_path(prism::get_domain_path(prism::domain::internal).string());
 
     create_dummy_texture();
     create_histogram_resources();
@@ -144,8 +144,8 @@ void renderer::resize_render_target(RenderTarget& target, const prism::Extent ex
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Text";
     
-    pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("text.vert"));
-    pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("text.frag"));
+    pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("text.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("text.frag"));
     
     pipelineInfo.rasterization.primitive_type = GFXPrimitiveType::TriangleStrip;
     
@@ -222,7 +222,7 @@ void renderer::update_screen() {
 	if(current_screen != nullptr) {
 		for(auto& element : current_screen->elements) {
 			if(!element.background.image.empty())
-				element.background.texture = assetm->get<Texture>(file::app_domain / element.background.image);
+				element.background.texture = assetm->get<Texture>(prism::app_domain / element.background.image);
 		}
 	}
 }
@@ -718,8 +718,8 @@ void renderer::create_mesh_pipeline(Material& material) const {
     
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Mesh";
-    pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("mesh.vert"));
-    pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("mesh.frag"));
+    pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("mesh.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("mesh.frag"));
     
     pipelineInfo.shaders.vertex_constants = {materials_constant, lights_constant, spot_lights_constant, probes_constant};
     pipelineInfo.shaders.fragment_constants = {materials_constant, lights_constant, spot_lights_constant, probes_constant};
@@ -814,8 +814,8 @@ void renderer::create_render_target_resources(RenderTarget& target) {
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.label = "Post";
         
-        pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("post.vert"));
-        pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("post.frag"));
+        pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("post.vert"));
+        pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("post.frag"));
         
         pipelineInfo.shader_input.bindings = {
             {4, GFXBindingType::PushConstant},
@@ -841,8 +841,8 @@ void renderer::create_post_pipelines() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "Post";
     
-    pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("post.vert"));
-    pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("post.frag"));
+    pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("post.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("post.frag"));
     
     pipelineInfo.shader_input.bindings = {
         {4, GFXBindingType::PushConstant},
@@ -862,7 +862,7 @@ void renderer::create_post_pipelines() {
 }
 
 void renderer::create_font_texture() {
-    auto file = file::open(file::app_domain / "font.fp", true);
+    auto file = prism::open_file(prism::app_domain / "font.fp", true);
     if(file == std::nullopt) {
         prism::log::error(System::Renderer, "Failed to load font file!");
         return;
@@ -920,8 +920,8 @@ void renderer::create_ui_pipelines() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "UI";
 
-    pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("ui.vert"));
-    pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("ui.frag"));
+    pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("ui.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("ui.frag"));
 
     pipelineInfo.rasterization.primitive_type = GFXPrimitiveType::TriangleStrip;
 
@@ -959,8 +959,8 @@ void renderer::generate_brdf() {
     GFXGraphicsPipelineCreateInfo pipelineInfo = {};
     pipelineInfo.label = "BRDF";
     
-    pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("brdf.vert"));
-    pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("brdf.frag"));
+    pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("brdf.vert"));
+    pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("brdf.frag"));
     
     pipelineInfo.render_pass = brdf_render_pass;
 
@@ -1006,7 +1006,7 @@ void renderer::generate_brdf() {
 
 void renderer::create_histogram_resources() {
     GFXComputePipelineCreateInfo create_info = {};
-    create_info.compute_src = ShaderSource(file::Path("histogram.comp"));
+    create_info.compute_src = ShaderSource(prism::Path("histogram.comp"));
     create_info.workgroup_size_x = 16;
     create_info.workgroup_size_y = 16;
     
@@ -1022,7 +1022,7 @@ void renderer::create_histogram_resources() {
     
     histogram_pipeline = gfx->create_compute_pipeline(create_info);
     
-    create_info.compute_src = ShaderSource(file::Path("histogram-average.comp"));
+    create_info.compute_src = ShaderSource(prism::Path("histogram-average.comp"));
     create_info.workgroup_size_x = 256;
     create_info.workgroup_size_y = 1;
     
@@ -1055,15 +1055,15 @@ ShaderSource renderer::register_shader(const std::string_view shader_file) {
         }
     }
     
-    file::Path base_shader_path = get_shader_source_directory();
+    prism::Path base_shader_path = get_shader_source_directory();
     
     // if shader editor system is not initialized, use prebuilt shaders
     if(base_shader_path.empty())
-        return ShaderSource(file::Path(shader_file));
+        return ShaderSource(prism::Path(shader_file));
     
     shader_compiler.set_include_path(base_shader_path.string());
     
-    file::Path shader_path = file::Path(shader_file);
+    prism::Path shader_path = prism::Path(shader_file);
     
     ShaderStage stage = ShaderStage::Vertex;
     if(shader_path.extension() == ".vert")
@@ -1072,7 +1072,7 @@ ShaderSource renderer::register_shader(const std::string_view shader_file) {
         stage = ShaderStage::Fragment;
 
     if(found_shader_source.empty()) {
-        auto file = file::open(base_shader_path / shader_path.replace_extension(shader_path.extension().string() + ".glsl"));
+        auto file = prism::open_file(base_shader_path / shader_path.replace_extension(shader_path.extension().string() + ".glsl"));
         
         return shader_compiler.compile(ShaderLanguage::GLSL, stage, ShaderSource(file->read_as_string()), gfx->accepted_shader_language()).value();
     } else {

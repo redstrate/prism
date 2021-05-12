@@ -754,7 +754,7 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 			vertex_module = createShaderModule(vertex_shader_vector.data(), vertex_shader_vector.size() * sizeof(uint32_t));
 		}
 		else {
-			auto vertex_shader = file::open(file::internal_domain / (info.shaders.vertex_src.as_path().string()), true);
+			auto vertex_shader = prism::open_file(prism::internal_domain / (info.shaders.vertex_src.as_path().string()), true);
 			vertex_shader->read_all();
 
 			vertex_module = createShaderModule(vertex_shader->cast_data<uint32_t>(), vertex_shader->size());
@@ -781,7 +781,7 @@ GFXPipeline* GFXVulkan::create_graphics_pipeline(const GFXGraphicsPipelineCreate
 			fragment_module = createShaderModule(fragment_shader_vector.data(), fragment_shader_vector.size() * sizeof(uint32_t));
 		}
 		else {
-			auto fragment_shader = file::open(file::internal_domain / (info.shaders.fragment_src.as_path().string()), true);
+			auto fragment_shader = prism::open_file(prism::internal_domain / (info.shaders.fragment_src.as_path().string()), true);
 			fragment_shader->read_all();
 
 			fragment_module = createShaderModule(fragment_shader->cast_data<uint32_t>(), fragment_shader->size());
@@ -1035,7 +1035,7 @@ GFXPipeline* GFXVulkan::create_compute_pipeline(const GFXComputePipelineCreateIn
         compute_module = createShaderModule(shader_vector.data(), shader_vector.size() * sizeof(uint32_t));
     }
     else {
-        auto shader = file::open(file::internal_domain / (info.compute_src.as_path().string()), true);
+        auto shader = prism::open_file(prism::internal_domain / (info.compute_src.as_path().string()), true);
         shader->read_all();
 
         compute_module = createShaderModule(shader->cast_data<uint32_t>(), shader->size());

@@ -15,10 +15,10 @@
 #include "physics.hpp"
 #include "imgui_backend.hpp"
 
-std::unique_ptr<Mesh> load_mesh(const file::Path path) {
+std::unique_ptr<Mesh> load_mesh(const prism::Path path) {
     Expects(!path.empty());
     
-    auto file = file::open(path, true);
+    auto file = prism::open_file(path, true);
     if(!file.has_value()) {
         prism::log::error(System::Renderer, "Failed to load mesh from {}!", path);
         return nullptr;
@@ -185,10 +185,10 @@ std::unique_ptr<Mesh> load_mesh(const file::Path path) {
     return mesh;
 }
 
-std::unique_ptr<Texture> load_texture(const file::Path path) {
+std::unique_ptr<Texture> load_texture(const prism::Path path) {
     Expects(!path.empty());
     
-    auto file = file::open(path, true);
+    auto file = prism::open_file(path, true);
     if(!file.has_value()) {
         prism::log::error(System::Renderer, "Failed to load texture from {}!", path);
         return nullptr;
@@ -242,10 +242,10 @@ std::unique_ptr<Texture> load_texture(const file::Path path) {
     return texture;
 }
 
-std::unique_ptr<Material> load_material(const file::Path path) {
+std::unique_ptr<Material> load_material(const prism::Path path) {
     Expects(!path.empty());
     
-    auto file = file::open(path);
+    auto file = prism::open_file(path);
     if(!file.has_value()) {
         prism::log::error(System::Core, "Failed to load material from {}!", path);
         return {};
@@ -287,7 +287,7 @@ std::unique_ptr<Material> load_material(const file::Path path) {
                     p.float_value = property["float_value"];
                     
                     if(!property["asset_value"].get<std::string>().empty()) {
-                        p.value_tex = assetm->get<Texture>(file::app_domain / property["asset_value"].get<std::string>());
+                        p.value_tex = assetm->get<Texture>(prism::app_domain / property["asset_value"].get<std::string>());
                     }
                 }
             }
@@ -331,7 +331,7 @@ std::unique_ptr<Material> load_material(const file::Path path) {
     return mat;
 }
 
-void save_material(Material* material, const file::Path path) {
+void save_material(Material* material, const prism::Path path) {
     Expects(material != nullptr);
     Expects(!path.empty());
     

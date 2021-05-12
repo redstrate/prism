@@ -2,6 +2,6 @@
 
 #include <filesystem>
 
-namespace file {
+namespace prism {
     using Path = std::filesystem::path;
 }

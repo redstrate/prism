@@ -11,24 +11,24 @@
 #include "file_utils.hpp"
 #include "path.hpp"
 
-namespace file {
-    enum class Domain {
-        System,
-        Internal,
-        App
+namespace prism {
+    enum class domain {
+        system,
+        internal,
+        app
     };
 
     /// Represents a file handle. The file may or may not be fully loaded in memory.
-    class File {
+    class file {
     public:
-        File(FILE* handle) : handle(handle) {}
+        explicit file(FILE* handle) : handle(handle) {}
         
-        File(File&& f) noexcept :
+        file(file&& f) noexcept :
             mem(std::move(f.mem)),
             handle(std::exchange(f.handle, nullptr)),
             data(std::move(f.data)) {}
         
-        ~File() {
+        ~file() {
             if(handle != nullptr)
                 fclose(handle);
         }
@@ -57,7 +57,7 @@ namespace file {
         /// Loads the entire file into memory, accessible via cast_data()
         void read_all() {
             fseek(handle, 0L, SEEK_END);
-            const size_t _size = static_cast<size_t>(ftell(handle));
+            const auto _size = static_cast<size_t>(ftell(handle));
             rewind(handle);
 
             data.resize(_size);
@@ -71,7 +71,7 @@ namespace file {
         }
 
         /// If the file is loaded in memory, return the size of the file.
-        size_t size() const {
+        [[nodiscard]] size_t size() const {
             return data.size();
         }
 
@@ -110,11 +110,11 @@ namespace file {
      @param mode The access mode.
      @param path The absolute file path.
      */
-    void set_domain_path(const Domain domain, const Path path);
-    Path get_domain_path(const Domain domain);
+    void set_domain_path(domain domain, Path path);
+    Path get_domain_path(domain domain);
 
     /// Converts an absolute path to a domain relative path.
-    Path get_relative_path(const Domain domain, const Path path);
+    Path get_relative_path(domain domain, Path path);
 
 	/// Returns the path to a writeable directory.
 	Path get_writeable_directory();
@@ -126,10 +126,10 @@ namespace file {
      @param binary_mode Whether or not to open the file as binary or ASCII. Defaults to false.
      @return An optional with a value if the file was loaded correctly, otherwise it's empty.
      */
-    std::optional<File> open(const Path path, const bool binary_mode = false);
+    std::optional<file> open_file(Path path, bool binary_mode = false);
     
-    Path root_path(const Path path);
-    Path get_file_path(const Path path);
+    Path root_path(Path path);
+    Path get_file_path(const Path& path);
     
     inline Path internal_domain = "/internal", app_domain = "/app";
 }

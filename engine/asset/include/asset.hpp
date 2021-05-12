@@ -11,28 +11,28 @@
 
 namespace std {
     template <>
-    struct hash<file::Path> {
-        std::size_t operator()(const file::Path& k) const {
+    struct hash<prism::Path> {
+        std::size_t operator()(const prism::Path& k) const {
             return (std::hash<std::string>()(k.string()));
         }
     };
 }
 
 template<typename T>
-std::unique_ptr<T> load_asset(const file::Path p);
+std::unique_ptr<T> load_asset(const prism::Path p);
 
 template<typename T>
-bool can_load_asset(const file::Path p);
+bool can_load_asset(const prism::Path p);
 
 template<class AssetType>
-using AssetStore = std::unordered_map<file::Path, std::unique_ptr<AssetType>>;
+using AssetStore = std::unordered_map<prism::Path, std::unique_ptr<AssetType>>;
 
 template<class... Assets>
 class AssetPool : public AssetStore<Assets>... {
 public:
     template<typename T>
     AssetPtr<T> add() {
-        const auto p = file::Path();
+        const auto p = prism::Path();
         auto reference_block = get_reference_block(p);
                 
         AssetStore<T>::try_emplace(p, std::make_unique<T>());
@@ -41,7 +41,7 @@ public:
     }
 
     template<typename T>
-    AssetPtr<T> get(const file::Path path) {
+    AssetPtr<T> get(const prism::Path path) {
         return fetch<T>(path, get_reference_block(path));
     }
     
@@ -58,14 +58,14 @@ public:
     }
     
     template<typename T>
-    AssetPtr<T> fetch(const file::Path path, ReferenceBlock* reference_block) {
+    AssetPtr<T> fetch(const prism::Path path, ReferenceBlock* reference_block) {
         if(!AssetStore<T>::count(path))
             AssetStore<T>::try_emplace(path, load_asset<T>(path));
        
         return AssetPtr<T>(AssetStore<T>::at(path).get(), reference_block);
     }
     
-    std::tuple<Asset*, ReferenceBlock*> load_asset_generic(const file::Path path) {
+    std::tuple<Asset*, ReferenceBlock*> load_asset_generic(const prism::Path path) {
         Asset* asset = nullptr;
         ReferenceBlock* block = nullptr;
         
@@ -88,10 +88,10 @@ public:
         }
     }
     
-    std::unordered_map<file::Path, std::unique_ptr<ReferenceBlock>> reference_blocks;
+    std::unordered_map<prism::Path, std::unique_ptr<ReferenceBlock>> reference_blocks;
     
 private:
-    ReferenceBlock* get_reference_block(const file::Path path) {
+    ReferenceBlock* get_reference_block(const prism::Path path) {
         if(!reference_blocks.count(path))
             reference_blocks.try_emplace(path, std::make_unique<ReferenceBlock>());
 
@@ -99,7 +99,7 @@ private:
     }
     
     template<typename T>
-    void load_asset_generic(const file::Path path, Asset*& at, ReferenceBlock*& block) {
+    void load_asset_generic(const prism::Path path, Asset*& at, ReferenceBlock*& block) {
         if(can_load_asset<T>(path)) {
             if(!AssetStore<T>::count(path))
                 AssetStore<T>::try_emplace(path, load_asset<T>(path));
@@ -110,7 +110,7 @@ private:
     }
     
     template<typename T>
-    void delete_asset(const file::Path path) {
+    void delete_asset(const prism::Path path) {
         auto iter = AssetStore<T>::find(path);
         if(iter != AssetStore<T>::end()) {
             auto& [_, asset] = *iter;
@@ -126,14 +126,14 @@ using AssetManager = AssetPool<Mesh, Material, Texture>;
 
 inline std::unique_ptr<AssetManager> assetm;
 
-std::unique_ptr<Mesh> load_mesh(const file::Path path);
-std::unique_ptr<Material> load_material(const file::Path path);
-std::unique_ptr<Texture> load_texture(const file::Path path);
+std::unique_ptr<Mesh> load_mesh(const prism::Path path);
+std::unique_ptr<Material> load_material(const prism::Path path);
+std::unique_ptr<Texture> load_texture(const prism::Path path);
 
-void save_material(Material* material, const file::Path path);
+void save_material(Material* material, const prism::Path path);
 
 template<typename T>
-std::unique_ptr<T> load_asset(const file::Path path) {
+std::unique_ptr<T> load_asset(const prism::Path path) {
     if constexpr (std::is_same_v<T, Mesh>) {
         return load_mesh(path);
     } else if constexpr(std::is_same_v<T, Material>) {
@@ -144,7 +144,7 @@ std::unique_ptr<T> load_asset(const file::Path path) {
 }
 
 template<typename T>
-bool can_load_asset(const file::Path path) {
+bool can_load_asset(const prism::Path path) {
     if constexpr(std::is_same_v<T, Mesh>) {
         return path.extension() == ".model";
     } else if constexpr(std::is_same_v<T, Material>) {

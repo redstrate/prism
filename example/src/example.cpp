@@ -6,8 +6,8 @@
 #include "scene.hpp"
 
 void app_main(prism::engine* engine) {
-    file::set_domain_path(file::Domain::App, "data");
-    file::set_domain_path(file::Domain::Internal, "{resource_dir}/shaders");
+    prism::set_domain_path(prism::domain::app, "data");
+    prism::set_domain_path(prism::domain::internal, "{resource_dir}/shaders");
 
     platform::open_window("Example", {-1, -1, 1280, 720}, WindowFlags::Resizable);
 }

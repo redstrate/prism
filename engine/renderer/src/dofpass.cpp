@@ -9,7 +9,7 @@
 AssetPtr<Texture> aperture_texture;
 
 DoFPass::DoFPass(GFX* gfx, prism::renderer* renderer) : renderer(renderer) {
-    aperture_texture = assetm->get<Texture>(file::app_domain / "textures/aperture.png");
+    aperture_texture = assetm->get<Texture>(prism::app_domain / "textures/aperture.png");
     
     GFXRenderPassCreateInfo renderPassInfo = {};
     renderPassInfo.label = "Depth of Field";
@@ -28,9 +28,9 @@ DoFPass::DoFPass(GFX* gfx, prism::renderer* renderer) : renderer(renderer) {
     height_constant.value = extent.height;
     
     GFXGraphicsPipelineCreateInfo create_info = {};
-    create_info.shaders.vertex_src = ShaderSource(file::Path("dof.vert"));
+    create_info.shaders.vertex_src = ShaderSource(prism::Path("dof.vert"));
     create_info.shaders.vertex_constants = {width_constant, height_constant};
-    create_info.shaders.fragment_src = ShaderSource(file::Path("dof.frag"));
+    create_info.shaders.fragment_src = ShaderSource(prism::Path("dof.frag"));
     
     create_info.shader_input.bindings = {
         {0, GFXBindingType::StorageImage},

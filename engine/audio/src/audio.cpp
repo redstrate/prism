@@ -77,8 +77,8 @@ void audio::initialize() {
     Pa_StartStream(stream);
 }
 
-void audio::play_file(const file::Path path, const float gain) {
-    auto audio_file = file::open(path);
+void audio::play_file(const prism::Path path, const float gain) {
+    auto audio_file = prism::open_file(path);
     if(audio_file == std::nullopt)
         return;
 

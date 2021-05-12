@@ -24,7 +24,7 @@ private:
     void create_font_texture();
     void update_buffers(RenderTarget& target, const ImDrawData& draw_data);
 
-    std::unique_ptr<file::File> font_file;
+    std::unique_ptr<prism::file> font_file;
     
     GFXPipeline* pipeline = nullptr;
     GFXTexture* font_texture = nullptr;

@@ -188,7 +188,7 @@ public:
         }
     }
     
-    GFXTexture* get_asset_thumbnail(const file::Path path) {
+    GFXTexture* get_asset_thumbnail(const prism::Path path) {
         if(asset_thumbnails.count(path.string())) {
             return asset_thumbnails[path.string()];
         } else {
@@ -272,7 +272,7 @@ public:
             current_asset_type = get_asset_type<T>();
             open_asset_popup = true;
             on_asset_select = [&asset, this](auto p) {
-                asset = assetm->get<T>(file::app_domain / p);
+                asset = assetm->get<T>(prism::app_domain / p);
                 has_asset_edit_changed = true;
             };
         }
@@ -360,7 +360,7 @@ inline void editPath(const char* label, std::string& path, bool editable = true,
 
     if(ImGui::Button("...")) {
         platform::open_dialog(false, [&path, &on_selected](std::string p) {
-            path = file::get_relative_path(file::Domain::App, p).string();
+            path = prism::get_relative_path(prism::domain::app, p).string();
 
             if(on_selected != nullptr)
                 on_selected();

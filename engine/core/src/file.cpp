@@ -6,7 +6,7 @@
 #include "log.hpp"
 #include "assertions.hpp"
 
-file::Path file::root_path(const Path path) {
+prism::Path prism::root_path(const Path path) {
     auto p = path;
     while(p.parent_path() != p && p.parent_path() != "/") {
         p = p.parent_path();
@@ -15,7 +15,7 @@ file::Path file::root_path(const Path path) {
     return p;
 }
 
-std::optional<file::File> file::open(const file::Path path, const bool binary_mode) {
+std::optional<prism::file> prism::open_file(const prism::Path path, const bool binary_mode) {
     Expects(!path.empty());
     
     auto str = get_file_path(path).string();
@@ -25,30 +25,30 @@ std::optional<file::File> file::open(const file::Path path, const bool binary_mo
         return {};
     }
     
-    return file::File(file);
+    return prism::file(file);
 }
 
-file::Path file::get_file_path(const file::Path path) {
+prism::Path prism::get_file_path(const prism::Path& path) {
     auto fixed_path = path;
     auto root = root_path(path);
     if(root == app_domain) {
-        fixed_path = domain_data[static_cast<int>(Domain::App)] / path.lexically_relative(root_path(path));
+        fixed_path = domain_data[static_cast<int>(domain::app)] / path.lexically_relative(root_path(path));
     } else if(root == internal_domain) {
-        fixed_path = domain_data[static_cast<int>(Domain::Internal)] / path.lexically_relative(root_path(path));
+        fixed_path = domain_data[static_cast<int>(domain::internal)] / path.lexically_relative(root_path(path));
     }
     
     return fixed_path;
 }
 
-file::Path file::get_domain_path(const Domain domain) {
+prism::Path prism::get_domain_path(const domain domain) {
     return domain_data[static_cast<int>(domain)];
 }
 
-file::Path parent_domain(const file::Path path) {
+prism::Path parent_domain(const prism::Path& path) {
     return path;
 }
 
-file::Path file::get_relative_path(const Domain domain, const Path path) {
+prism::Path prism::get_relative_path(const domain domain, const Path path) {
     // unimplemented
     return path;
 }

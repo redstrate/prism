@@ -21,8 +21,8 @@ void DebugPass::initialize() {
 
     {
         GFXGraphicsPipelineCreateInfo createInfo;
-        createInfo.shaders.vertex_src = ShaderSource(file::Path("debug.vert"));
-        createInfo.shaders.fragment_src = ShaderSource(file::Path("debug.frag"));
+        createInfo.shaders.vertex_src = ShaderSource(prism::Path("debug.vert"));
+        createInfo.shaders.fragment_src = ShaderSource(prism::Path("debug.frag"));
 
         GFXVertexInput vertexInput = {};
         vertexInput.stride = sizeof(Vector3);
@@ -47,14 +47,14 @@ void DebugPass::initialize() {
 
         primitive_pipeline = engine->get_gfx()->create_graphics_pipeline(createInfo);
 
-        cubeMesh = assetm->get<Mesh>(file::app_domain / "models/cube.model");
-        sphereMesh = assetm->get<Mesh>(file::app_domain / "models/sphere.model");
+        cubeMesh = assetm->get<Mesh>(prism::app_domain / "models/cube.model");
+        sphereMesh = assetm->get<Mesh>(prism::app_domain / "models/sphere.model");
 
         createInfo.rasterization.polygon_type = GFXPolygonType::Fill;
 
         arrow_pipeline = engine->get_gfx()->create_graphics_pipeline(createInfo);
         
-        arrowMesh = assetm->get<Mesh>(file::app_domain / "models/arrow.model");
+        arrowMesh = assetm->get<Mesh>(prism::app_domain / "models/arrow.model");
     }
 
     {
@@ -69,8 +69,8 @@ void DebugPass::initialize() {
         // pipeline
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
 
-        pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("color.vert"));
-        pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("color.frag"));
+        pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("color.vert"));
+        pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("color.frag"));
 
         GFXVertexInput input;
         input.stride = sizeof(Vector3);
@@ -110,8 +110,8 @@ void DebugPass::initialize() {
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.label = "Sobel";
 
-        pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("color.vert"));
-        pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("color.frag"));
+        pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("color.vert"));
+        pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("color.frag"));
 
         GFXVertexInput input;
         input.stride = sizeof(Vector3);
@@ -142,8 +142,8 @@ void DebugPass::initialize() {
         GFXGraphicsPipelineCreateInfo pipelineInfo = {};
         pipelineInfo.label = "Billboard";
         
-        pipelineInfo.shaders.vertex_src = ShaderSource(file::Path("billboard.vert"));
-        pipelineInfo.shaders.fragment_src = ShaderSource(file::Path("billboard.frag"));
+        pipelineInfo.shaders.vertex_src = ShaderSource(prism::Path("billboard.vert"));
+        pipelineInfo.shaders.fragment_src = ShaderSource(prism::Path("billboard.frag"));
         
         pipelineInfo.shader_input.bindings = {
             {1, GFXBindingType::PushConstant},
@@ -163,10 +163,10 @@ void DebugPass::initialize() {
         
         billboard_pipeline = engine->get_gfx()->create_graphics_pipeline(pipelineInfo);
         
-        pointTexture = assetm->get<Texture>(file::app_domain / "textures/point.png");
-        spotTexture = assetm->get<Texture>(file::app_domain / "textures/spot.png");
-        sunTexture = assetm->get<Texture>(file::app_domain / "textures/sun.png");
-        probeTexture = assetm->get<Texture>(file::app_domain / "textures/probe.png");
+        pointTexture = assetm->get<Texture>(prism::app_domain / "textures/point.png");
+        spotTexture = assetm->get<Texture>(prism::app_domain / "textures/spot.png");
+        sunTexture = assetm->get<Texture>(prism::app_domain / "textures/sun.png");
+        probeTexture = assetm->get<Texture>(prism::app_domain / "textures/probe.png");
     }
 }
 

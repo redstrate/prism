@@ -63,7 +63,7 @@ prism::app* engine::get_app() const {
 void engine::load_localization(const std::string_view path) {
     Expects(!path.empty());
 
-    auto file = file::open(file::app_domain / path);
+    auto file = prism::open_file(prism::app_domain / path);
     if(file.has_value()) {
         nlohmann::json j;
         file->read_as_stream() >> j;
@@ -131,10 +131,10 @@ void engine::create_empty_scene() {
     current_scene = scenes.back().get();
 }
 
-Scene* engine::load_scene(const file::Path& path) {
+Scene* engine::load_scene(const prism::Path& path) {
     Expects(!path.empty());
 
-    auto file = file::open(path);
+    auto file = prism::open_file(path);
     if(!file.has_value()) {
         prism::log::error(System::Core, "Failed to load scene from {}!", path);
         return nullptr;
@@ -149,7 +149,7 @@ Scene* engine::load_scene(const file::Path& path) {
 
     for(auto& obj : j["objects"]) {
         if(obj.contains("prefabPath")) {
-            Object o = add_prefab(*scene, file::app_domain / obj["prefabPath"].get<std::string_view>());
+            Object o = add_prefab(*scene, prism::app_domain / obj["prefabPath"].get<std::string_view>());
 
             scene->get(o).name = obj["name"];
 
@@ -191,7 +191,7 @@ void engine::save_scene(const std::string_view path) {
     out << j;
 }
 
-ui::Screen* engine::load_screen(const file::Path& path) {
+ui::Screen* engine::load_screen(const prism::Path& path) {
     Expects(!path.empty());
 
     return new ui::Screen(path);
@@ -224,10 +224,10 @@ AnimationChannel engine::load_animation(nlohmann::json a) {
     return animation;
 }
 
-Animation engine::load_animation(const file::Path& path) {
+Animation engine::load_animation(const prism::Path& path) {
     Expects(!path.empty());
 
-    auto file = file::open(path, true);
+    auto file = prism::open_file(path, true);
     if(!file.has_value()) {
         prism::log::error(System::Core, "Failed to load animation from {}!", path);
         return {};
@@ -282,12 +282,12 @@ Animation engine::load_animation(const file::Path& path) {
     return anim;
 }
 
-void engine::load_cutscene(const file::Path& path) {
+void engine::load_cutscene(const prism::Path& path) {
     Expects(!path.empty());
 
     cutscene = std::make_unique<Cutscene>();
 
-    auto file = file::open(path);
+    auto file = prism::open_file(path);
     if(!file.has_value()) {
         prism::log::error(System::Core, "Failed to load cutscene from {}!", path);
         return;
@@ -316,7 +316,7 @@ void engine::load_cutscene(const file::Path& path) {
                     anim.target = obj;
             }
         } else {
-            load_scene(file::root_path(path) / s["scene"].get<std::string_view>());
+            load_scene(prism::root_path(path) / s["scene"].get<std::string_view>());
 
             if(get_scene() == nullptr)
                 create_empty_scene();
@@ -359,10 +359,10 @@ void engine::save_cutscene(const std::string_view path) {
     out << j;
 }
 
-Object engine::add_prefab(Scene& scene, const file::Path& path, const std::string_view override_name) {
+Object engine::add_prefab(Scene& scene, const prism::Path& path, const std::string_view override_name) {
     Expects(!path.empty());
     
-    auto file = file::open(path);
+    auto file = prism::open_file(path);
     if(!file.has_value()) {
         prism::log::error(System::Core, "Failed to load prefab from {}!", path);
         return NullObject;

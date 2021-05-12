@@ -49,15 +49,15 @@ const std::map<ImGuiKey, InputButton> imToPl = {
 
 CommonEditor::CommonEditor(std::string id) : id(id) {
 #ifdef PLATFORM_MACOS
-    file::set_domain_path(file::Domain::App, "../../../data");
+    file::set_domain_path(file::domain::App, "../../../data");
 #else
-    file::set_domain_path(file::Domain::App, "data");
+    prism::set_domain_path(prism::domain::app, "data");
 #endif
-    file::set_domain_path(file::Domain::Internal, "{resource_dir}/shaders");
+    prism::set_domain_path(prism::domain::internal, "{resource_dir}/shaders");
     
     ImGuiIO& io = ImGui::GetIO();
     
-    iniFileName = (file::get_writeable_directory() / "imgui.ini").string();
+    iniFileName = (prism::get_writeable_directory() / "imgui.ini").string();
     
     io.IniFilename = iniFileName.c_str();
     
@@ -260,7 +260,7 @@ void CommonEditor::begin_frame() {
         int column = 0;
         for(auto& [p, a_type] : asset_files) {
             if(current_asset_type == a_type) {
-                if(ImGui::ImageButton(get_asset_thumbnail(file::app_domain / p), ImVec2(64, 64))) {
+                if(ImGui::ImageButton(get_asset_thumbnail(prism::app_domain / p), ImVec2(64, 64))) {
                     on_asset_select(p);
                     ImGui::CloseCurrentPopup();
                 }
@@ -465,7 +465,7 @@ void editUI(UI& ui) {
     ImGui::InputText("Path", &ui.ui_path);
     
     if(ImGui::Button("Reload")) {
-        ui.screen = engine->load_screen(file::app_domain / ui.ui_path);
+        ui.screen = engine->load_screen(prism::app_domain / ui.ui_path);
         engine->get_renderer()->init_screen(ui.screen);
         ui.screen->extent.width = ui.width;
         ui.screen->extent.height = ui.height;
@@ -723,8 +723,8 @@ void CommonEditor::set_undo_stack(UndoStack *stack) {
     current_stack = stack;
 }
 
-bool mesh_readable(const file::Path path) {
-    auto file = file::open(path);
+bool mesh_readable(const prism::Path path) {
+    auto file = prism::open_file(path);
     if(!file.has_value()) {
         prism::log::error(System::Renderer, "Failed to load mesh from {}!", path);
         return false;
@@ -736,8 +736,8 @@ bool mesh_readable(const file::Path path) {
     return version == 5 || version == 6;
 }
 
-bool material_readable(const file::Path path) {
-    auto file = file::open(path);
+bool material_readable(const prism::Path path) {
+    auto file = prism::open_file(path);
     if(!file.has_value()) {
         prism::log::error(System::Core, "Failed to load material from {}!", path);
         return false;
@@ -783,8 +783,8 @@ void CommonEditor::drawAssets() {
     for(auto& [p, type] : asset_files) {
         ImGui::PushID(&p);
         
-        if(ImGui::ImageButton(get_asset_thumbnail(file::app_domain / p), ImVec2(64, 64)))
-            asset_selected(file::app_domain / p, type);
+        if(ImGui::ImageButton(get_asset_thumbnail(prism::app_domain / p), ImVec2(64, 64)))
+            asset_selected(prism::app_domain / p, type);
         
         if(ImGui::BeginPopupContextItem()) {
             ImGui::TextDisabled("%s", p.string().c_str());
@@ -792,7 +792,7 @@ void CommonEditor::drawAssets() {
             ImGui::Separator();
             
             if(ImGui::Button("Regenerate thumbnail")) {
-                asset_thumbnails.erase(asset_thumbnails.find((file::app_domain / p).string()));
+                asset_thumbnails.erase(asset_thumbnails.find((prism::app_domain / p).string()));
             }
             
             ImGui::EndPopup();
@@ -814,8 +814,8 @@ GFXTexture* CommonEditor::get_material_preview(Material& material) {
     Scene scene;
     
     auto sphere = scene.add_object();
-    scene.add<Renderable>(sphere).mesh = assetm->get<Mesh>(file::app_domain / "models" / "sphere.model");
-    scene.get<Renderable>(sphere).materials.push_back(assetm->get<Material>(file::app_domain / material.path)); // we throw away our material handle here :-(
+    scene.add<Renderable>(sphere).mesh = assetm->get<Mesh>(prism::app_domain / "models" / "sphere.model");
+    scene.get<Renderable>(sphere).materials.push_back(assetm->get<Material>(prism::app_domain / material.path)); // we throw away our material handle here :-(
     
     scene.get<Transform>(sphere).rotation = euler_to_quat(Vector3(radians(90.0f), 0, 0));
 
@@ -826,7 +826,7 @@ GFXTexture* CommonEditor::get_mesh_preview(Mesh& mesh) {
     Scene scene;
     
     auto mesh_obj = scene.add_object();
-    scene.add<Renderable>(mesh_obj).mesh = assetm->get<Mesh>(file::app_domain / mesh.path);
+    scene.add<Renderable>(mesh_obj).mesh = assetm->get<Mesh>(prism::app_domain / mesh.path);
     
     float biggest_component = 0.0f;
     for(const auto& part : scene.get<Renderable>(mesh_obj).mesh->parts) {
@@ -840,7 +840,7 @@ GFXTexture* CommonEditor::get_mesh_preview(Mesh& mesh) {
         find_biggest_component(part.aabb.min);
         find_biggest_component(part.aabb.max);
         
-        scene.get<Renderable>(mesh_obj).materials.push_back(assetm->get<Material>(file::app_domain / "materials" / "Material.material"));
+        scene.get<Renderable>(mesh_obj).materials.push_back(assetm->get<Material>(prism::app_domain / "materials" / "Material.material"));
     }
     
     return generate_common_preview(scene, Vector3(biggest_component * 2.0f));
@@ -1045,7 +1045,7 @@ void CommonEditor::drawConsole() {
 }
 
 void CommonEditor::load_options() {
-    std::ifstream i(file::get_writeable_directory() / (id + "options.json"));
+    std::ifstream i(prism::get_writeable_directory() / (id + "options.json"));
     if (i.is_open()) {
         nlohmann::json j;
         i >> j;
@@ -1077,12 +1077,12 @@ void CommonEditor::save_options() {
     j["height"] = height;
     j["files"] = lastOpenedFiles;
     
-    std::ofstream out(file::get_writeable_directory() / (id + "options.json"));
+    std::ofstream out(prism::get_writeable_directory() / (id + "options.json"));
     out << j;
 }
 
 void CommonEditor::load_thumbnail_cache() {
-    auto thumbnail_cache = file::open("./thumbnail-cache");
+    auto thumbnail_cache = prism::open_file("./thumbnail-cache");
     if(thumbnail_cache != std::nullopt) {
         int size;
         thumbnail_cache->read(&size);

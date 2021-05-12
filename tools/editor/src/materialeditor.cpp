@@ -137,7 +137,7 @@ void MaterialEditor::draw(CommonEditor* editor) {
                         save_material(*material, path);
                     });
                 } else {
-                    save_material(*material, file::get_file_path(path));
+                    save_material(*material, prism::get_file_path(path));
                 }
             }
             

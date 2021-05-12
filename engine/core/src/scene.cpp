@@ -19,10 +19,10 @@ void load_transform_component(nlohmann::json j, Transform& t) {
 
 void load_renderable_component(nlohmann::json j, Renderable& t) {
     if(j.contains("path"))
-        t.mesh = assetm->get<Mesh>(file::app_domain / j["path"].get<std::string_view>());
+        t.mesh = assetm->get<Mesh>(prism::app_domain / j["path"].get<std::string_view>());
     
     for(auto& material : j["materials"])
-        t.materials.push_back(assetm->get<Material>(file::app_domain / material.get<std::string_view>()));
+        t.materials.push_back(assetm->get<Material>(prism::app_domain / material.get<std::string_view>()));
 }
 
 void load_camera_component(nlohmann::json j, Camera& camera) {
