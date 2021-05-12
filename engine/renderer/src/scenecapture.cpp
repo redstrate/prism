@@ -111,7 +111,7 @@ SceneCapture::SceneCapture(GFX* gfx) {
     cubeTextureInfo.width = scene_cubemap_resolution;
     cubeTextureInfo.height = scene_cubemap_resolution;
     cubeTextureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
-    cubeTextureInfo.usage = GFXTextureUsage::Sampled;
+    cubeTextureInfo.usage = GFXTextureUsage::Sampled | GFXTextureUsage::TransferDst;
     cubeTextureInfo.samplingMode = SamplingMode::ClampToEdge;
     cubeTextureInfo.mip_count = mipLevels;
     
@@ -134,7 +134,7 @@ void SceneCapture::create_scene_resources(Scene& scene) {
         cubeTextureInfo.width = irradiance_cubemap_resolution;
         cubeTextureInfo.height = irradiance_cubemap_resolution;
         cubeTextureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
-        cubeTextureInfo.usage = GFXTextureUsage::Sampled;
+        cubeTextureInfo.usage = GFXTextureUsage::Sampled | GFXTextureUsage::TransferDst;
         cubeTextureInfo.samplingMode = SamplingMode::ClampToEdge;
         cubeTextureInfo.array_length = max_environment_probes;
         
@@ -146,7 +146,7 @@ void SceneCapture::create_scene_resources(Scene& scene) {
         cubeTextureInfo.width = scene_cubemap_resolution;
         cubeTextureInfo.height = scene_cubemap_resolution;
         cubeTextureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
-        cubeTextureInfo.usage = GFXTextureUsage::Sampled;
+        cubeTextureInfo.usage = GFXTextureUsage::Sampled | GFXTextureUsage::TransferDst;
         cubeTextureInfo.samplingMode = SamplingMode::ClampToEdge;
         cubeTextureInfo.array_length = max_environment_probes;
         cubeTextureInfo.mip_count = mipLevels;

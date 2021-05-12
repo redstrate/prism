@@ -1485,6 +1485,69 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
             cmd_debug_marker_end(device, cmd);
         }
             break;
+        case GFXCommandType::GenerateMipmaps:
+        {
+            auto texture = static_cast<GFXVulkanTexture*>(command.data.generate_mipmaps.texture);
+
+            for(int l = 0; l < texture->range.layerCount; l++) {
+                int mip_width = texture->width;
+                int mip_height = texture->height;
+
+                for (int i = 1; i < command.data.generate_mipmaps.mip_count; i++) {
+                    VkImageSubresourceRange range = {};
+                    range.layerCount = 1;
+                    range.baseArrayLayer = l;
+                    range.baseMipLevel = i - 1;
+                    range.levelCount = 1;
+                    range.aspectMask = texture->aspect;
+
+                    inlineTransitionImageLayout(cmd,
+                                                texture->handle,
+                                                texture->format,
+                                                texture->aspect,
+                                                range,
+                                                texture->layout,
+                                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+
+                    VkImageBlit blit = {};
+                    blit.srcOffsets[1] = {mip_width, mip_height, 1};
+                    blit.srcSubresource.aspectMask = texture->aspect;
+                    blit.srcSubresource.mipLevel = i - 1;
+                    blit.srcSubresource.baseArrayLayer = l;
+                    blit.srcSubresource.layerCount = 1;
+
+                    blit.dstOffsets[1] = {mip_width > 1 ? mip_width / 2 : 1, mip_height > 1 ? mip_height / 2 : 1, 1};
+                    blit.dstSubresource.aspectMask = texture->aspect;
+                    blit.dstSubresource.mipLevel = i;
+                    blit.dstSubresource.baseArrayLayer = l;
+                    blit.dstSubresource.layerCount = 1;
+
+                    vkCmdBlitImage(cmd,
+                                   texture->handle,
+                                   VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                   texture->handle,
+                                   VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                   1,
+                                   &blit,
+                                   VK_FILTER_LINEAR);
+
+                    inlineTransitionImageLayout(cmd,
+                                                texture->handle,
+                                                texture->format,
+                                                texture->aspect,
+                                                range,
+                                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                                texture->layout);
+
+                    if(mip_width > 1)
+                        mip_width /= 2;
+
+                    if(mip_height > 1)
+                        mip_height /= 2;
+                }
+            }
+        }
+            break;
         default:
             prism::log::error(System::GFX, "Unhandled GFX Command Type {}", utility::enum_to_string(command.type));
             break;
