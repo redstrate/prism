@@ -60,6 +60,7 @@ void draw_lighting() {
         for(auto& [obj, light] : lights) {
             auto& transform = engine->get_scene()->get<Transform>(obj);
             ImGui::DragFloat3((engine->get_scene()->get(obj).name + "Position").c_str(), transform.position.ptr());
+            ImGui::DragFloat((engine->get_scene()->get(obj).name + "Light Size").c_str(), &light.size, 0.1f);
         }
         
         ImGui::Text("Environment");
