@@ -156,6 +156,11 @@ void SceneCapture::create_scene_resources(Scene& scene) {
 }
 
 void SceneCapture::render(GFXCommandBuffer* command_buffer, Scene* scene) {
+    if(scene->probe_refresh_timer > 0) {
+        scene->probe_refresh_timer--;
+        return;
+    }
+
     int last_probe = 0;
     auto probes = scene->get_all<EnvironmentProbe>();
     for(auto [obj, probe] : probes) {

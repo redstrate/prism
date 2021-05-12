@@ -238,6 +238,7 @@ public:
     std::array<bool, max_spot_shadows> spot_light_dirty;
 
     int shadow_refresh_timer = 5;
+    int probe_refresh_timer = 5;
     
     // environment
     std::array<bool, max_environment_probes> environment_dirty;
