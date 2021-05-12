@@ -484,8 +484,8 @@ GFXTexture* GFXVulkan::create_texture(const GFXTextureCreateInfo& info) {
 	// create sampler
 	VkSamplerCreateInfo samplerInfo = {};
 	samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	samplerInfo.magFilter = VK_FILTER_NEAREST;
-    samplerInfo.minFilter = VK_FILTER_NEAREST;
+	samplerInfo.magFilter = VK_FILTER_LINEAR;
+    samplerInfo.minFilter = VK_FILTER_LINEAR;
     samplerInfo.addressModeU = samplerMode;
     samplerInfo.addressModeV = samplerMode;
     samplerInfo.addressModeW = samplerMode;
