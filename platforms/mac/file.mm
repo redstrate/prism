@@ -20,7 +20,7 @@ inline std::string clean_path(const std::string_view path) {
         return p;
 }
 
-void file::set_domain_path(const Domain domain, const Path path) {
+void prism::set_domain_path(const prism::domain domain, const prism::path path) {
     NSBundle* bundle = [NSBundle mainBundle];
     NSString* resourceFolderPath = [bundle resourcePath];
         
@@ -34,7 +34,7 @@ void file::set_domain_path(const Domain domain, const Path path) {
     domain_data[static_cast<int>(domain)] = clean_path([[[url absoluteURL] absoluteString] cStringUsingEncoding:NSUTF8StringEncoding]);
 }
 
-file::Path file::get_writeable_directory() {
+prism::path prism::get_writeable_directory() {
     NSArray* paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory, NSUserDomainMask, YES);
     NSString* resourceFolderPath = paths[0];
  

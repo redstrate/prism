@@ -454,7 +454,7 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
             } else {
                 const auto vertex_path = info.shaders.vertex_src.as_path().string();
                 
-                auto file = file::open(file::internal_domain / vertex_path);
+                auto file = prism::open_file(prism::internal_domain / vertex_path);
                 if(file != std::nullopt) {
                     vertex_src = file->read_as_string();
                 } else {
@@ -486,7 +486,7 @@ GFXPipeline* GFXMetal::create_graphics_pipeline(const GFXGraphicsPipelineCreateI
             } else {
                 const auto fragment_path = info.shaders.fragment_src.as_path().string();
                 
-                auto file = file::open(file::internal_domain / fragment_path);
+                auto file = prism::open_file(prism::internal_domain / fragment_path);
                 if(file != std::nullopt) {
                     fragment_src = file->read_as_string();
                 } else {
@@ -659,7 +659,7 @@ GFXPipeline* GFXMetal::create_compute_pipeline(const GFXComputePipelineCreateInf
         } else {
             const auto compute_path = info.compute_src.as_path().string();
             
-            auto file = file::open(file::internal_domain / compute_path);
+            auto file = prism::open_file(prism::internal_domain / compute_path);
             if(file != std::nullopt) {
                 compute_src = file->read_as_string();
             } else {
