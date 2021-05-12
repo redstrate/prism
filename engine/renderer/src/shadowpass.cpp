@@ -43,6 +43,8 @@ void ShadowPass::create_scene_resources(Scene& scene) {
         textureInfo.height = render_options.shadow_resolution;
         textureInfo.format = GFXPixelFormat::DEPTH_32F;
         textureInfo.usage = GFXTextureUsage::Sampled | GFXTextureUsage::Attachment;
+        textureInfo.samplingMode = SamplingMode::ClampToBorder;
+        textureInfo.border_color = GFXBorderColor::OpaqueWhite;
 
         scene.depthTexture = gfx->create_texture(textureInfo);
         
@@ -62,9 +64,10 @@ void ShadowPass::create_scene_resources(Scene& scene) {
         cubeTextureInfo.height = render_options.shadow_resolution;
         cubeTextureInfo.format = GFXPixelFormat::R_32F;
         cubeTextureInfo.usage = GFXTextureUsage::Sampled;
-        cubeTextureInfo.samplingMode = SamplingMode::ClampToEdge;
         cubeTextureInfo.array_length = max_point_shadows;
-        
+        cubeTextureInfo.samplingMode = SamplingMode::ClampToBorder;
+        cubeTextureInfo.border_color = GFXBorderColor::OpaqueWhite;
+
         scene.pointLightArray = gfx->create_texture(cubeTextureInfo);
     }
     
@@ -77,9 +80,10 @@ void ShadowPass::create_scene_resources(Scene& scene) {
         spotTextureInfo.height = render_options.shadow_resolution;
         spotTextureInfo.format = GFXPixelFormat::DEPTH_32F;
         spotTextureInfo.usage = GFXTextureUsage::Sampled | GFXTextureUsage::Attachment;
-        spotTextureInfo.samplingMode = SamplingMode::ClampToEdge;
         spotTextureInfo.array_length = max_spot_shadows;
-        
+        spotTextureInfo.samplingMode = SamplingMode::ClampToBorder;
+        spotTextureInfo.border_color = GFXBorderColor::OpaqueWhite;
+
         scene.spotLightArray = gfx->create_texture(spotTextureInfo);
     }
 }
