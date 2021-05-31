@@ -4,6 +4,8 @@
 #include "file.hpp"
 #include "engine.hpp"
 #include "scene.hpp"
+#include "asset.hpp"
+#include "path.hpp"
 
 void app_main(prism::engine* engine) {
     prism::set_domain_path(prism::domain::app, "data");
@@ -18,12 +20,19 @@ void ExampleApp::initialize_render() {
 
     auto camera_obj = scene->add_object();
     auto& camera = scene->add<Camera>(camera_obj);
-    auto& camera_trans = scene->get<Transform>(camera_obj);
-    camera_trans.position.z = -3;
+    camera_look_at(*scene, camera_obj, {2, 2, -2}, {0, 0, 0});
 
     auto sun_obj = scene->add_object();
     auto& sun = scene->add<Light>(sun_obj);
     sun.type = Light::Type::Sun;
     auto& sun_trans = scene->get<Transform>(sun_obj);
     sun_trans.position = {5, 5, 5};
+
+    auto sphere_obj = scene->add_object();
+    auto& sphere_render = scene->add<Renderable>(sphere_obj);
+    sphere_render.mesh = assetm->get<Mesh>(prism::path("data/models/sphere.model"));
+    sphere_render.materials = { assetm->get<Material>(prism::path("data/materials/Material.material")) };
+
+    auto probe_obj = scene->add_object();
+    scene->add<EnvironmentProbe>(probe_obj);
 }
