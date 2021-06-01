@@ -14,8 +14,9 @@ public:
 	VkPipelineLayout layout;
 
 	VkDescriptorSetLayout descriptorLayout;
-	
-	std::vector<int> bindings_marked_as_storage_images;
+
+    std::vector<int> bindings_marked_as_normal_images;
+    std::vector<int> bindings_marked_as_storage_images;
 	std::vector<int> bindings_marked_as_sampled_images;
 
     // dynamic descriptor sets
