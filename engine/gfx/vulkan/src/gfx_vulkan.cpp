@@ -337,6 +337,14 @@ void* GFXVulkan::get_buffer_contents(GFXBuffer* buffer) {
 
 void GFXVulkan::release_buffer_contents(GFXBuffer* buffer, void* handle) {
     GFXVulkanBuffer* vulkanBuffer = (GFXVulkanBuffer*)buffer;
+
+    VkMappedMemoryRange range = {};
+    range.sType = VK_STRUCTURE_TYPE_MAPPED_MEMORY_RANGE;
+    range.memory = vulkanBuffer->memory;
+    range.size = VK_WHOLE_SIZE;
+
+    vkFlushMappedMemoryRanges(device, 1, &range);
+
     vkUnmapMemory(device, vulkanBuffer->memory);
 }
 

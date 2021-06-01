@@ -204,16 +204,23 @@ void ImGuiPass::update_buffers(RenderTarget& target, const ImDrawData& draw_data
         target.index_buffer[target.current_frame] = engine->get_gfx()->create_buffer(nullptr, new_index_size, true, GFXBufferUsage::Index);
         target.current_index_size[target.current_frame] = new_index_size;
     }
-    
-    int vertex_offset = 0;
-    int index_offset = 0;
+
+    auto vtx_map = engine->get_gfx()->get_buffer_contents(target.vertex_buffer[target.current_frame]);
+    auto idx_map = engine->get_gfx()->get_buffer_contents(target.index_buffer[target.current_frame]);
+
+    auto vtx_dst = (ImDrawVert*)vtx_map;
+    auto idx_dst = (ImDrawIdx*)idx_map;
+
     for(int i = 0; i < draw_data.CmdListsCount; i++) {
         const ImDrawList* cmd_list = draw_data.CmdLists[i];
-        
-        engine->get_gfx()->copy_buffer(target.vertex_buffer[target.current_frame], cmd_list->VtxBuffer.Data, vertex_offset, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
-        engine->get_gfx()->copy_buffer(target.index_buffer[target.current_frame], cmd_list->IdxBuffer.Data, index_offset, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
-        
-        vertex_offset += cmd_list->VtxBuffer.Size * sizeof(ImDrawVert);
-        index_offset += cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx);
+
+        memcpy(vtx_dst, cmd_list->VtxBuffer.Data, cmd_list->VtxBuffer.Size * sizeof(ImDrawVert));
+        memcpy(idx_dst, cmd_list->IdxBuffer.Data, cmd_list->IdxBuffer.Size * sizeof(ImDrawIdx));
+
+        vtx_dst += cmd_list->VtxBuffer.Size;
+        idx_dst += cmd_list->IdxBuffer.Size;
     }
+
+    engine->get_gfx()->release_buffer_contents(target.vertex_buffer[target.current_frame], vtx_map);
+    engine->get_gfx()->release_buffer_contents(target.index_buffer[target.current_frame], idx_map);
 }
