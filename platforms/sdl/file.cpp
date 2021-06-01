@@ -7,5 +7,5 @@ void prism::set_domain_path(const prism::domain domain, const prism::path path) 
 }
 
 prism::path prism::get_writeable_directory() {
-    return "~";
+    return "";
 }

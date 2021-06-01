@@ -349,7 +349,9 @@ int main(int argc, char* argv[]) {
         engine->end_frame();
      }
 
-  return 0;
+    engine->prepare_quit();
+
+    return 0;
 }
 
 #ifdef PLATFORM_WINDOWS
