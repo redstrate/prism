@@ -338,7 +338,9 @@ void renderer::render(GFXCommandBuffer* commandbuffer, Scene* scene, RenderTarge
                             static_cast<uint32_t>(std::ceil(static_cast<float>(render_extent.height) / 16.0f)), 1);
     
     commandbuffer->set_compute_pipeline(histogram_average_pipeline);
-    
+
+    commandbuffer->bind_shader_buffer(histogram_buffer, 0, 1, sizeof(uint32_t) * 256);
+
     params = prism::float4(render_options.min_luminance,
                      lum_range,
                      std::clamp(1.0f - std::exp(-(1.0f / 60.0f) * 1.1f), 0.0f, 1.0f),
@@ -1006,6 +1008,7 @@ void renderer::generate_brdf() {
 
 void renderer::create_histogram_resources() {
     GFXComputePipelineCreateInfo create_info = {};
+    create_info.label = "Histogram";
     create_info.compute_src = ShaderSource(prism::path("histogram.comp"));
     create_info.workgroup_size_x = 16;
     create_info.workgroup_size_y = 16;
@@ -1021,7 +1024,8 @@ void renderer::create_histogram_resources() {
     };
     
     histogram_pipeline = gfx->create_compute_pipeline(create_info);
-    
+
+    create_info.label = "Histogram Average";
     create_info.compute_src = ShaderSource(prism::path("histogram-average.comp"));
     create_info.workgroup_size_x = 256;
     create_info.workgroup_size_y = 1;

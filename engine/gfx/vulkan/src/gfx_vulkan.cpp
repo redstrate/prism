@@ -1115,7 +1115,7 @@ GFXPipeline* GFXVulkan::create_compute_pipeline(const GFXComputePipelineCreateIn
         layoutBinding.binding = binding.binding;
         layoutBinding.descriptorType = descriptorType;
         layoutBinding.descriptorCount = 1;
-        layoutBinding.stageFlags = VK_SHADER_STAGE_ALL;
+        layoutBinding.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
 
         layoutBindings.push_back(layoutBinding);
     }
@@ -2006,8 +2006,6 @@ void GFXVulkan::resetDescriptorState() {
 void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSetLayout layout) {
 	uint64_t hash = getDescriptorHash(pipeline);
 
-	vkDeviceWaitIdle(device);
-
 	// create set object
 	VkDescriptorSet descriptorSet;
 
@@ -2018,17 +2016,13 @@ void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSe
 	allocInfo.pSetLayouts = &layout;
 
 	VkResult error = vkAllocateDescriptorSets(device, &allocInfo, &descriptorSet);
-	if(error == VK_ERROR_OUT_OF_POOL_MEMORY) {
+	if(error != VK_SUCCESS || descriptorSet == VK_NULL_HANDLE) {
         prism::log::error(System::GFX, "ERROR: COULD NOT CACHE BECAUSE OUT OF DESCRIPTOR SETS.");
+
+        return;
 	}
 
-    if(error != VK_SUCCESS)
-        return;
-
 	name_object(device, VK_OBJECT_TYPE_DESCRIPTOR_SET, (uint64_t)descriptorSet, pipeline->label);
-
-	if (descriptorSet == VK_NULL_HANDLE)
-		return;
 
 	// update set
 	for (auto [i, buffer] : utility::enumerate(boundShaderBuffers)) {
