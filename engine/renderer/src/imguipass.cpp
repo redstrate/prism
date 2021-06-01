@@ -205,6 +205,7 @@ void ImGuiPass::update_buffers(RenderTarget& target, const ImDrawData& draw_data
         target.current_index_size[target.current_frame] = new_index_size;
     }
 
+    // todo: dont map every frame
     auto vtx_map = engine->get_gfx()->get_buffer_contents(target.vertex_buffer[target.current_frame]);
     auto idx_map = engine->get_gfx()->get_buffer_contents(target.index_buffer[target.current_frame]);
 

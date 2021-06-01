@@ -36,6 +36,7 @@ struct NativeSurface {
     VkRenderPass swapchainRenderPass = VK_NULL_HANDLE;
     
     std::vector<VkFramebuffer> swapchainFramebuffers;
+    std::vector<VkCommandBuffer> commandBuffers;
 };
 
 class GFXVulkanPipeline;
@@ -127,8 +128,6 @@ private:
 	VkDescriptorPool descriptorPool = VK_NULL_HANDLE;
 
     std::vector<NativeSurface*> native_surfaces;
-
-	std::vector<VkCommandBuffer> commandBuffers;
 
 	struct BoundShaderBuffer {
 		GFXBuffer* buffer = nullptr;

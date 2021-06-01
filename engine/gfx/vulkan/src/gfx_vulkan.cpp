@@ -1213,7 +1213,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
     if(cmdbuf->handle != VK_NULL_HANDLE)
         cmd = cmdbuf->handle;
     else if(current_surface != nullptr)
-        cmd = commandBuffers[current_surface-> currentFrame];
+        cmd = current_surface->commandBuffers[current_surface-> currentFrame];
     
     if(cmd == nullptr)
         return;
@@ -1999,17 +1999,17 @@ void GFXVulkan::createSwapchain(NativeSurface* native_surface, VkSwapchainKHR ol
 	}
 
 	// allocate command buffers
-	commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
+	native_surface->commandBuffers.resize(MAX_FRAMES_IN_FLIGHT);
 
 	VkCommandBufferAllocateInfo allocInfo = {};
 	allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
 	allocInfo.commandPool = commandPool;
 	allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	allocInfo.commandBufferCount = (uint32_t)commandBuffers.size();
+	allocInfo.commandBufferCount = (uint32_t)native_surface->commandBuffers.size();
 
-	vkAllocateCommandBuffers(device, &allocInfo, commandBuffers.data());
+	vkAllocateCommandBuffers(device, &allocInfo, native_surface->commandBuffers.data());
 
-	for (auto [i, cmdbuf] : utility::enumerate(commandBuffers))
+	for (auto [i, cmdbuf] : utility::enumerate(native_surface->commandBuffers))
 		name_object(device, VK_OBJECT_TYPE_COMMAND_BUFFER, (uint64_t)cmdbuf, ("main cmd buf " + std::to_string(i)).c_str());
 }
 
