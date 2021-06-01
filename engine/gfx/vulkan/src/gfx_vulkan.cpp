@@ -676,7 +676,7 @@ GFXRenderPass* GFXVulkan::create_render_pass(const GFXRenderPassCreateInfo& info
 	VkAttachmentDescription depthAttachment;
 	VkAttachmentReference depthAttachmentRef;
 
-	for (int i = 0; i < info.attachments.size(); i++) {
+    for (int i = 0; i < info.attachments.size(); i++) {
 		bool isDepthAttachment = false;
 		if (info.attachments[i] == GFXPixelFormat::DEPTH_32F)
 			isDepthAttachment = true;
@@ -691,10 +691,14 @@ GFXRenderPass* GFXVulkan::create_render_pass(const GFXRenderPassCreateInfo& info
 		attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         
         if(info.will_use_in_shader) {
-            attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            if(isDepthAttachment) {
+                attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+            } else {
+                attachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            }
         } else {
             if (isDepthAttachment)
-                attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+                attachment.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
             else
                 attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
         }
@@ -717,7 +721,7 @@ GFXRenderPass* GFXVulkan::create_render_pass(const GFXRenderPassCreateInfo& info
 			descriptions.push_back(attachment);
 			references.push_back(attachmentRef);
 		}
-	}
+    }
 
 	VkSubpassDescription subpass = {};
 	subpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -730,7 +734,9 @@ GFXRenderPass* GFXVulkan::create_render_pass(const GFXRenderPassCreateInfo& info
 		descriptions.push_back(depthAttachment);
 	}
 
-	VkRenderPassCreateInfo renderPassInfo = {};
+	// dependency to next renderpass
+
+    VkRenderPassCreateInfo renderPassInfo = {};
 	renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
 	renderPassInfo.attachmentCount = static_cast<uint32_t>(descriptions.size());
 	renderPassInfo.pAttachments = descriptions.data();
@@ -1489,8 +1495,12 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                 for(auto binding : currentPipeline->bindings_marked_as_storage_images) {
                     auto tex = (GFXVulkanTexture*)boundTextures[binding];
 
+                    const auto check_flag = [](const GFXTextureUsage usage, const GFXTextureUsage flag) {
+                        return (usage & flag) == flag;
+                    };
+
                     VkImageLayout next_layout = tex->layout;
-                    if((tex->usage & GFXTextureUsage::Sampled) == GFXTextureUsage::Sampled)
+                    if(check_flag(tex->usage, GFXTextureUsage::Sampled) && !check_flag(tex->usage, GFXTextureUsage::Attachment))
                         next_layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
                     inlineTransitionImageLayout(cmd, tex->handle, tex->format, tex->aspect, tex->range, VK_IMAGE_LAYOUT_GENERAL, next_layout);
@@ -2092,6 +2102,12 @@ void GFXVulkan::cacheDescriptorState(GFXVulkanPipeline* pipeline, VkDescriptorSe
             imageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
             imageInfo.imageView = vulkanTexture->view;
             imageInfo.sampler = vulkanTexture->sampler;
+
+            if((vulkanTexture->usage & GFXTextureUsage::Attachment) == GFXTextureUsage::Attachment) {
+                if(vulkanTexture->format == VK_FORMAT_D32_SFLOAT) {
+                    imageInfo.imageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
+                }
+            }
 
             VkWriteDescriptorSet descriptorWrite = {};
             descriptorWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

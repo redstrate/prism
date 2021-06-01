@@ -79,7 +79,7 @@ void ShadowPass::create_scene_resources(Scene& scene) {
         spotTextureInfo.width = render_options.shadow_resolution;
         spotTextureInfo.height = render_options.shadow_resolution;
         spotTextureInfo.format = GFXPixelFormat::DEPTH_32F;
-        spotTextureInfo.usage = GFXTextureUsage::Sampled | GFXTextureUsage::Attachment;
+        spotTextureInfo.usage = GFXTextureUsage::Sampled;
         spotTextureInfo.array_length = max_spot_shadows;
         spotTextureInfo.samplingMode = SamplingMode::ClampToBorder;
         spotTextureInfo.border_color = GFXBorderColor::OpaqueWhite;
@@ -307,7 +307,7 @@ void ShadowPass::create_render_passes() {
     renderPassInfo.label = "Shadow";
     renderPassInfo.attachments.push_back(GFXPixelFormat::DEPTH_32F);
     renderPassInfo.will_use_in_shader = true;
-    
+
     render_pass = gfx->create_render_pass(renderPassInfo);
     
     renderPassInfo.label = "Shadow Cube";
