@@ -330,7 +330,7 @@ void* GFXVulkan::get_buffer_contents(GFXBuffer* buffer) {
     GFXVulkanBuffer* vulkanBuffer = (GFXVulkanBuffer*)buffer;
 
     void* mapped_data;
-    vkMapMemory(device, vulkanBuffer->memory, 0, vulkanBuffer->size, 0, &mapped_data);
+    vkMapMemory(device, vulkanBuffer->memory, 0, VK_WHOLE_SIZE, 0, &mapped_data);
 
     return mapped_data;
 }
