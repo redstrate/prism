@@ -49,7 +49,7 @@ struct MaterialProperty {
 
     prism::float3 value;
     AssetPtr<Texture> value_tex;
-    float float_value;
+    float float_value = 0.0f;
 };
 
 static int last_id = 0;
