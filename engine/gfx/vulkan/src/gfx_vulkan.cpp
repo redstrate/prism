@@ -1522,14 +1522,16 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                 int mip_width = texture->width;
                 int mip_height = texture->height;
 
-                for (int i = 1; i < command.data.generate_mipmaps.mip_count; i++) {
+                // prepare source level
+                {
                     VkImageSubresourceRange range = {};
                     range.layerCount = 1;
                     range.baseArrayLayer = l;
-                    range.baseMipLevel = i - 1;
+                    range.baseMipLevel = 0;
                     range.levelCount = 1;
                     range.aspectMask = texture->aspect;
 
+                    // change previous mip level to SRC for copy
                     inlineTransitionImageLayout(cmd,
                                                 texture->handle,
                                                 texture->format,
@@ -1537,6 +1539,24 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                                                 range,
                                                 texture->layout,
                                                 VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
+                }
+
+                for (int i = 1; i < command.data.generate_mipmaps.mip_count; i++) {
+                    VkImageSubresourceRange range = {};
+                    range.layerCount = 1;
+                    range.baseArrayLayer = l;
+                    range.baseMipLevel = i;
+                    range.levelCount = 1;
+                    range.aspectMask = texture->aspect;
+
+                    // change mip level to DST for copy
+                    inlineTransitionImageLayout(cmd,
+                                                texture->handle,
+                                                texture->format,
+                                                texture->aspect,
+                                                range,
+                                                texture->layout,
+                                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
 
                     VkImageBlit blit = {};
                     blit.srcOffsets[1] = {mip_width, mip_height, 1};
@@ -1551,6 +1571,7 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                     blit.dstSubresource.baseArrayLayer = l;
                     blit.dstSubresource.layerCount = 1;
 
+                    // blit from src->dst
                     vkCmdBlitImage(cmd,
                                    texture->handle,
                                    VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
@@ -1560,13 +1581,14 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                                    &blit,
                                    VK_FILTER_LINEAR);
 
+                    // change THIS mip level to SRC because we will use it in the next for copying
                     inlineTransitionImageLayout(cmd,
                                                 texture->handle,
                                                 texture->format,
                                                 texture->aspect,
                                                 range,
-                                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
-                                                texture->layout);
+                                                VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
+                                                VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL);
 
                     if(mip_width > 1)
                         mip_width /= 2;
@@ -1574,6 +1596,22 @@ void GFXVulkan::submit(GFXCommandBuffer* command_buffer, const int identifier) {
                     if(mip_height > 1)
                         mip_height /= 2;
                 }
+
+                // transitions all from src->previous layout
+                VkImageSubresourceRange range = {};
+                range.layerCount = 1;
+                range.baseArrayLayer = l;
+                range.baseMipLevel = 0;
+                range.levelCount = command.data.generate_mipmaps.mip_count;
+                range.aspectMask = texture->aspect;
+
+                inlineTransitionImageLayout(cmd,
+                                            texture->handle,
+                                            texture->format,
+                                            texture->aspect,
+                                            range,
+                                            VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL,
+                                            texture->layout);
             }
         }
             break;

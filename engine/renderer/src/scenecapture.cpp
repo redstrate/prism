@@ -111,7 +111,7 @@ SceneCapture::SceneCapture(GFX* gfx) {
     cubeTextureInfo.width = scene_cubemap_resolution;
     cubeTextureInfo.height = scene_cubemap_resolution;
     cubeTextureInfo.format = GFXPixelFormat::R8G8B8A8_UNORM;
-    cubeTextureInfo.usage = GFXTextureUsage::Sampled | GFXTextureUsage::TransferDst;
+    cubeTextureInfo.usage = GFXTextureUsage::Sampled | GFXTextureUsage::TransferDst | GFXTextureUsage::TransferSrc; // dst used for cubemap copy, src used for mipmap gen
     cubeTextureInfo.samplingMode = SamplingMode::ClampToEdge;
     cubeTextureInfo.mip_count = mipLevels;
     
